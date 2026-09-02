@@ -90,6 +90,25 @@ class AppTranslations {
       "ask_pramaan": "Ask Pramaan AI",
       "scan_input": "Scan Input QR",
       "verified_label": "VERIFIED",
+      "crop_doctor_title": "Crop Doctor AI",
+      "crop_doctor_sub": "Pramaan AI • Real-Time Plant Pathology",
+      "target_crop": "Target Crop:",
+      "take_photo": "Take Photo",
+      "gallery": "Gallery",
+      "try_sample": "Try Sample",
+      "recommended_spray": "Recommended Spray:",
+      "field_action": "Field Action:",
+      "desi_organic": "Desi/Organic:",
+      "save_spray_record": "SAVE SPRAY RECORD IN JOURNAL",
+      "match_label": "Match",
+      "damage_label": "Damage",
+      "urgency_label": "Urgency",
+      "healthy_crop": "Healthy Crop",
+      "disease_alert": "Disease Alert",
+      "pest_alert": "Pest Alert",
+      "moderate_risk": "Moderate Risk",
+      "view_scientific": "🔬 View Scientific & Prevention Details",
+      "align_camera": "📷 Align crop leaf or plant inside frame",
     },
     "hi": {
       "app_title": "प्रमाण",
@@ -172,6 +191,25 @@ class AppTranslations {
       "ask_pramaan": "प्रमाण एआई से पूछें",
       "scan_input": "दवा का क्यूआर स्कैन करें",
       "verified_label": "सत्यापित",
+      "crop_doctor_title": "फसल डॉक्टर AI",
+      "crop_doctor_sub": "Pramaan AI • तुरंत बीमारी और कीट जांच",
+      "target_crop": "लक्ष्य फसल:",
+      "take_photo": "फोटो लें",
+      "gallery": "गैलरी",
+      "try_sample": "नमूना देखें",
+      "recommended_spray": "अनुशंसित स्प्रे (दवा):",
+      "field_action": "खेत में कार्रवाई:",
+      "desi_organic": "देसी/जैविक:",
+      "save_spray_record": "स्प्रे रिकॉर्ड खाते में दर्ज करें",
+      "match_label": "सटीकता",
+      "damage_label": "नुकसान",
+      "urgency_label": "समय सीमा",
+      "healthy_crop": "तंदुरुस्त फसल",
+      "disease_alert": "रोग चेतावनी",
+      "pest_alert": "कीट चेतावनी",
+      "moderate_risk": "मध्यम जोखिम",
+      "view_scientific": "🔬 वैज्ञानिक और रोकथाम विवरण देखें",
+      "align_camera": "📷 फसल के पत्ते या पौधे को फ्रेम में रखें",
     },
     "mr": {
       "app_title": "प्रमाण",
@@ -249,11 +287,29 @@ class AppTranslations {
       "pricing": "खरेदीदार दर",
       "insights": "फायदा/रिकव्हरी",
       "spray_safe_badge": "फवारणीसाठी योग्य वेळ",
-      "spray_caution_badge": "काळजीपूर्वक",
       "spray_no_badge": "फवारणी करू नका",
       "ask_pramaan": "प्रमाण एआय ला विचारा",
       "scan_input": "औषधाचा क्यूआर स्कॅन करा",
       "verified_label": "प्रमाणित",
+      "crop_doctor_title": "पीक डॉक्टर AI",
+      "crop_doctor_sub": "Pramaan AI • रोग व कीड त्वरित निदान",
+      "target_crop": "लक्ष्य पीक:",
+      "take_photo": "फोटो काढा",
+      "gallery": "गॅलरी",
+      "try_sample": "नमुना पीक",
+      "recommended_spray": "शिफारस केलेले औषध:",
+      "field_action": "कृती सूचना:",
+      "desi_organic": "देशी/सेंद्रिय:",
+      "save_spray_record": "फवारणी नोंद डायरीत जतन करा",
+      "match_label": "अचूकता",
+      "damage_label": "नुकसान",
+      "urgency_label": "तातडी",
+      "healthy_crop": "निरोगी पीक",
+      "disease_alert": "रोग इशारा",
+      "pest_alert": "कीड इशारा",
+      "moderate_risk": "मध्यम जोखीम",
+      "view_scientific": "🔬 वैज्ञानिक व प्रतिबंधक माहिती पहा",
+      "align_camera": "📷 पिकाचे पान किंवा झाड फ्रेममध्ये ठेवा",
     },
     "pa": {
       "app_title": "ਪ੍ਰਮਾਣ",
@@ -331,11 +387,29 @@ class AppTranslations {
       "pricing": "ਖ਼ਰੀਦਦਾਰ ਭਾਅ",
       "insights": "ਅਸਰ/ਮੁਨਾਫ਼ਾ",
       "spray_safe_badge": "ਸਪਰੇਅ ਲਈ ਸਹੀ ਸਮਾਂ",
-      "spray_caution_badge": "ਧਿਆਨ ਨਾਲ",
       "spray_no_badge": "ਸਪਰੇਅ ਨਾ ਕਰੋ",
       "ask_pramaan": "ਪ੍ਰਮਾਣ ਏਆਈ ਨੂੰ ਪੁੱਛੋ",
       "scan_input": "ਦਵਾਈ ਦਾ QR ਸਕੈਨ ਕਰੋ",
       "verified_label": "ਤਸਦੀਕਸ਼ੁਦਾ",
+      "crop_doctor_title": "ਫ਼ਸਲ ਡਾਕਟਰ AI",
+      "crop_doctor_sub": "Pramaan AI • ਤੁਰੰਤ ਬਿਮਾਰੀ ਤੇ ਕੀੜਿਆਂ ਦੀ ਜਾਂਚ",
+      "target_crop": "ਟਾਰਗੇਟ ਫ਼ਸਲ:",
+      "take_photo": "ਫੋਟੋ ਖਿੱਚੋ",
+      "gallery": "ਗੈਲਰੀ",
+      "try_sample": "ਨਮੂਨਾ ਫ਼ਸਲ",
+      "recommended_spray": "ਸਿਫ਼ਾਰਸ਼ ਕੀਤੀ ਦਵਾਈ (ਸਪਰੇਅ):",
+      "field_action": "ਖੇਤ ਵਿੱਚ ਕਾਰਵਾਈ:",
+      "desi_organic": "ਦੇਸੀ/ਜੈਵਿਕ:",
+      "save_spray_record": "ਸਪਰੇਅ ਰਿਕਾਰਡ ਖਾਤੇ ਵਿੱਚ ਦਰਜ ਕਰੋ",
+      "match_label": "ਸਟੀਕਤਾ",
+      "damage_label": "ਨੁਕਸਾਨ",
+      "urgency_label": "ਸਮਾਂ ਸੀਮਾ",
+      "healthy_crop": "ਤੰਦਰੁਸਤ ਫ਼ਸਲ",
+      "disease_alert": "ਬਿਮਾਰੀ ਅਲਰਟ",
+      "pest_alert": "ਕੀੜਿਆਂ ਦਾ ਅਲਰਟ",
+      "moderate_risk": "ਦਰਮਿਆਨਾ ਜੋਖ਼ਮ",
+      "view_scientific": "🔬 ਵਿਗਿਆਨਕ ਅਤੇ ਬਚਾਅ ਦੇ ਵੇਰਵੇ ਵੇਖੋ",
+      "align_camera": "📷 ਫਸਲ ਦੇ ਪੱਤੇ ਜਾਂ ਬੂਟੇ ਨੂੰ ਫਰੇਮ ਵਿੱਚ ਰੱਖੋ",
     }
   };
 
@@ -364,17 +438,15 @@ class AppTranslations {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.translate_rounded, color: Color(0xFF059669), size: 22),
-                        SizedBox(width: 8),
-                        Text(
-                          "Select App Language / भाषा चुनें",
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                        ),
-                      ],
+                    const Icon(Icons.translate_rounded, color: Color(0xFF059669), size: 22),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        "Select Language / भाषा चुनें",
+                        style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded, size: 20, color: Color(0xFF64748B)),
@@ -385,40 +457,43 @@ class AppTranslations {
                 const SizedBox(height: 12),
                 ...supportedLanguages.map((lang) {
                   final isSelected = currentLang == lang["code"];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected ? const Color(0xFFECFDF5) : Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: isSelected ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
-                        width: isSelected ? 1.5 : 1.0,
-                      ),
-                    ),
-                    child: ListTile(
-                      leading: Text(
-                        lang["flag"] ?? "🌐",
-                        style: const TextStyle(fontSize: 22),
-                      ),
-                      title: Text(
-                        lang["native"] ?? "",
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                          color: isSelected ? const Color(0xFF065F46) : const Color(0xFF1E293B),
+                  return Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: isSelected ? const Color(0xFFECFDF5) : Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: isSelected ? const Color(0xFF059669) : const Color(0xFFE2E8F0),
+                          width: isSelected ? 1.5 : 1.0,
                         ),
                       ),
-                      subtitle: Text(
-                        lang["name"] ?? "",
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      child: ListTile(
+                        leading: Text(
+                          lang["flag"] ?? "🌐",
+                          style: const TextStyle(fontSize: 22),
+                        ),
+                        title: Text(
+                          lang["native"] ?? "",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                            color: isSelected ? const Color(0xFF065F46) : const Color(0xFF1E293B),
+                          ),
+                        ),
+                        subtitle: Text(
+                          lang["name"] ?? "",
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                        ),
+                        trailing: isSelected
+                            ? const Icon(Icons.check_circle_rounded, color: Color(0xFF059669))
+                            : null,
+                        onTap: () {
+                          onSelect(lang["code"] ?? "en");
+                          Navigator.pop(ctx);
+                        },
                       ),
-                      trailing: isSelected
-                          ? const Icon(Icons.check_circle_rounded, color: Color(0xFF059669))
-                          : null,
-                      onTap: () {
-                        onSelect(lang["code"] ?? "en");
-                        Navigator.pop(ctx);
-                      },
                     ),
                   );
                 }),

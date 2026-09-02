@@ -72,15 +72,33 @@ class BackendTestSuite(unittest.TestCase):
         self.assertIn(data["action_type"], ["SPRAY", "OBSERVE", "FERTILIZE"])
 
     def test_vision_agent_analysis(self):
+        # 1. Text hint test
         payload = {
-            "crop_type": "Cotton",
+            "crop_type": "Tomato",
             "plot_id": "plot-01"
         }
         response = self.client.post("/api/v1/vision/analyze", json=payload)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertIn("disease_detected", data)
+        self.assertIn("crop_detected", data)
         self.assertIn(data["severity_level"], ["Low", "Medium", "High", "Critical"])
+        self.assertIsInstance(data["symptoms"], list)
+
+        # 2. Auto-Detect test with base64 image data
+        import base64
+        dummy_b64 = base64.b64encode(b"RIFF\x00\x00\x00\x00WEBPVP8 ").decode('utf-8')
+        payload_img = {
+            "crop_type": "Auto-Detect",
+            "image_base64": dummy_b64,
+            "plot_id": "plot-02"
+        }
+        response_img = self.client.post("/api/v1/vision/analyze", json=payload_img)
+        self.assertEqual(response_img.status_code, 200)
+        data_img = response_img.json()
+        self.assertIn("crop_detected", data_img)
+        self.assertIn("disease_detected", data_img)
+
 
     def test_validation_agent(self):
         payload = {

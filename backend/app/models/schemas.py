@@ -98,19 +98,26 @@ class VoiceLogResponse(BaseModel):
 class VisionAnalysisRequest(BaseModel):
     image_base64: Optional[str] = None
     image_url: Optional[str] = None
-    crop_type: Optional[str] = "Cotton"
+    crop_type: Optional[str] = "Auto-Detect"
     plot_id: Optional[str] = "plot-01"
 
 class VisionAnalysisResponse(BaseModel):
+    crop_detected: str = "Unknown Crop"
+    scientific_name: Optional[str] = None
+    crop_stage: Optional[str] = "Mature Canopy"
     disease_detected: str
+    health_status: Optional[str] = "Diseased" # "Diseased", "Pest Infested", "Nutrient Deficient", "Healthy Crop", "Stressed"
     confidence: float
     severity_level: str # Low, Medium, High, Critical
-    pest_count_estimate: int
-    affected_percentage: float
-    symptoms: List[str]
+    pest_count_estimate: int = 0
+    affected_percentage: float = 0.0
+    symptoms: List[str] = Field(default_factory=list)
     recommended_active_ingredient: str
     organic_alternative: str
-    urgency_days: int
+    urgency_days: int = 3
+    treatment_advice: Optional[str] = None
+    prevention_tips: Optional[List[str]] = Field(default_factory=list)
+
 
 # Validation Agent Models
 class ValidationRequest(BaseModel):
