@@ -21,7 +21,7 @@ class ApiService {
     "http://10.0.2.2:8000/api/v1",
   ];
 
-  Future<http.Response> _postWithFallback(String path, Map<String, dynamic> body, {int timeoutSec = 5}) async {
+  Future<http.Response> _postWithFallback(String path, Map<String, dynamic> body, {int timeoutSec = 1}) async {
     for (final host in _backendHosts) {
       final url = "$host$path";
       try {
@@ -38,7 +38,7 @@ class ApiService {
     throw Exception("Could not connect to backend server on USB/LAN.");
   }
 
-  Future<http.Response> _getWithFallback(String path, {int timeoutSec = 4}) async {
+  Future<http.Response> _getWithFallback(String path, {int timeoutSec = 1}) async {
     for (final host in _backendHosts) {
       final url = "$host$path";
       try {
