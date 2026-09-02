@@ -1,40 +1,73 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/providers/auth_provider.dart';
 import '../core/providers/farm_provider.dart';
+import '../core/localization/app_translations.dart';
 import '../../models/weather_model.dart';
-import '../../models/evidence_model.dart';
 
 class AgronomySuiteScreen extends StatelessWidget {
   const AgronomySuiteScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
     final farmProv = Provider.of<FarmProvider>(context);
+    final lang = auth.selectedLanguage;
     final advisory = farmProv.weatherAdvisory;
     final weather = advisory?.currentWeather;
     final selectedDistrict = farmProv.selectedDistrict;
     final districts = farmProv.punjabDistricts;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Agronomy Intelligence Suite",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              AppTranslations.tr(lang, "weather_guide"),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.5, color: Color(0xFF0F172A)),
             ),
             Text(
-              "PAU Punjab Live Microclimate • ${weather?.districtName ?? selectedDistrict?.name ?? 'Ludhiana'}",
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary, fontWeight: FontWeight.normal),
+              "Punjab Live Microclimate • ${weather?.districtName ?? selectedDistrict?.name ?? 'Ludhiana'}",
+              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.normal),
             ),
           ],
         ),
         actions: [
+          // Language Switcher Button
           IconButton(
-            tooltip: "Live Real-Time Refresh",
+            tooltip: AppTranslations.tr(lang, "select_language"),
+            icon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.translate_rounded, color: Color(0xFF059669), size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    lang.toUpperCase(),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                  ),
+                ],
+              ),
+            ),
+            onPressed: () => AppTranslations.showLanguageSelectorModal(
+              context,
+              lang,
+              (newLang) => auth.setLanguage(newLang),
+            ),
+          ),
+          IconButton(
+            tooltip: AppTranslations.tr(lang, "refresh"),
             icon: farmProv.isWeatherLoading
                 ? const SizedBox(
                     width: 18,
@@ -44,7 +77,7 @@ class AgronomySuiteScreen extends StatelessWidget {
                 : const Icon(Icons.refresh_rounded, color: AppColors.primary),
             onPressed: () => farmProv.refreshWeather(),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: SingleChildScrollView(
@@ -53,9 +86,15 @@ class AgronomySuiteScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Punjab Districts Quick Switcher Bar
-            const Text(
-              "Select Punjab Agricultural District",
-              style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            Row(
+              children: [
+                const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 16),
+                const SizedBox(width: 4),
+                Text(
+                  AppTranslations.tr(lang, "select_district"),
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+              ],
             ),
             const SizedBox(height: 8),
             SizedBox(
@@ -68,13 +107,14 @@ class AgronomySuiteScreen extends StatelessWidget {
                   final dist = districts[idx];
                   final isSelected = (selectedDistrict?.id == dist.id) ||
                       (weather?.districtName.toLowerCase() == dist.name.toLowerCase());
+                  final displayName = lang == 'pa' ? dist.punjabiName : dist.name;
                   return ChoiceChip(
                     label: Text(
-                      "${dist.name} (${dist.punjabiName})",
+                      displayName,
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : AppColors.textPrimary,
+                        fontSize: 12.5,
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                        color: isSelected ? Colors.white : const Color(0xFF334155),
                       ),
                     ),
                     selected: isSelected,
@@ -92,106 +132,98 @@ class AgronomySuiteScreen extends StatelessWidget {
                 },
               ),
             ),
+            const SizedBox(height: 14),
+
+            // 2. Simple Traffic-Light Main Decision Banner
+            _buildFarmerDecisionBanner(weather, advisory, lang),
+            const SizedBox(height: 14),
+
+            // 3. Simple 4-Factor Metric Grid
+            _buildSimpleMetricsGrid(weather, lang),
             const SizedBox(height: 16),
 
-            // 2. Real-Time Microclimate Overview Card
-            _buildLiveMicroclimateBanner(weather, advisory),
-            const SizedBox(height: 16),
-
-            // 3. Real-Time Microclimate Metrics Grid
-            _buildMicroclimateMetricsGrid(weather),
-            const SizedBox(height: 16),
-
-            // 4. PAU Regional Agro-Advisory & Live Pest Warning
-            _buildPauAdvisoryCard(advisory, weather),
+            // 4. Farmer Action Advisory (PAU Guidelines)
+            _buildFarmerActionCard(advisory, weather, lang),
             const SizedBox(height: 20),
 
-            // 5. Dynamic 48-Hour Operational Spray Schedule
+            // 5. Simple 48-Hour Spray Timetable
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Expanded(
+                Expanded(
                   child: Text(
-                    "48-Hour Live Spray Windows",
-                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    AppTranslations.tr(lang, "best_spray_timings"),
+                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 8),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: AppColors.primarySurface,
+                    color: const Color(0xFFECFDF5),
                     borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: const Color(0xFFA7F3D0)),
                   ),
-                  child: const Text(
-                    "Delta-T Calibrated",
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                  child: Text(
+                    "48h",
+                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             if (advisory != null && advisory.upcomingWindows.isNotEmpty)
-              ...advisory.upcomingWindows.map((slot) => _buildSpraySlotCard(slot))
+              ...advisory.upcomingWindows.map((slot) => _buildSimpleSpraySlot(slot, lang))
             else
               const Card(
                 child: Padding(
                   padding: EdgeInsets.all(16),
-                  child: Text("Loading 48-hour live numerical weather windows..."),
+                  child: Text("Loading weather forecast windows..."),
                 ),
               ),
             const SizedBox(height: 20),
 
-            // 6. Punjab Crop Pathology & Diagnostic Reference Library
-            const Text(
-              "Punjab Crop Pathology & Pest Protocols",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            // 6. Simplified Crop Diseases & Medicine Guide
+            Text(
+              AppTranslations.tr(lang, "crop_diseases"),
+              style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
             ),
             const SizedBox(height: 10),
-            _buildDiseaseCard(
-              title: "Wheat Yellow / Stripe Rust (Puccinia striiformis)",
-              crop: "Wheat (Kanak)",
-              zone: "Central Plain & Sub-Mountain Zone",
-              severity: "High (Cool & Humid Morning Trigger)",
-              organicTreatment: "Trichoderma viride 1.5% WP @ 1.0 kg/Ac or Bio-Sulfur dusting",
-              chemicalTreatment: "Propiconazole 25% EC (Tilt) @ 200 ml/Acre in 200L clean water",
-              color: AppColors.accentGold,
+            _buildSimpleDiseaseCard(
+              cropName: AppTranslations.tr(lang, "wheat"),
+              diseaseName: AppTranslations.tr(lang, "wheat_disease"),
+              symptoms: AppTranslations.tr(lang, "wheat_symptoms"),
+              chemicalMedicine: AppTranslations.tr(lang, "wheat_medicine"),
+              organicSolution: AppTranslations.tr(lang, "wheat_organic"),
+              doseLabel: AppTranslations.tr(lang, "dose_label"),
+              organicLabel: AppTranslations.tr(lang, "organic_label"),
+              color: const Color(0xFFD97706),
               icon: Icons.grass_rounded,
             ),
             const SizedBox(height: 10),
-            _buildDiseaseCard(
-              title: "Cotton Whitefly (Bemisia tabaci) & CLCuV",
-              crop: "Bt Cotton",
-              zone: "Malwa Western Belt (Bathinda/Mansa/Fazilka)",
-              severity: "High (Warm Dry-Spells)",
-              organicTreatment: "Bio-Neem Power 10,000 PPM @ 2.5 ml/L + 16 Yellow Sticky Traps/Acre",
-              chemicalTreatment: "Pyriproxyfen 10% EC @ 400 ml/Ac or Diafenthiuron 50% WP @ 1.5 g/L",
-              color: AppColors.primary,
+            _buildSimpleDiseaseCard(
+              cropName: AppTranslations.tr(lang, "cotton"),
+              diseaseName: AppTranslations.tr(lang, "cotton_disease"),
+              symptoms: AppTranslations.tr(lang, "cotton_symptoms"),
+              chemicalMedicine: AppTranslations.tr(lang, "cotton_medicine"),
+              organicSolution: AppTranslations.tr(lang, "cotton_organic"),
+              doseLabel: AppTranslations.tr(lang, "dose_label"),
+              organicLabel: AppTranslations.tr(lang, "organic_label"),
+              color: const Color(0xFF059669),
               icon: Icons.pest_control_rounded,
             ),
             const SizedBox(height: 10),
-            _buildDiseaseCard(
-              title: "Late Blight of Potato (Phytophthora infestans)",
-              crop: "Seed Potato",
-              zone: "Doaba Zone (Jalandhar / Kapurthala)",
-              severity: "Critical when RH > 85%",
-              organicTreatment: "Prophylactic Copper Oxychloride 50% WP @ 2.5 g/L",
-              chemicalTreatment: "Mancozeb 75% WP @ 600 g/Ac or Cymoxanil + Mancozeb @ 600 g/Ac",
-              color: Colors.redAccent,
+            _buildSimpleDiseaseCard(
+              cropName: AppTranslations.tr(lang, "potato"),
+              diseaseName: AppTranslations.tr(lang, "potato_disease"),
+              symptoms: AppTranslations.tr(lang, "potato_symptoms"),
+              chemicalMedicine: AppTranslations.tr(lang, "potato_medicine"),
+              organicSolution: AppTranslations.tr(lang, "potato_organic"),
+              doseLabel: AppTranslations.tr(lang, "dose_label"),
+              organicLabel: AppTranslations.tr(lang, "organic_label"),
+              color: const Color(0xFFDC2626),
               icon: Icons.shield_moon_rounded,
-            ),
-            const SizedBox(height: 10),
-            _buildDiseaseCard(
-              title: "Basmati Neck Blast & Sheath Blight",
-              crop: "Basmati Rice (1121/1509)",
-              zone: "Majha Zone (Amritsar / Gurdaspur)",
-              severity: "Medium",
-              organicTreatment: "Pseudomonas fluorescens 0.5% foliar spray",
-              chemicalTreatment: "Tricyclazole 75% WP @ 0.6 g/L or Azoxystrobin + Difenoconazole",
-              color: Colors.blueAccent,
-              icon: Icons.water_drop_rounded,
             ),
             const SizedBox(height: 24),
           ],
@@ -200,26 +232,46 @@ class AgronomySuiteScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLiveMicroclimateBanner(WeatherSnapshot? weather, WeatherAdvisory? advisory) {
+  /// 1. Simple Traffic-Light Decision Banner
+  Widget _buildFarmerDecisionBanner(WeatherSnapshot? weather, WeatherAdvisory? advisory, String lang) {
     final temp = weather?.temperatureC ?? 28.5;
-    final apparent = weather?.apparentTempC ?? 31.8;
-    final condition = weather?.condition ?? "Clear Sunny Skies";
-    final location = weather?.locationName ?? "Ludhiana (ਪੰਜਾਬ)";
-    final deltaT = weather?.deltaTC ?? 3.6;
+    final location = weather?.districtName ?? "Ludhiana";
     final wind = weather?.windSpeedKmh ?? 5.4;
+    final deltaT = weather?.deltaTC ?? 3.6;
+
+    final isOptimal = wind <= 14.0 && deltaT >= 2.0 && deltaT <= 8.5 && temp <= 33.0;
+    final isCaution = !isOptimal && (wind <= 18.0 || temp <= 35.0);
+
+    Color bannerBg;
+    String statusTitle;
+    String statusSubtitle;
+    IconData statusIcon;
+
+    if (isOptimal) {
+      bannerBg = const Color(0xFF065F46); // Emerald Green
+      statusTitle = AppTranslations.tr(lang, "safe_to_spray");
+      statusSubtitle = AppTranslations.tr(lang, "safe_to_spray_sub");
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isCaution) {
+      bannerBg = const Color(0xFF92400E); // Amber Warm
+      statusTitle = AppTranslations.tr(lang, "spray_caution");
+      statusSubtitle = AppTranslations.tr(lang, "spray_caution_sub");
+      statusIcon = Icons.warning_amber_rounded;
+    } else {
+      bannerBg = const Color(0xFF991B1B); // Crimson Red
+      statusTitle = AppTranslations.tr(lang, "do_not_spray");
+      statusSubtitle = AppTranslations.tr(lang, "do_not_spray_sub");
+      statusIcon = Icons.cancel_rounded;
+    }
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
+        color: bannerBg,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: bannerBg.withValues(alpha: 0.35),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -228,102 +280,92 @@ class AgronomySuiteScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // District Name + Live Tag
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    const Icon(Icons.satellite_alt_rounded, color: Color(0xFF38BDF8), size: 18),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        location,
-                        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF38BDF8).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: const Color(0xFF38BDF8).withOpacity(0.4)),
-                ),
-                child: const Text(
-                  "LIVE TELEMETRY",
-                  style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF38BDF8)),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "$temp°C",
-                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, height: 1.0),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 3),
-                  child: Text(
-                    "Feels like $apparent°C • $condition",
-                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF94A3B8)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  const Icon(Icons.location_on_rounded, color: Colors.white70, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    "$location, Punjab",
+                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
                   ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  "● ${AppTranslations.tr(lang, "live_weather")}",
+                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.06),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildMicroStat("Delta-T (ΔT)", "$deltaT°C", const Color(0xFF34D399)),
-                Container(height: 24, width: 1, color: Colors.white24),
-                _buildMicroStat("Wind Drift", "$wind km/h", const Color(0xFF38BDF8)),
-                Container(height: 24, width: 1, color: Colors.white24),
-                _buildMicroStat("Wash-Off Risk", "${weather?.precipitationProb ?? 10}%", const Color(0xFFFBBF24)),
-              ],
-            ),
+
+          // Big Decision Badge
+          Row(
+            children: [
+              Icon(statusIcon, color: Colors.white, size: 28),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  statusTitle,
+                  style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Colors.white),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            statusSubtitle,
+            style: const TextStyle(fontSize: 12, color: Colors.white70, height: 1.3),
+          ),
+          const Divider(height: 20, color: Colors.white24),
+
+          // Bottom Quick Snapshot: Temp, Wind, Rain, Absorption
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildBannerMicroStat("🌡️ ${AppTranslations.tr(lang, "temp")}", "$temp°C"),
+              _buildBannerMicroStat("💨 ${AppTranslations.tr(lang, "wind")}", "$wind km/h"),
+              _buildBannerMicroStat("💧 ${AppTranslations.tr(lang, "rain_risk")}", "${weather?.precipitationProb ?? 0}%"),
+              _buildBannerMicroStat("🌿 ${AppTranslations.tr(lang, "absorption")}", isOptimal ? AppTranslations.tr(lang, "pleasant") : AppTranslations.tr(lang, "moderate")),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMicroStat(String label, String val, Color valColor) {
+  Widget _buildBannerMicroStat(String label, String value) {
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8))),
+        Text(label, style: const TextStyle(fontSize: 10.5, color: Colors.white70)),
         const SizedBox(height: 2),
-        Text(val, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: valColor)),
+        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
       ],
     );
   }
 
-  Widget _buildMicroclimateMetricsGrid(WeatherSnapshot? weather) {
-    final humidity = weather?.humidityPercent ?? 68.0;
-    final dewPoint = weather?.dewPointC ?? 21.0;
-    final windGusts = weather?.windGustsKmh ?? 12.0;
-    final cloudCover = weather?.cloudCoverPercent ?? 20.0;
-    final soilMoisture = weather?.soilMoisturePercent ?? 28.0;
+  /// 2. Simple 4-Factor Metric Grid
+  Widget _buildSimpleMetricsGrid(WeatherSnapshot? weather, String lang) {
+    final temp = weather?.temperatureC ?? 28.5;
+    final wind = weather?.windSpeedKmh ?? 5.4;
+    final rainProb = weather?.precipitationProb ?? 10.0;
     final deltaT = weather?.deltaTC ?? 3.6;
+
+    final isDeltaTOptimal = deltaT >= 2.0 && deltaT <= 8.5;
+    final isWindCalm = wind <= 12.0;
+    final isRainSafe = rainProb <= 20.0;
 
     return GridView.count(
       crossAxisCount: 2,
@@ -331,45 +373,52 @@ class AgronomySuiteScreen extends StatelessWidget {
       mainAxisSpacing: 10,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.55,
+      childAspectRatio: 1.5,
       children: [
-        _buildMetricTile(
-          icon: Icons.thermostat_rounded,
-          label: "Delta-T (ΔT) Foliar",
-          value: "$deltaT°C",
-          status: "Optimal Window (2–8°C)",
-          color: AppColors.primary,
+        // 1. Spray Absorption
+        _buildSimpleFactorCard(
+          icon: Icons.eco_rounded,
+          title: AppTranslations.tr(lang, "spray_absorption"),
+          value: isDeltaTOptimal ? AppTranslations.tr(lang, "absorption_val_optimal") : AppTranslations.tr(lang, "absorption_val_moderate"),
+          subtitle: isDeltaTOptimal ? AppTranslations.tr(lang, "absorption_desc_optimal") : AppTranslations.tr(lang, "absorption_desc_moderate"),
+          color: const Color(0xFF059669),
         ),
-        _buildMetricTile(
-          icon: Icons.water_drop_rounded,
-          label: "Humidity & Dew Point",
-          value: "$humidity% / $dewPoint°C",
-          status: "Foliar Uptake Safe",
-          color: Colors.blueAccent,
-        ),
-        _buildMetricTile(
+
+        // 2. Wind Speed
+        _buildSimpleFactorCard(
           icon: Icons.air_rounded,
-          label: "Wind Speed & Gusts",
-          value: "${weather?.windSpeedKmh ?? 5.4} / $windGusts km/h",
-          status: "Low Drift Hazard",
-          color: Colors.teal,
+          title: AppTranslations.tr(lang, "wind_speed"),
+          value: "${isWindCalm ? AppTranslations.tr(lang, "wind_calm") : AppTranslations.tr(lang, "wind_breezy")} ($wind km/h)",
+          subtitle: isWindCalm ? AppTranslations.tr(lang, "wind_desc_calm") : AppTranslations.tr(lang, "wind_desc_breezy"),
+          color: isWindCalm ? const Color(0xFF0284C7) : const Color(0xFFD97706),
         ),
-        _buildMetricTile(
-          icon: Icons.grass_rounded,
-          label: "Topsoil & Cloud Cover",
-          value: "$soilMoisture% / $cloudCover%",
-          status: "Root Zone Aerated",
-          color: Colors.amber.shade800,
+
+        // 3. Rain Risk
+        _buildSimpleFactorCard(
+          icon: Icons.water_drop_rounded,
+          title: AppTranslations.tr(lang, "rain_risk"),
+          value: "${rainProb.round()}% ${AppTranslations.tr(lang, "rain_chance")}",
+          subtitle: isRainSafe ? AppTranslations.tr(lang, "rain_desc_safe") : AppTranslations.tr(lang, "rain_desc_unsafe"),
+          color: isRainSafe ? const Color(0xFF0D9488) : const Color(0xFFDC2626),
+        ),
+
+        // 4. Heat & Sun
+        _buildSimpleFactorCard(
+          icon: Icons.wb_sunny_rounded,
+          title: AppTranslations.tr(lang, "heat_sun"),
+          value: "$temp°C (${temp <= 32 ? AppTranslations.tr(lang, "pleasant") : AppTranslations.tr(lang, "too_hot")})",
+          subtitle: temp <= 32 ? AppTranslations.tr(lang, "heat_desc_safe") : AppTranslations.tr(lang, "heat_desc_hot"),
+          color: const Color(0xFFD97706),
         ),
       ],
     );
   }
 
-  Widget _buildMetricTile({
+  Widget _buildSimpleFactorCard({
     required IconData icon,
-    required String label,
+    required String title,
     required String value,
-    required String status,
+    required String subtitle,
     required Color color,
   }) {
     return Container(
@@ -378,6 +427,13 @@ class AgronomySuiteScreen extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -386,9 +442,9 @@ class AgronomySuiteScreen extends StatelessWidget {
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(5),
+                padding: const EdgeInsets.all(4.5),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Icon(icon, color: color, size: 16),
@@ -396,8 +452,8 @@ class AgronomySuiteScreen extends StatelessWidget {
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  label,
-                  style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary, fontWeight: FontWeight.w500),
+                  title,
+                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -407,14 +463,14 @@ class AgronomySuiteScreen extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: color),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 2),
           Text(
-            status,
-            style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: color),
+            subtitle,
+            style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -423,9 +479,9 @@ class AgronomySuiteScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPauAdvisoryCard(WeatherAdvisory? advisory, WeatherSnapshot? weather) {
-    final alert = advisory?.pestPressureForecast ?? "Low fungal rust pressure under current Delta-T.";
-    final pauText = weather?.pauAdvisoryText ?? "PAU Ludhiana: Follow calibrated 200L/Acre spray dilution.";
+  /// 3. Farmer Action Card (PAU Guidelines)
+  Widget _buildFarmerActionCard(WeatherAdvisory? advisory, WeatherSnapshot? weather, String lang) {
+    final district = weather?.districtName ?? "Ludhiana";
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -439,64 +495,80 @@ class AgronomySuiteScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 18),
+              const Icon(Icons.lightbulb_rounded, color: Color(0xFFD97706), size: 18),
               const SizedBox(width: 6),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  "PAU Ludhiana Regional Pest & Spray Alert",
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                  "${AppTranslations.tr(lang, "farmer_advisory")} ($district)",
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            alert,
-            style: const TextStyle(fontSize: 11.5, color: Color(0xFF78350F), height: 1.3),
-          ),
-          const Divider(height: 16, color: Color(0xFFFDE68A)),
-          Row(
-            children: [
-              const Icon(Icons.school_rounded, color: Color(0xFFB45309), size: 16),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  pauText,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFFB45309)),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
+          const SizedBox(height: 10),
+          _buildActionBullet(AppTranslations.tr(lang, "advisory_bullet_1")),
+          const SizedBox(height: 5),
+          _buildActionBullet(AppTranslations.tr(lang, "advisory_bullet_2")),
+          const SizedBox(height: 5),
+          _buildActionBullet(AppTranslations.tr(lang, "advisory_bullet_3")),
         ],
       ),
     );
   }
 
-  Widget _buildSpraySlotCard(SprayWindowSlot slot) {
-    Color badgeColor;
-    IconData statusIcon;
-    if (slot.suitability == 'OPTIMAL') {
-      badgeColor = AppColors.primary;
-      statusIcon = Icons.check_circle_rounded;
-    } else if (slot.suitability == 'MODERATE') {
-      badgeColor = AppColors.accentGold;
-      statusIcon = Icons.info_outline_rounded;
-    } else {
-      badgeColor = AppColors.flaggedRed;
-      statusIcon = Icons.cancel_rounded;
+  Widget _buildActionBullet(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text("• ", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(fontSize: 11.5, color: Color(0xFF78350F), height: 1.3),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 4. Simple Spray Slot Timings
+  Widget _buildSimpleSpraySlot(SprayWindowSlot slot, String lang) {
+    bool isGood = slot.suitability == 'OPTIMAL';
+    bool isModerate = slot.suitability == 'MODERATE';
+
+    Color badgeColor = isGood
+        ? const Color(0xFF059669)
+        : (isModerate ? const Color(0xFFD97706) : const Color(0xFFDC2626));
+
+    String statusText = isGood
+        ? AppTranslations.tr(lang, "best_time")
+        : (isModerate ? AppTranslations.tr(lang, "moderate") : AppTranslations.tr(lang, "no_spray"));
+
+    String slotTitle = slot.timeWindow;
+    String slotReason = slot.advisoryReason;
+    if (slot.timeWindow.contains("Morning") && !slot.timeWindow.contains("Tomorrow")) {
+      slotTitle = AppTranslations.tr(lang, "morning_slot");
+      slotReason = AppTranslations.tr(lang, "morning_reason");
+    } else if (slot.timeWindow.contains("Midday")) {
+      slotTitle = AppTranslations.tr(lang, "midday_slot");
+      slotReason = AppTranslations.tr(lang, "midday_reason");
+    } else if (slot.timeWindow.contains("Evening")) {
+      slotTitle = AppTranslations.tr(lang, "evening_slot");
+      slotReason = AppTranslations.tr(lang, "evening_reason");
+    } else if (slot.timeWindow.contains("Tomorrow")) {
+      slotTitle = AppTranslations.tr(lang, "tomorrow_slot");
+      slotReason = AppTranslations.tr(lang, "tomorrow_reason");
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        border: Border.all(color: isGood ? const Color(0xFFA7F3D0) : const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -506,69 +578,41 @@ class AgronomySuiteScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(6)),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(statusIcon, color: Colors.white, size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      slot.suitability.replaceAll('_', ' '),
-                      style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+                child: Text(
+                  statusText,
+                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  slot.timeWindow,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  slotTitle,
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 12,
-            runSpacing: 4,
-            children: [
-              _buildSlotMetric(Icons.thermostat_rounded, "${slot.temperatureC}°C"),
-              _buildSlotMetric(Icons.air_rounded, "Wind ${slot.windKmh} km/h"),
-              _buildSlotMetric(Icons.water_drop_rounded, "Rain ${slot.rainProbabilityPercent}%"),
-              if (slot.deltaTC != null)
-                _buildSlotMetric(Icons.scatter_plot_rounded, "ΔT ${slot.deltaTC}°C"),
-            ],
-          ),
           const SizedBox(height: 6),
           Text(
-            slot.advisoryReason,
-            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+            slotReason,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSlotMetric(IconData icon, String text) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 13, color: AppColors.textSecondary),
-        const SizedBox(width: 3),
-        Text(text, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-      ],
-    );
-  }
-
-  Widget _buildDiseaseCard({
-    required String title,
-    required String crop,
-    required String zone,
-    required String severity,
-    required String organicTreatment,
-    required String chemicalTreatment,
+  /// 5. Simplified Disease & Medicine Card
+  Widget _buildSimpleDiseaseCard({
+    required String cropName,
+    required String diseaseName,
+    required String symptoms,
+    required String chemicalMedicine,
+    required String organicSolution,
+    required String doseLabel,
+    required String organicLabel,
     required Color color,
     required IconData icon,
   }) {
@@ -591,22 +635,44 @@ class AgronomySuiteScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                      Text("Zone: $zone", style: const TextStyle(fontSize: 10.5, color: AppColors.textSecondary)),
+                      Text(diseaseName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
+                      Text(symptoms, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(6)),
-                  child: Text(crop, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
+                  child: Text(cropName, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
                 ),
               ],
             ),
             const Divider(height: 14),
-            Text("🌱 Organic: $organicTreatment", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("🧪 ", style: TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Text(
+                    "$doseLabel $chemicalMedicine",
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 3),
-            Text("🧪 PAU Protocol: $chemicalTreatment", style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("🌿 ", style: TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Text(
+                    "$organicLabel $organicSolution",
+                    style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

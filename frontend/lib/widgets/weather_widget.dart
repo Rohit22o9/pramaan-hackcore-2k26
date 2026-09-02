@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../core/theme/app_colors.dart';
+import 'package:provider/provider.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/localization/app_translations.dart';
 import '../../models/weather_model.dart';
 
 class WeatherSummaryWidget extends StatelessWidget {
@@ -14,28 +16,27 @@ class WeatherSummaryWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
     final weather = advisory?.currentWeather;
     final temp = weather?.temperatureC ?? 28.5;
-    final condition = weather?.condition ?? "Clear Sunny Skies";
-    final recommendation = weather?.sprayRecommendation ?? "Prime spraying conditions in Punjab agricultural belt.";
-    final location = weather?.locationName ?? "Ludhiana (ਪੰਜਾਬ)";
+    final location = weather?.districtName ?? "Ludhiana";
     final wind = weather?.windSpeedKmh ?? 5.4;
-    final humidity = weather?.humidityPercent ?? 68.0;
     final deltaT = weather?.deltaTC ?? 3.6;
-    final isSafe = weather?.spraySuitabilityScore != null && weather!.spraySuitabilityScore >= 0.8;
 
-    IconData weatherIcon = Icons.wb_sunny_rounded;
-    Color iconColor = AppColors.accentGold;
-    if (condition.toLowerCase().contains("rain") || condition.toLowerCase().contains("shower")) {
-      weatherIcon = Icons.water_drop_rounded;
-      iconColor = Colors.lightBlueAccent;
-    } else if (condition.toLowerCase().contains("cloud") || condition.toLowerCase().contains("overcast")) {
-      weatherIcon = Icons.cloud_rounded;
-      iconColor = Colors.white70;
-    } else if (condition.toLowerCase().contains("fog")) {
-      weatherIcon = Icons.cloud_queue_rounded;
-      iconColor = Colors.tealAccent;
-    }
+    final isOptimal = wind <= 14.0 && deltaT >= 2.0 && deltaT <= 8.5 && temp <= 33.0;
+    final isCaution = !isOptimal && (wind <= 18.0 || temp <= 35.0);
+
+    Color bgStart = isOptimal ? const Color(0xFF064E3B) : (isCaution ? const Color(0xFF78350F) : const Color(0xFF7F1D1D));
+    Color bgEnd = isOptimal ? const Color(0xFF047857) : (isCaution ? const Color(0xFFB45309) : const Color(0xFF991B1B));
+
+    String badgeLabel = isOptimal
+        ? AppTranslations.tr(lang, "spray_safe_badge")
+        : (isCaution ? AppTranslations.tr(lang, "spray_caution_badge") : AppTranslations.tr(lang, "spray_no_badge"));
+
+    String mainDesc = isOptimal
+        ? AppTranslations.tr(lang, "safe_to_spray_sub")
+        : (isCaution ? AppTranslations.tr(lang, "spray_caution_sub") : AppTranslations.tr(lang, "do_not_spray_sub"));
 
     return InkWell(
       onTap: onTap,
@@ -43,15 +44,15 @@ class WeatherSummaryWidget extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF064E3B), Color(0xFF047857), Color(0xFF065F46)],
+          gradient: LinearGradient(
+            colors: [bgStart, bgEnd],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF064E3B).withOpacity(0.35),
+              color: bgStart.withValues(alpha: 0.35),
               blurRadius: 14,
               offset: const Offset(0, 6),
             ),
@@ -60,7 +61,7 @@ class WeatherSummaryWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Location & Live Pulsing Badge
+            // Top Row: Location & Live Tag
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -69,9 +70,9 @@ class WeatherSummaryWidget extends StatelessWidget {
                     const Icon(Icons.location_on_rounded, color: Color(0xFF34D399), size: 16),
                     const SizedBox(width: 4),
                     Text(
-                      location,
+                      "$location, Punjab",
                       style: const TextStyle(
-                        fontSize: 13,
+                        fontSize: 13.5,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFFA7F3D0),
                       ),
@@ -81,9 +82,9 @@ class WeatherSummaryWidget extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.25),
+                    color: Colors.black.withValues(alpha: 0.25),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF34D399).withOpacity(0.4)),
+                    border: Border.all(color: Colors.white24),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -97,9 +98,9 @@ class WeatherSummaryWidget extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 5),
-                      const Text(
-                        "LIVE REAL-TIME",
-                        style: TextStyle(
+                      Text(
+                        AppTranslations.tr(lang, "live_weather"),
+                        style: const TextStyle(
                           fontSize: 9.5,
                           fontWeight: FontWeight.w800,
                           color: Colors.white,
@@ -113,19 +114,27 @@ class WeatherSummaryWidget extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Middle Row: Temperature & Spray Safe Tag
+            // Middle Row: Temperature & Spray Decision
             Row(
               children: [
-                Icon(weatherIcon, color: iconColor, size: 32),
+                Text(
+                  "$temp°C",
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    height: 1.0,
+                  ),
+                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "$temp°C • $condition",
+                        isOptimal ? AppTranslations.tr(lang, "safe_to_spray") : AppTranslations.tr(lang, "spray_caution"),
                         style: const TextStyle(
-                          fontSize: 16.5,
+                          fontSize: 13.5,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
@@ -134,8 +143,8 @@ class WeatherSummaryWidget extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        "Wind $wind km/h • $humidity% RH • ΔT $deltaT°C",
-                        style: const TextStyle(fontSize: 11.5, color: Color(0xFFA7F3D0)),
+                        "💨 ${AppTranslations.tr(lang, "wind")}: $wind km/h • 💧 ${AppTranslations.tr(lang, "rain_risk")}: ${weather?.precipitationProb ?? 0}% • 🌿 ${AppTranslations.tr(lang, "absorption")}: ${isOptimal ? AppTranslations.tr(lang, "pleasant") : AppTranslations.tr(lang, "moderate")}",
+                        style: const TextStyle(fontSize: 10.5, color: Color(0xFFA7F3D0)),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -144,49 +153,32 @@ class WeatherSummaryWidget extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isSafe ? const Color(0xFF059669) : const Color(0xFFD97706),
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white30),
                   ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        isSafe ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
-                        color: Colors.white,
-                        size: 14,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        isSafe ? "SPRAY SAFE" : "CAUTION",
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.3,
-                        ),
-                      ),
-                    ],
+                  child: Text(
+                    badgeLabel,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Bottom Alert Container
+            // Bottom Recommendation
             Container(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.2),
+                color: Colors.black.withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
+                border: Border.all(color: Colors.white12),
               ),
               child: Row(
                 children: [
@@ -194,9 +186,9 @@ class WeatherSummaryWidget extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      recommendation,
+                      mainDesc,
                       style: const TextStyle(
-                        fontSize: 11.5,
+                        fontSize: 11,
                         color: Colors.white,
                         height: 1.25,
                       ),
@@ -204,7 +196,7 @@ class WeatherSummaryWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded, color: Colors.white70, size: 18),
+                  const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 12),
                 ],
               ),
             ),

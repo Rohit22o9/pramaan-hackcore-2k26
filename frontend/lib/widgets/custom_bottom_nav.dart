@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/localization/app_translations.dart';
 
 class CustomBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -13,12 +16,15 @@ class CustomBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 16,
             offset: const Offset(0, -4),
           ),
@@ -30,11 +36,11 @@ class CustomBottomNav extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              _buildNavItem(0, Icons.dashboard_rounded, "Home"),
-              _buildNavItem(1, Icons.mic_rounded, "Voice Log"),
+              _buildNavItem(0, Icons.dashboard_rounded, AppTranslations.tr(lang, "home")),
+              _buildNavItem(1, Icons.mic_rounded, AppTranslations.tr(lang, "voice_log")),
               _buildCenterAction(context),
-              _buildNavItem(2, Icons.verified_user_rounded, "Evidence"),
-              _buildNavItem(3, Icons.auto_awesome_rounded, "Ask AI"),
+              _buildNavItem(2, Icons.verified_user_rounded, AppTranslations.tr(lang, "journal")),
+              _buildNavItem(3, Icons.auto_awesome_rounded, AppTranslations.tr(lang, "ask_pramaan")),
             ],
           ),
         ),
@@ -48,7 +54,7 @@ class CustomBottomNav extends StatelessWidget {
       onTap: () => onTap(index),
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -61,10 +67,12 @@ class CustomBottomNav extends StatelessWidget {
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                 color: isSelected ? AppColors.primary : AppColors.textMuted,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -83,7 +91,7 @@ class CustomBottomNav extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.4),
+            color: AppColors.primary.withValues(alpha: 0.4),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

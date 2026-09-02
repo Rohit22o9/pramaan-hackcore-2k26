@@ -8,6 +8,8 @@ import '../widgets/weather_widget.dart';
 import '../widgets/evidence_card.dart';
 import '../widgets/custom_bottom_nav.dart';
 
+import '../core/localization/app_translations.dart';
+
 class FarmerDashboardScreen extends StatefulWidget {
   const FarmerDashboardScreen({super.key});
 
@@ -24,6 +26,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     final farmProv = Provider.of<FarmProvider>(context);
     final evProv = Provider.of<EvidenceProvider>(context);
     final farm = farmProv.selectedFarm;
+    final lang = auth.selectedLanguage;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -60,6 +63,34 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         ),
 
         actions: [
+          // Language Switcher Button
+          IconButton(
+            tooltip: AppTranslations.tr(lang, "select_language"),
+            icon: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFA7F3D0)),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.translate_rounded, color: Color(0xFF059669), size: 14),
+                  const SizedBox(width: 4),
+                  Text(
+                    lang.toUpperCase(),
+                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                  ),
+                ],
+              ),
+            ),
+            onPressed: () => AppTranslations.showLanguageSelectorModal(
+              context,
+              lang,
+              (newLang) => auth.setLanguage(newLang),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.sync_rounded, color: AppColors.textPrimary),
             onPressed: () => Navigator.pushNamed(context, '/sync_center'),
@@ -80,6 +111,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             onSelected: (val) {
               if (val == 'switch_role') {
                 Navigator.pushNamed(context, '/profile_selection');
+              } else if (val == 'language') {
+                AppTranslations.showLanguageSelectorModal(
+                  context,
+                  lang,
+                  (newLang) => auth.setLanguage(newLang),
+                );
               } else if (val == 'settings') {
                 Navigator.pushNamed(context, '/settings');
               } else if (val == 'profile') {
@@ -88,6 +125,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             },
             itemBuilder: (context) => [
               PopupMenuItem(value: 'profile', child: Text("Profile: ${auth.userName}")),
+              PopupMenuItem(value: 'language', child: Text("🌐 ${AppTranslations.tr(lang, "language")}: ${lang.toUpperCase()}")),
               const PopupMenuItem(value: 'switch_role', child: Text("Switch Role")),
               const PopupMenuItem(value: 'settings', child: Text("Settings")),
             ],
