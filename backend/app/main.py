@@ -9,7 +9,8 @@ from backend.app.routes import (
     efficacy,
     weather,
     report,
-    farm
+    farm,
+    adk_route
 )
 
 app = FastAPI(
@@ -36,6 +37,8 @@ app.include_router(efficacy.router, prefix=settings.API_V1_STR)
 app.include_router(weather.router, prefix=settings.API_V1_STR)
 app.include_router(report.router, prefix=settings.API_V1_STR)
 app.include_router(farm.router, prefix=settings.API_V1_STR)
+app.include_router(adk_route.router, prefix=settings.API_V1_STR)
+
 
 @app.get("/")
 def root():
