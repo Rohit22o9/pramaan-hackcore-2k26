@@ -74,21 +74,29 @@ def verify_evidence_5layer_tool(
     }
 
 
-def parse_multilingual_voice_tool(audio_transcript: str, language: str = "pa") -> Dict[str, Any]:
-    """ADK Tool: Extracts structured agricultural entities from Punjabi, Hindi, or English voice notes."""
+def parse_multilingual_voice_tool(
+    audio_transcript: str,
+    language: str = "hi",
+    farm_id: str = "unknown",
+) -> Dict[str, Any]:
+
     from backend.app.ai.voice_agent import voice_agent
     from backend.app.models.schemas import VoiceLogRequest
 
-    req = VoiceLogRequest(
+    request = VoiceLogRequest(
         audio_transcript=audio_transcript,
         language=language,
-        farm_id="farm-104"
+        farm_id=farm_id,
     )
-    res = voice_agent.process_voice_transcript(req)
+
+    response = voice_agent.process_voice_transcript(
+        request
+    )
+
     return {
         "status": "SUCCESS",
-        "framework": "Google ADK",
-        "parsed_entities": res.model_dump(),
+        "agent": "PramaanVoiceAgent",
+        "parsed_entities": response.model_dump(),
     }
 
 
@@ -133,11 +141,49 @@ adk_validation_agent = Agent(
 )
 
 # Multilingual Voice NLU Agent
+from google.adk.agents import Agent
+
+
 adk_voice_agent = Agent(
     name="PramaanVoiceAgent",
-    description="Autonomous Google ADK agent for Punjabi, Hindi, and English agricultural voice note extraction.",
-    instruction="Extract structured farming actions and chemicals from unstructured audio transcripts.",
-    tools=[parse_multilingual_voice_tool],
+
+    model="gemini-3.7-flash",
+
+    description=(
+        "Evidence-preserving agricultural voice interpretation "
+        "agent for PRAMAAN."
+    ),
+
+    instruction="""
+You are the PRAMAAN Voice Evidence Agent.
+
+Your responsibility is to interpret farmer speech-to-text
+and return structured agricultural evidence.
+
+You MUST:
+
+1. Preserve the farmer's original meaning.
+2. Never invent missing agricultural information.
+3. Never infer a pesticide from a crop.
+4. Never infer dosage from a product.
+5. Never infer a pest from a crop.
+6. Never invent plot names.
+7. Distinguish extraction from verification.
+8. Use the voice parsing tool for transcript extraction.
+9. Preserve uncertainty.
+10. Ask for clarification when an important field is ambiguous.
+
+The Voice Agent extracts claims.
+
+It does NOT verify whether the claim is true.
+
+Verification is performed downstream by PRAMAAN's
+Validation Agent.
+""",
+
+    tools=[
+        parse_multilingual_voice_tool
+    ],
 )
 
 # Canopy Efficacy & Yield ROI Agent

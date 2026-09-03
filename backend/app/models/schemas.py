@@ -76,24 +76,56 @@ class EvidenceItem(BaseModel):
 # Voice Parsing Request & Result
 class VoiceLogRequest(BaseModel):
     audio_base64: Optional[str] = None
+
     audio_transcript: Optional[str] = None
-    language: str = "hi" # hi, en, mr, te, pa, gu
-    farm_id: str = "farm-101"
-    latitude: Optional[float] = 19.9975
-    longitude: Optional[float] = 73.7898
+
+    language: str = "hi"
+
+    farm_id: str
+
+    latitude: Optional[float] = None
+
+    longitude: Optional[float] = None
 
 class VoiceLogResponse(BaseModel):
     raw_transcript: str
-    detected_language: str
-    crop: Optional[str] = None
-    action_type: Optional[str] = None # e.g. "SPRAY", "OBSERVE", "IRRIGATE", "FERTILIZE"
-    product_mentioned: Optional[str] = None
-    dosage: Optional[str] = None
-    target_pest: Optional[str] = None
-    plot_name: Optional[str] = None
-    confidence_score: float
-    extracted_entities: Dict[str, Any]
 
+    detected_language: str
+
+    crop: Optional[str] = None
+
+    action_type: Optional[str] = None
+
+    product_mentioned: Optional[str] = None
+
+    dosage: Optional[str] = None
+
+    target_pest: Optional[str] = None
+
+    plot_name: Optional[str] = None
+
+    observation_time: Optional[str] = None
+
+    confidence_score: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
+
+    missing_information: List[str] = Field(
+        default_factory=list
+    )
+
+    ambiguous_information: List[str] = Field(
+        default_factory=list
+    )
+
+    needs_clarification: bool = False
+
+    clarification_question: Optional[str] = None
+
+    extracted_entities: Dict[str, Any] = Field(
+        default_factory=dict
+    )
 # Vision Analysis Request & Result
 class VisionAnalysisRequest(BaseModel):
     image_base64: Optional[str] = None
