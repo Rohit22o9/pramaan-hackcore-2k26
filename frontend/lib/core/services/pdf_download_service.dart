@@ -107,12 +107,20 @@ class PdfDownloadService {
     Directory? targetDir;
 
     if (Platform.isAndroid) {
-      final publicDownload = Directory('/storage/emulated/0/Download');
-      if (await publicDownload.exists()) {
-        targetDir = publicDownload;
-      } else {
-        targetDir = await getExternalStorageDirectory();
+      try {
+        final publicDownload = Directory('/storage/emulated/0/Download');
+        if (await publicDownload.exists()) {
+          final testPath = "${publicDownload.path}/.perm_check_${DateTime.now().millisecondsSinceEpoch}";
+          final testFile = File(testPath);
+          await testFile.writeAsString("ok");
+          await testFile.delete();
+          targetDir = publicDownload;
+        }
+      } catch (_) {
+        // Fallback to app external or docs directory
       }
+
+      targetDir ??= await getExternalStorageDirectory();
     }
 
     targetDir ??= await getApplicationDocumentsDirectory();
@@ -996,11 +1004,13 @@ class PdfDownloadService {
               final isEven = idx % 2 == 0;
 
               return pw.Container(
-                color: isEven ? PdfColors.white : PdfColor.fromHex("#FAFAFA"),
                 padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                decoration: idx < keys.length - 1
-                    ? pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: tableBorder, width: 0.5)))
-                    : null,
+                decoration: pw.BoxDecoration(
+                  color: isEven ? PdfColors.white : PdfColor.fromHex("#FAFAFA"),
+                  border: idx < keys.length - 1
+                      ? pw.Border(bottom: pw.BorderSide(color: tableBorder, width: 0.5))
+                      : null,
+                ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
@@ -1059,9 +1069,11 @@ class PdfDownloadService {
                 final isEven = idx % 2 == 0;
 
                 return pw.Container(
-                  color: isEven ? PdfColors.white : PdfColor.fromHex("#FAFAFA"),
                   padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
-                  decoration: pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: tableBorder, width: 0.5))),
+                  decoration: pw.BoxDecoration(
+                    color: isEven ? PdfColors.white : PdfColor.fromHex("#FAFAFA"),
+                    border: pw.Border(bottom: pw.BorderSide(color: tableBorder, width: 0.5)),
+                  ),
                   child: pw.Row(
                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                     children: [
