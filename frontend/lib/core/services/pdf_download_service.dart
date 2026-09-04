@@ -38,32 +38,34 @@ class PdfDownloadService {
 
     Uint8List? pdfBytes;
 
-    // 1. Try fetching from Backend Report Agent
+    // 1. Try fetching from Backend Report Agent with fast 2.5s timeout
     try {
-      final res = await ApiService().generateAuditReport(
-        farmId: item.farmId.isNotEmpty ? item.farmId : "farm-101",
-        crop: effectiveCrop,
-        farmerName: effectiveFarmer,
-        farmerPhone: effectivePhone,
-        village: effectiveVillage,
-        state: state,
-        complianceScore: item.verificationScore,
-        voiceTranscript: item.description.isNotEmpty
-            ? item.description
-            : item.title,
-        voiceAction: item.title.contains(':')
-            ? item.title.split(':')[1].trim()
-            : 'SPRAY',
-        productApplied: item.productName,
-        dosage: item.dosagePerAcre,
-      );
+      final res = await ApiService()
+          .generateAuditReport(
+            farmId: item.farmId.isNotEmpty ? item.farmId : "farm-101",
+            crop: effectiveCrop,
+            farmerName: effectiveFarmer,
+            farmerPhone: effectivePhone,
+            village: effectiveVillage,
+            state: state,
+            complianceScore: item.verificationScore,
+            voiceTranscript: item.description.isNotEmpty
+                ? item.description
+                : item.title,
+            voiceAction: item.title.contains(':')
+                ? item.title.split(':')[1].trim()
+                : 'SPRAY',
+            productApplied: item.productName,
+            dosage: item.dosagePerAcre,
+          )
+          .timeout(const Duration(seconds: 3));
 
       final downloadPath = res['pdf_download_url']?.toString();
       if (downloadPath != null && downloadPath.isNotEmpty) {
         final fullUrl = ApiService().getReportDownloadUrl(downloadPath);
         final httpRes = await http
             .get(Uri.parse(fullUrl))
-            .timeout(const Duration(seconds: 8));
+            .timeout(const Duration(seconds: 3));
         if (httpRes.statusCode == 200 && httpRes.bodyBytes.length > 500) {
           pdfBytes = httpRes.bodyBytes;
           debugPrint(
@@ -72,7 +74,7 @@ class PdfDownloadService {
         }
       }
     } catch (e) {
-      debugPrint("[PdfDownloadService] Backend PDF download notice: $e");
+      debugPrint("[PdfDownloadService] Fast backend notice (falling back to instant on-device generation): $e");
     }
 
     // 2. If backend unreachable or offline, generate complete 3-Page Trilingual PDF directly on device

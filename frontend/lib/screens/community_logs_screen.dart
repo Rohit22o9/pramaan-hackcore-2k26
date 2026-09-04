@@ -25,7 +25,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
   String _selectedCrop = "All";
   String _selectedRegion = "All";
   String _searchQuery = "";
-  final Set<String> _downloadingLogIds = {};
+  final Set<String> _downloadingLogKeys = {};
 
   @override
   void initState() {
@@ -64,7 +64,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     final crops = <String>{"All"};
     for (var log in _sheetLogs) {
       final crop = (log['crop'] ?? log['crop_name'] ?? '').toString().trim();
-      if (crop.isNotEmpty) {
+      if (crop.isNotEmpty && crop != 'Crop') {
         crops.add(crop);
       }
     }
@@ -76,8 +76,10 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     for (var log in _sheetLogs) {
       final state = (log['state'] ?? '').toString().trim();
       final village = (log['village'] ?? '').toString().trim();
-      if (state.isNotEmpty) regions.add(state);
-      if (village.isNotEmpty && !regions.contains(village)) regions.add(village);
+      if (state.isNotEmpty && state != 'State') regions.add(state);
+      if (village.isNotEmpty && village != 'Village / Location' && !regions.contains(village)) {
+        regions.add(village);
+      }
     }
     return regions.toList();
   }
@@ -120,12 +122,12 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     return list;
   }
 
-  Future<void> _handleDownloadPdf(Map<String, dynamic> log) async {
-    final logId = (log['id'] ?? log['log_id'] ?? DateTime.now().millisecondsSinceEpoch).toString();
-    setState(() => _downloadingLogIds.add(logId));
+  Future<void> _handleDownloadPdf(Map<String, dynamic> log, String itemKey) async {
+    setState(() => _downloadingLogKeys.add(itemKey));
 
     try {
-      final farmerName = (log['farmer_name'] ?? 'Verified Farmer').toString();
+      final rawName = (log['farmer_name'] ?? '').toString().trim();
+      final farmerName = rawName.isNotEmpty ? rawName : 'Verified Farmer';
       final farmerPhone = (log['farmer_phone'] ?? '').toString();
       final village = (log['village'] ?? 'Dindori, Nashik').toString();
       final state = (log['state'] ?? 'Maharashtra').toString();
@@ -174,12 +176,12 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
       }
     } finally {
       if (mounted) {
-        setState(() => _downloadingLogIds.remove(logId));
+        setState(() => _downloadingLogKeys.remove(itemKey));
       }
     }
   }
 
-  void _showLogDetailsModal(Map<String, dynamic> log, String lang) {
+  void _showLogDetailsModal(Map<String, dynamic> log, String lang, String itemKey) {
     final farmerName = (log['farmer_name'] ?? 'Verified Farmer').toString();
     final village = (log['village'] ?? '').toString();
     final state = (log['state'] ?? '').toString();
@@ -373,7 +375,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                       ),
                       onPressed: () {
                         Navigator.pop(ctx);
-                        _handleDownloadPdf(log);
+                        _handleDownloadPdf(log, itemKey);
                       },
                     ),
                   ),
@@ -527,7 +529,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                           itemCount: logs.length,
                           itemBuilder: (context, index) {
                             final log = logs[index];
-                            return _buildCommunityLogCard(log, lang);
+                            return _buildCommunityLogCard(log, lang, index);
                           },
                         ),
             ),
@@ -682,7 +684,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     );
   }
 
-  Widget _buildCommunityLogCard(Map<String, dynamic> log, String lang) {
+  Widget _buildCommunityLogCard(Map<String, dynamic> log, String lang, int index) {
     final logId = (log['id'] ?? log['log_id'] ?? '').toString();
     final farmerName = (log['farmer_name'] ?? 'Verified Farmer').toString();
     final village = (log['village'] ?? '').toString();
@@ -694,7 +696,8 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     final score = ((log['compliance_score'] ?? log['verification_score'] ?? 98.6) as num).toDouble();
     final transcript = (log['voice_transcript'] ?? log['description'] ?? '').toString();
     final timestamp = (log['timestamp'] ?? '').toString();
-    final isDownloading = _downloadingLogIds.contains(logId);
+    final itemKey = "${logId}_${timestamp}_$index";
+    final isDownloading = _downloadingLogKeys.contains(itemKey);
 
     // Format display date
     String dateDisplay = "";
@@ -885,7 +888,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                       side: const BorderSide(color: Color(0xFFCBD5E1)),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
-                    onPressed: () => _showLogDetailsModal(log, lang),
+                    onPressed: () => _showLogDetailsModal(log, lang, itemKey),
                     child: Text(
                       AppTranslations.tr(lang, "view_all", "View Details"),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
@@ -918,7 +921,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    onPressed: isDownloading ? null : () => _handleDownloadPdf(log),
+                    onPressed: isDownloading ? null : () => _handleDownloadPdf(log, itemKey),
                   ),
                 ),
               ],
