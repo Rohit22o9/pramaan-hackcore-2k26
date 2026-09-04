@@ -20,18 +20,17 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
   final PdfDownloadService _pdfService = PdfDownloadService();
   final TextEditingController _searchController = TextEditingController();
 
-  List<Map<String, dynamic>> _allLogs = [];
+  List<Map<String, dynamic>> _sheetLogs = [];
   bool _isLoading = true;
   String _selectedCrop = "All";
   String _selectedRegion = "All";
-  String _sortBy = "newest"; // "newest" | "compliance"
   String _searchQuery = "";
   final Set<String> _downloadingLogIds = {};
 
   @override
   void initState() {
     super.initState();
-    _fetchLogs();
+    _fetchLiveSheetLogs();
   }
 
   @override
@@ -40,18 +39,21 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchLogs() async {
+  Future<void> _fetchLiveSheetLogs() async {
     setState(() => _isLoading = true);
     try {
       final logs = await _sheetsService.fetchAllCommunityLogs();
       if (mounted) {
         setState(() {
-          _allLogs = logs;
+          _sheetLogs = logs;
           _isLoading = false;
+          // Reset filters if previous selection not in new data
+          if (!_availableCrops.contains(_selectedCrop)) _selectedCrop = "All";
+          if (!_availableRegions.contains(_selectedRegion)) _selectedRegion = "All";
         });
       }
     } catch (e) {
-      debugPrint("[CommunityLogsScreen] Error loading community logs: $e");
+      debugPrint("[CommunityLogsScreen] Error loading live sheet logs: $e");
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -60,34 +62,30 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
 
   List<String> get _availableCrops {
     final crops = <String>{"All"};
-    for (var log in _allLogs) {
+    for (var log in _sheetLogs) {
       final crop = (log['crop'] ?? log['crop_name'] ?? '').toString().trim();
       if (crop.isNotEmpty) {
-        // Strip variety if present (e.g. "Wheat (PBW 826)" -> "Wheat")
-        final clean = crop.split('(').first.trim();
-        if (clean.isNotEmpty) crops.add(clean);
+        crops.add(crop);
       }
     }
-    // Add default popular crops if not present
-    crops.addAll(["Wheat", "Cotton", "Chilli", "Paddy", "Soybean", "Tomato"]);
     return crops.toList();
   }
 
   List<String> get _availableRegions {
     final regions = <String>{"All"};
-    for (var log in _allLogs) {
+    for (var log in _sheetLogs) {
       final state = (log['state'] ?? '').toString().trim();
+      final village = (log['village'] ?? '').toString().trim();
       if (state.isNotEmpty) regions.add(state);
+      if (village.isNotEmpty && !regions.contains(village)) regions.add(village);
     }
-    // Add default popular states if not present
-    regions.addAll(["Punjab", "Maharashtra", "Andhra Pradesh", "Gujarat", "Haryana"]);
     return regions.toList();
   }
 
   List<Map<String, dynamic>> get _filteredLogs {
-    var list = List<Map<String, dynamic>>.from(_allLogs);
+    var list = List<Map<String, dynamic>>.from(_sheetLogs);
 
-    // 1. Crop Filter
+    // 1. Crop Dropdown Filter
     if (_selectedCrop != "All") {
       list = list.where((log) {
         final crop = (log['crop'] ?? log['crop_name'] ?? '').toString().toLowerCase();
@@ -95,7 +93,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
       }).toList();
     }
 
-    // 2. Region Filter
+    // 2. Region Dropdown Filter
     if (_selectedRegion != "All") {
       list = list.where((log) {
         final state = (log['state'] ?? '').toString().toLowerCase();
@@ -117,22 +115,6 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
 
         return farmer.contains(q) || crop.contains(q) || village.contains(q) || state.contains(q) || product.contains(q) || desc.contains(q);
       }).toList();
-    }
-
-    // 4. Sorting
-    if (_sortBy == "compliance") {
-      list.sort((a, b) {
-        final scoreA = (a['compliance_score'] ?? a['verification_score'] ?? 0) as num;
-        final scoreB = (b['compliance_score'] ?? b['verification_score'] ?? 0) as num;
-        return scoreB.compareTo(scoreA);
-      });
-    } else {
-      // Default: Newest first
-      list.sort((a, b) {
-        final timeA = (a['timestamp'] ?? '').toString();
-        final timeB = (b['timestamp'] ?? '').toString();
-        return timeB.compareTo(timeA);
-      });
     }
 
     return list;
@@ -171,7 +153,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    "✓ 3-Page Audit PDF for $farmerName saved to device storage!",
+                    "✓ 3-Page Audit PDF for $farmerName saved to storage!",
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                   ),
                 ),
@@ -201,9 +183,9 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     final farmerName = (log['farmer_name'] ?? 'Verified Farmer').toString();
     final village = (log['village'] ?? '').toString();
     final state = (log['state'] ?? '').toString();
-    final crop = (log['crop'] ?? log['crop_name'] ?? 'Wheat').toString();
+    final crop = (log['crop'] ?? log['crop_name'] ?? 'Crop').toString();
     final productName = (log['product_name'] ?? 'Bio-Neem Power 10000 PPM').toString();
-    final dosage = (log['dosage'] ?? log['dosage_per_acre'] ?? '400 ml / Acre').toString();
+    final dosage = (log['dosage'] ?? log['dosage_per_acre'] ?? 'Standard Dose').toString();
     final score = ((log['compliance_score'] ?? log['verification_score'] ?? 98.6) as num).toDouble();
     final transcript = (log['voice_transcript'] ?? log['description'] ?? '').toString();
     final reportId = (log['report_id'] ?? 'PRM-REP-VERIFIED').toString();
@@ -254,11 +236,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                         ),
                         child: Text(
                           "✓ $reportId",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF047857),
-                          ),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF047857)),
                         ),
                       ),
                       Container(
@@ -270,11 +248,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                         ),
                         child: Text(
                           "$score% ${AppTranslations.tr(lang, "verified_label", "VERIFIED")}",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF92400E),
-                          ),
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                         ),
                       ),
                     ],
@@ -330,7 +304,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                         const Divider(height: 16),
                         _buildDetailRow("⚖️ Verified Dosage", dosage),
                         const Divider(height: 16),
-                        _buildDetailRow("🎯 Target Problem", log['target_pest']?.toString() ?? "Pest / Disease Control"),
+                        _buildDetailRow("🎯 Action Type", log['action_type']?.toString() ?? "SPRAY"),
                       ],
                     ),
                   ),
@@ -357,41 +331,6 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   ),
                   const SizedBox(height: 16),
 
-                  // ICAR / PAU Agronomy Insights
-                  const Text(
-                    "🔬 ICAR / PAU Agronomic Guidance",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                  ),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFBBF7D0)),
-                    ),
-                    child: const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "• Recommended Water Volume: 200 Litres clean water per acre.",
-                          style: TextStyle(fontSize: 12, color: Color(0xFF166534)),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "• Pre-Harvest Interval (PHI): 14 Days safe margin strictly maintained.",
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF991B1B)),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          "• Best Spray Window: Morning 07:00 – 10:30 AM (Delta-T 2-8°C).",
-                          style: TextStyle(fontSize: 12, color: Color(0xFF166534)),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-
                   // SHA-256 Hash
                   Container(
                     padding: const EdgeInsets.all(10),
@@ -403,7 +342,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          "🔒 SHA-256 Cryptographic Hash Anchor:",
+                          "🔒 SHA-256 Hash Anchor:",
                           style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 2),
@@ -473,36 +412,25 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     final logs = _filteredLogs;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0.5,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.groups_rounded, color: AppColors.primary, size: 22),
-                const SizedBox(width: 6),
-                Text(
-                  AppTranslations.tr(lang, "log_community", "Log Community"),
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ],
-            ),
-            Text(
-              AppTranslations.tr(lang, "community_subtitle", "Verified Peer Logs & Audit Certificates"),
-              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-            ),
-          ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: AppColors.textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          AppTranslations.tr(lang, "log_community", "Log Community"),
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
         ),
         actions: [
           IconButton(
-            tooltip: "Refresh Feed",
+            tooltip: "Refresh from Google Sheet",
             icon: _isLoading
                 ? const SizedBox(
                     width: 18,
@@ -510,7 +438,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
                   )
                 : const Icon(Icons.refresh_rounded, color: AppColors.primary),
-            onPressed: _isLoading ? null : _fetchLogs,
+            onPressed: _isLoading ? null : _fetchLiveSheetLogs,
           ),
           IconButton(
             tooltip: AppTranslations.tr(lang, "select_language"),
@@ -536,15 +464,45 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _fetchLogs,
+        onRefresh: _fetchLiveSheetLogs,
         color: AppColors.primary,
         child: Column(
           children: [
-            // Top Community Stats & Live Banner
-            _buildCommunityStatsBanner(lang),
+            // Clean Dropdown Filter Bar
+            _buildDropdownFilterBar(lang),
 
-            // Search Bar & Filter Chips Header
-            _buildSearchAndFilters(lang),
+            // Live Sheets Logs Count Header
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Google Sheet Records (${logs.length})",
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  if (_selectedCrop != "All" || _selectedRegion != "All" || _searchQuery.isNotEmpty)
+                    InkWell(
+                      onTap: () {
+                        setState(() {
+                          _selectedCrop = "All";
+                          _selectedRegion = "All";
+                          _searchQuery = "";
+                          _searchController.clear();
+                        });
+                      },
+                      child: const Text(
+                        "Reset Filters",
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      ),
+                    ),
+                ],
+              ),
+            ),
 
             // Logs Feed List
             Expanded(
@@ -556,7 +514,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                           CircularProgressIndicator(color: AppColors.primary),
                           SizedBox(height: 12),
                           Text(
-                            "Syncing verified logs from Google Sheets...",
+                            "Loading records from Google Sheet...",
                             style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
                           ),
                         ],
@@ -565,7 +523,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   : logs.isEmpty
                       ? _buildEmptyState(lang)
                       : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           itemCount: logs.length,
                           itemBuilder: (context, index) {
                             final log = logs[index];
@@ -577,7 +535,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
         ),
       ),
       bottomNavigationBar: CustomBottomNav(
-        currentIndex: 99, // Highlight Community button
+        currentIndex: 99,
         onTap: (index) {
           if (index == 0) {
             Navigator.pushReplacementNamed(context, '/farmer_dashboard');
@@ -593,62 +551,106 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     );
   }
 
-  Widget _buildCommunityStatsBanner(String lang) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(14, 10, 14, 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF064E3B), Color(0xFF047857)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF064E3B).withValues(alpha: 0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildStatItem("🌾 ${AppTranslations.tr(lang, "all_crops", "Crops")}", "${_availableCrops.length - 1} Active"),
-          Container(width: 1, height: 28, color: Colors.white24),
-          _buildStatItem("📍 ${AppTranslations.tr(lang, "all_regions", "Regions")}", "${_availableRegions.length - 1} States"),
-          Container(width: 1, height: 28, color: Colors.white24),
-          _buildStatItem("📜 ${AppTranslations.tr(lang, "live_community_feed", "Feed")}", "${_allLogs.length} Verified"),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem(String title, String value) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(title, style: const TextStyle(fontSize: 11, color: Color(0xFFA7F3D0), fontWeight: FontWeight.w500)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold)),
-      ],
-    );
-  }
-
-  Widget _buildSearchAndFilters(String lang) {
+  /// Clean, compact 2-Dropdown Filter Bar for Crop and Region
+  Widget _buildDropdownFilterBar(String lang) {
     final crops = _availableCrops;
     final regions = _availableRegions;
 
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(14, 6, 14, 8),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Search Input
+          // Dropdowns Row
+          Row(
+            children: [
+              // 1. Crop Dropdown
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: crops.contains(_selectedCrop) ? _selectedCrop : "All",
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary, size: 20),
+                      items: crops.map((c) {
+                        return DropdownMenuItem<String>(
+                          value: c,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.eco_rounded, size: 16, color: AppColors.primary),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  c == "All" ? AppTranslations.tr(lang, "all_crops", "All Crops") : c,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedCrop = val);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+
+              // 2. Region Dropdown
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                  ),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: regions.contains(_selectedRegion) ? _selectedRegion : "All",
+                      isExpanded: true,
+                      icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.primary, size: 20),
+                      items: regions.map((r) {
+                        return DropdownMenuItem<String>(
+                          value: r,
+                          child: Row(
+                            children: [
+                              const Icon(Icons.location_on_rounded, size: 16, color: Color(0xFF047857)),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  r == "All" ? AppTranslations.tr(lang, "all_regions", "All Regions") : r,
+                                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (val) {
+                        if (val != null) setState(() => _selectedRegion = val);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+
+          // Search Field
           Container(
-            height: 42,
+            height: 38,
             decoration: BoxDecoration(
               color: const Color(0xFFF1F5F9),
               borderRadius: BorderRadius.circular(10),
@@ -656,10 +658,10 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
             child: TextField(
               controller: _searchController,
               onChanged: (val) => setState(() => _searchQuery = val.trim()),
-              style: const TextStyle(fontSize: 13.5),
+              style: const TextStyle(fontSize: 13),
               decoration: InputDecoration(
                 hintText: AppTranslations.tr(lang, "search_community_hint", "Search farmer, crop, village, product..."),
-                hintStyle: const TextStyle(fontSize: 12.5, color: AppColors.textMuted),
+                hintStyle: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                 prefixIcon: const Icon(Icons.search_rounded, size: 18, color: AppColors.textSecondary),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
@@ -671,138 +673,9 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                       )
                     : null,
                 border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                contentPadding: const EdgeInsets.symmetric(vertical: 9),
               ),
             ),
-          ),
-          const SizedBox(height: 8),
-
-          // Crop Filter Chips
-          Row(
-            children: [
-              Text(
-                "${AppTranslations.tr(lang, "filter_by_crop", "Crop")}: ",
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-              ),
-              Expanded(
-                child: SizedBox(
-                  height: 28,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: crops.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 6),
-                    itemBuilder: (context, i) {
-                      final crop = crops[i];
-                      final isSelected = _selectedCrop == crop;
-                      return ChoiceChip(
-                        label: Text(crop == "All" ? AppTranslations.tr(lang, "all_crops", "All Crops") : crop),
-                        selected: isSelected,
-                        labelStyle: TextStyle(
-                          fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                        ),
-                        selectedColor: AppColors.primary,
-                        backgroundColor: const Color(0xFFF8FAFC),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
-                            width: 1,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        onSelected: (selected) {
-                          if (selected) setState(() => _selectedCrop = crop);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-
-          // Region Filter Chips & Sort
-          Row(
-            children: [
-              Text(
-                "${AppTranslations.tr(lang, "filter_by_region", "Region")}: ",
-                style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
-              ),
-              Expanded(
-                child: SizedBox(
-                  height: 28,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: regions.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 6),
-                    itemBuilder: (context, i) {
-                      final region = regions[i];
-                      final isSelected = _selectedRegion == region;
-                      return ChoiceChip(
-                        label: Text(region == "All" ? AppTranslations.tr(lang, "all_regions", "All Regions") : region),
-                        selected: isSelected,
-                        labelStyle: TextStyle(
-                          fontSize: 11,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                          color: isSelected ? Colors.white : AppColors.textPrimary,
-                        ),
-                        selectedColor: const Color(0xFF065F46),
-                        backgroundColor: const Color(0xFFF8FAFC),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                          side: BorderSide(
-                            color: isSelected ? const Color(0xFF065F46) : const Color(0xFFCBD5E1),
-                            width: 1,
-                          ),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        onSelected: (selected) {
-                          if (selected) setState(() => _selectedRegion = region);
-                        },
-                      );
-                    },
-                  ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              // Quick Sort Toggle Button
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    _sortBy = (_sortBy == "newest") ? "compliance" : "newest";
-                  });
-                },
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: const Color(0xFFCBD5E1)),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _sortBy == "newest" ? Icons.access_time_rounded : Icons.star_rounded,
-                        size: 13,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        _sortBy == "newest" ? "New" : "Top %",
-                        style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -814,23 +687,23 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     final farmerName = (log['farmer_name'] ?? 'Verified Farmer').toString();
     final village = (log['village'] ?? '').toString();
     final state = (log['state'] ?? '').toString();
-    final crop = (log['crop'] ?? log['crop_name'] ?? 'Wheat').toString();
+    final crop = (log['crop'] ?? log['crop_name'] ?? 'Crop').toString();
     final actionType = (log['action_type'] ?? 'SPRAY').toString();
     final productName = (log['product_name'] ?? 'Bio-Neem Power 10000 PPM').toString();
-    final dosage = (log['dosage'] ?? log['dosage_per_acre'] ?? '400 ml in 200L Water / Acre').toString();
+    final dosage = (log['dosage'] ?? log['dosage_per_acre'] ?? 'Standard Dosage').toString();
     final score = ((log['compliance_score'] ?? log['verification_score'] ?? 98.6) as num).toDouble();
     final transcript = (log['voice_transcript'] ?? log['description'] ?? '').toString();
     final timestamp = (log['timestamp'] ?? '').toString();
     final isDownloading = _downloadingLogIds.contains(logId);
 
     // Format display date
-    String dateDisplay = "Today";
+    String dateDisplay = "";
     if (timestamp.isNotEmpty) {
       try {
         final dt = DateTime.parse(timestamp).toLocal();
-        dateDisplay = "${dt.day}/${dt.month}/${dt.year}";
+        dateDisplay = " • ${dt.day}/${dt.month}/${dt.year}";
       } catch (_) {
-        dateDisplay = timestamp.split('T').first;
+        dateDisplay = " • ${timestamp.split('T').first}";
       }
     }
 
@@ -888,7 +761,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                         ],
                       ),
                       Text(
-                        "📍 $village, $state • $dateDisplay",
+                        "📍 $village, $state$dateDisplay",
                         style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -989,7 +862,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     "\"$transcript\"",
-                    style: const TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Color(0xFF475569)),
+                    style: const TextStyle(fontSize: 11.5, fontStyle: FontStyle.italic, color: Color(0xFF475569)),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1069,17 +942,17 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                 color: Color(0xFFF1F5F9),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.filter_list_off_rounded, size: 36, color: AppColors.textMuted),
+              child: const Icon(Icons.description_outlined, size: 36, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
-            Text(
-              AppTranslations.tr(lang, "no_community_logs_found", "No community logs match your filter criteria."),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            const Text(
+              "No logs found in Google Sheet for selected filters.",
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
             const Text(
-              "Try selecting 'All Crops' or 'All Regions' or clearing the search query.",
+              "Try selecting 'All Crops' or 'All Regions' or recorded new voice logs.",
               style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
@@ -1098,7 +971,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   _searchQuery = "";
                 });
               },
-              child: Text(AppTranslations.tr(lang, "filter_reset", "Reset Filters")),
+              child: const Text("Reset Filters"),
             ),
           ],
         ),

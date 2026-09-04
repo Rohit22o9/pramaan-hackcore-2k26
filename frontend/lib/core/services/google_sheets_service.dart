@@ -149,10 +149,11 @@ class GoogleSheetsService {
     return [];
   }
 
-  /// Fetch All Verified Logs across All Farmers for the Community Logs Hub
+  /// Fetch All Verified Logs across All Farmers from the Google Sheet ONLY
   Future<List<Map<String, dynamic>>> fetchAllCommunityLogs() async {
-    final getUrl = "$currentWebhookUrl?action=get_all_community_logs";
-    debugPrint("[Google Sheets Service] Fetching community logs from: $getUrl");
+    // Primary endpoint: action=get_farmer_logs without phone returns all logs from the Sheet
+    final getUrl = "$currentWebhookUrl?action=get_farmer_logs";
+    debugPrint("[Google Sheets Service] Fetching live community logs from Sheet: $getUrl");
 
     try {
       final response = await _getWithRedirect(getUrl);
@@ -161,149 +162,28 @@ class GoogleSheetsService {
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['logs'] is List) {
-          final liveLogs = List<Map<String, dynamic>>.from(data['logs']);
-          if (liveLogs.isNotEmpty) {
-            return liveLogs;
-          }
+          final List<Map<String, dynamic>> rawList =
+              List<Map<String, dynamic>>.from(data['logs']);
+
+          // Filter out header rows and empty logs from the sheet
+          final validLogs = rawList.where((log) {
+            final fName = (log['farmer_name'] ?? '').toString().trim();
+            final logId = (log['id'] ?? log['log_id'] ?? '').toString().trim();
+            if (fName.isEmpty || fName == 'Farmer Name' || logId == 'Log ID' || fName.toLowerCase() == 'name') {
+              return false;
+            }
+            return true;
+          }).toList();
+
+          return validLogs;
         }
       }
     } catch (e) {
       debugPrint("[Google Sheets Service] fetchAllCommunityLogs error: $e");
     }
 
-    // Curated Seed Data for instant community interaction across key Indian agricultural regions
-    return [
-      {
-        "timestamp": DateTime.now().subtract(const Duration(hours: 3)).toUtc().toIso8601String(),
-        "id": "LOG-1788497790842",
-        "log_id": "LOG-1788497790842",
-        "farmer_name": "Rohit Test",
-        "farmer_phone": "9988776655",
-        "village": "Dindori, Nashik",
-        "state": "Maharashtra",
-        "crop": "Wheat",
-        "crop_name": "Wheat (PBW 826)",
-        "action_type": "SPRAY",
-        "title": "Voice Log: SPRAY Wheat",
-        "product_name": "Bio-Neem Power 10000 PPM",
-        "dosage": "400 ml in 200L Water / Acre",
-        "dosage_per_acre": "400 ml in 200L Water / Acre",
-        "target_pest": "Whitefly & Aphids",
-        "voice_transcript": "गेहूं की फसल में बायो-नीम 10000 PPM का 400ml प्रति एकड़ के हिसाब से छिड़काव किया।",
-        "description": "Sprayed Bio-Neem Power 10000 PPM on Wheat crop for sucking pest prevention.",
-        "compliance_score": 98.6,
-        "verification_score": 98.6,
-        "verification_status": "VERIFIED",
-        "report_id": "PRM-REP-97790842",
-        "verification_hash": "a8f5b4c9103982eef11082cba972e345b98a0021c32ff8812de4b21903fa7e41",
-        "hash_anchor": "a8f5b4c9103982eef11082cba972e345b98a0021c32ff8812de4b21903fa7e41",
-        "evidence_type": "VOICE_LOG"
-      },
-      {
-        "timestamp": DateTime.now().subtract(const Duration(hours: 6)).toUtc().toIso8601String(),
-        "id": "LOG-1788498821901",
-        "log_id": "LOG-1788498821901",
-        "farmer_name": "Gurpreet Singh",
-        "farmer_phone": "9814012345",
-        "village": "Jagraon, Ludhiana",
-        "state": "Punjab",
-        "crop": "Wheat",
-        "crop_name": "Wheat (HD-3086)",
-        "action_type": "FOLIAR",
-        "title": "Voice Log: FOLIAR Wheat",
-        "product_name": "Tilt 25% EC (Propiconazole)",
-        "dosage": "200 ml in 200L Water / Acre",
-        "dosage_per_acre": "200 ml in 200L Water / Acre",
-        "target_pest": "Yellow Rust (Stripe Rust)",
-        "voice_transcript": "ਕਣਕ ਵਿੱਚ ਪੀਲੀ ਕੁੰਗੀ ਦੀ ਰੋਕਥਾਮ ਲਈ ਪ੍ਰੋਪੀਕੋਨਾਜ਼ੋਲ 200 ਮਿ.ਲੀ. ਦਾ ਸਪਰੇਅ ਕੀਤਾ।",
-        "description": "Preventive spray against Yellow Rust as per PAU recommendation.",
-        "compliance_score": 99.2,
-        "verification_score": 99.2,
-        "verification_status": "VERIFIED",
-        "report_id": "PRM-REP-8821901",
-        "verification_hash": "c4d7e8f192039485761a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3",
-        "hash_anchor": "c4d7e8f192039485761a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3",
-        "evidence_type": "VOICE_LOG"
-      },
-      {
-        "timestamp": DateTime.now().subtract(const Duration(hours: 14)).toUtc().toIso8601String(),
-        "id": "LOG-1788496632110",
-        "log_id": "LOG-1788496632110",
-        "farmer_name": "Ramesh Patel",
-        "farmer_phone": "9426098765",
-        "village": "Anand",
-        "state": "Gujarat",
-        "crop": "Cotton",
-        "crop_name": "Cotton (Bt-II)",
-        "action_type": "SPRAY",
-        "title": "Voice Log: SPRAY Cotton",
-        "product_name": "Pegasus (Diafenthiuron 50% WP)",
-        "dosage": "240 g in 200L Water / Acre",
-        "dosage_per_acre": "240 g in 200L Water / Acre",
-        "target_pest": "Whitefly & Jassids",
-        "voice_transcript": "કપાસમાં સફેદ માખી નિયંત્રણ માટે પેગાસસ ૨૪૦ ગ્રામ છંટકાવ કર્યો.",
-        "description": "Foliar application for sucking pest control with 14-day pre-harvest interval.",
-        "compliance_score": 96.5,
-        "verification_score": 96.5,
-        "verification_status": "VERIFIED",
-        "report_id": "PRM-REP-6632110",
-        "verification_hash": "f1a2b3c4d5e6f7890123456789abcdef0123456789abcdef0123456789abcdef",
-        "hash_anchor": "f1a2b3c4d5e6f7890123456789abcdef0123456789abcdef0123456789abcdef",
-        "evidence_type": "VOICE_LOG"
-      },
-      {
-        "timestamp": DateTime.now().subtract(const Duration(days: 1)).toUtc().toIso8601String(),
-        "id": "LOG-1788495512345",
-        "log_id": "LOG-1788495512345",
-        "farmer_name": "Suresh Reddy",
-        "farmer_phone": "9848011223",
-        "village": "Guntur",
-        "state": "Andhra Pradesh",
-        "crop": "Chilli",
-        "crop_name": "Chilli (Guntur Teja)",
-        "action_type": "BIOCONTROL",
-        "title": "Voice Log: BIOCONTROL Chilli",
-        "product_name": "Trichoderma Viride + Pseudomonas",
-        "dosage": "2.5 kg with Farmyard Manure / Acre",
-        "dosage_per_acre": "2.5 kg with Farmyard Manure / Acre",
-        "target_pest": "Root Rot & Wilt",
-        "voice_transcript": "మిర్చి పంటలో వేరు కుళ్ళు నివారణకు ట్రైకోడెర్మా కంపోస్ట్ ఎరువుతో కలిపి వేసాము.",
-        "description": "Soil drenching and root bio-inoculation for biological pathogen defense.",
-        "compliance_score": 99.8,
-        "verification_score": 99.8,
-        "verification_status": "VERIFIED",
-        "report_id": "PRM-REP-5512345",
-        "verification_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "hash_anchor": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-        "evidence_type": "VOICE_LOG"
-      },
-      {
-        "timestamp": DateTime.now().subtract(const Duration(days: 2)).toUtc().toIso8601String(),
-        "id": "LOG-1788494409876",
-        "log_id": "LOG-1788494409876",
-        "farmer_name": "Ananya Sharma",
-        "farmer_phone": "9711099887",
-        "village": "Karnal",
-        "state": "Haryana",
-        "crop": "Paddy",
-        "crop_name": "Paddy (Basmati 1121)",
-        "action_type": "NUTRIENT",
-        "title": "Voice Log: NUTRIENT Paddy",
-        "product_name": "Zinc Sulfate 21% + Urea Foliar",
-        "dosage": "1.0 kg Zinc + 2.0 kg Urea in 200L Water",
-        "dosage_per_acre": "1.0 kg Zinc + 2.0 kg Urea in 200L Water",
-        "target_pest": "Khaira Disease (Zinc Deficiency)",
-        "voice_transcript": "धान की फसल में खैरा रोग रोकथाम के लिए जिंक सल्फेट का फोलियर स्प्रे किया।",
-        "description": "Corrective foliar spray for Basmati export grain elongation and chlorophyll booster.",
-        "compliance_score": 97.9,
-        "verification_score": 97.9,
-        "verification_status": "VERIFIED",
-        "report_id": "PRM-REP-4409876",
-        "verification_hash": "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72",
-        "hash_anchor": "9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72",
-        "evidence_type": "VOICE_LOG"
-      }
-    ];
+    // Return empty list if no logs in sheet - strictly NO mock/random data
+    return [];
   }
 
   /// Appends a new voice observation entry to Google Sheets (Farmer_Logs Tab)
