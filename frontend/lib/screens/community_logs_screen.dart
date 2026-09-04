@@ -143,42 +143,15 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     setState(() => _downloadingLogIds.add(logId));
 
     try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
       final farmerName = (log['farmer_name'] ?? 'Verified Farmer').toString();
       final farmerPhone = (log['farmer_phone'] ?? '').toString();
       final village = (log['village'] ?? 'Dindori, Nashik').toString();
       final state = (log['state'] ?? 'Maharashtra').toString();
       final crop = (log['crop'] ?? log['crop_name'] ?? 'Wheat').toString();
-      final productName = (log['product_name'] ?? 'Bio-Neem Power 10000 PPM').toString();
-      final dosage = (log['dosage'] ?? log['dosage_per_acre'] ?? '400 ml / Acre').toString();
-      final score = ((log['compliance_score'] ?? log['verification_score'] ?? 98.6) as num).toDouble();
-      final transcript = (log['voice_transcript'] ?? log['description'] ?? log['title'] ?? 'Verified voice log').toString();
 
-      final evidenceItem = EvidenceItem(
-        id: logId,
-        farmId: "community-farm",
-        farmerName: farmerName,
-        farmerPhone: farmerPhone,
-        title: log['title']?.toString() ?? "Voice Log: ${log['action_type'] ?? 'SPRAY'} $crop",
-        description: transcript,
-        type: EvidenceType.voiceNote,
-        category: EvidenceCategory.cropHealth,
-        timestamp: log['timestamp']?.toString() ?? DateTime.now().toIso8601String(),
-        cropName: crop,
-        productName: productName,
-        dosagePerAcre: dosage,
-        location: EvidenceLocation(
-          latitude: 20.0,
-          longitude: 73.8,
-          village: village,
-          district: state,
-        ),
-        verificationScore: score,
-        isVerified: true,
-        verificationHash: (log['verification_hash'] ?? log['hash_anchor'] ?? 'a8f5b4c9103982eef11082cba972e345b98a0021c32ff8812de4b21903fa7e41').toString(),
-      );
+      final evidenceItem = EvidenceItem.fromJson(log);
 
-      final file = await _pdfService.downloadAndOpenReport(
+      await _pdfService.downloadAndOpenReport(
         item: evidenceItem,
         farmerName: farmerName,
         farmerPhone: farmerPhone,
@@ -717,7 +690,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: crops.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    separatorBuilder: (context, index) => const SizedBox(width: 6),
                     itemBuilder: (context, i) {
                       final crop = crops[i];
                       final isSelected = _selectedCrop == crop;
@@ -765,7 +738,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     itemCount: regions.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 6),
+                    separatorBuilder: (context, index) => const SizedBox(width: 6),
                     itemBuilder: (context, i) {
                       final region = regions[i];
                       final isSelected = _selectedRegion == region;
