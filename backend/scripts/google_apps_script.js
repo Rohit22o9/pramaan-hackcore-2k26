@@ -306,6 +306,19 @@ function doPost(e) {
         logs: logs
       });
     }
+
+    // --------------------------------------------------------------------------
+    // ACTION 4: GET ALL COMMUNITY LOGS (ALL FARMERS ACROSS ALL REGIONS & CROPS)
+    // --------------------------------------------------------------------------
+    if (action === "get_all_community_logs" || action === "get_community_logs" || action === "get_all_logs") {
+      var allLogs = getLogsForFarmer("", "");
+      return createJsonResponse({
+        status: "success",
+        community_feed: true,
+        total_logs: allLogs.length,
+        logs: allLogs
+      });
+    }
     
     return createJsonResponse({
       status: "error",
@@ -325,8 +338,18 @@ function doGet(e) {
   try {
     initSpreadsheet();
     var params = e && e.parameter ? e.parameter : {};
-    var action = params.action || (params.phone ? "get_farmer_logs" : "health");
+    var action = params.action || (params.phone ? "get_farmer_logs" : (params.community ? "get_community_logs" : "health"));
     
+    if (action === "get_all_community_logs" || action === "get_community_logs" || action === "get_all_logs") {
+      var allLogs = getLogsForFarmer("", "");
+      return createJsonResponse({
+        status: "success",
+        community_feed: true,
+        total_logs: allLogs.length,
+        logs: allLogs
+      });
+    }
+
     if (action === "get_farmer_logs" || params.phone) {
       var phone = String(params.phone || "").trim();
       var name = String(params.name || "").trim();
