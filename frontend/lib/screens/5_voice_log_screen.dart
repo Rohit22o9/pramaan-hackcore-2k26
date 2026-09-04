@@ -8,7 +8,6 @@ import '../core/services/api_service.dart';
 import '../core/services/google_sheets_service.dart';
 import '../widgets/waveform_visualizer.dart';
 
-
 class VoiceLogScreen extends StatefulWidget {
   const VoiceLogScreen({super.key});
 
@@ -205,8 +204,10 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       voiceTranscript: transcript,
       complianceScore: 98.6,
       verificationStatus: "VERIFIED",
-      reportId: "PRM-REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}",
-      hashAnchor: "a8f5b4c9103982eef11082cba972e345b98a0021c32ff8812de4b21903fa7e41",
+      reportId:
+          "PRM-REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}",
+      hashAnchor:
+          "a8f5b4c9103982eef11082cba972e345b98a0021c32ff8812de4b21903fa7e41",
     );
 
     if (mounted) {
@@ -253,20 +254,34 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFECFDF5),
                       shape: BoxShape.circle,
-                      border: Border.all(color: const Color(0xFFA7F3D0), width: 2),
+                      border: Border.all(
+                        color: const Color(0xFFA7F3D0),
+                        width: 2,
+                      ),
                     ),
-                    child: const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 40),
+                    child: const Icon(
+                      Icons.check_circle_rounded,
+                      color: AppColors.primary,
+                      size: 40,
+                    ),
                   ),
                   const SizedBox(height: 14),
                   const Text(
                     "Voice Log Successfully Saved!",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.primaryDark,
+                    ),
                   ),
                   const SizedBox(height: 6),
                   Text(
                     "Saved under farmer: ${auth.userName} (${auth.userVillage})\nSynced to Google Sheets / Excel successfully.",
                     textAlign: TextAlign.center,
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                    style: const TextStyle(
+                      fontSize: 12.5,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                   const SizedBox(height: 16),
 
@@ -286,21 +301,41 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                           children: [
                             Text(
                               "🌱 $crop • $action",
-                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: AppColors.primarySurface,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: const Text("98.6% VERIFIED", style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                              child: const Text(
+                                "98.6% VERIFIED",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.primaryDark,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                         if (product != null) ...[
                           const SizedBox(height: 4),
-                          Text("🧪 $product ($dosage)", style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                          Text(
+                            "🧪 $product ($dosage)",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
                         ],
                       ],
                     ),
@@ -332,7 +367,11 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                                   const SnackBar(
                                     content: Row(
                                       children: [
-                                        Icon(Icons.download_done_rounded, color: Colors.white, size: 20),
+                                        Icon(
+                                          Icons.download_done_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                         SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
@@ -357,12 +396,23 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                           ? const SizedBox(
                               width: 16,
                               height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
-                          : const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accentGold),
+                          : const Icon(
+                              Icons.picture_as_pdf_rounded,
+                              color: AppColors.accentGold,
+                            ),
                       label: Text(
-                        isDownloading ? "GENERATING PDF..." : "DOWNLOAD 3-PAGE PDF REPORT",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        isDownloading
+                            ? "GENERATING PDF..."
+                            : "DOWNLOAD 3-PAGE PDF REPORT",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
@@ -387,7 +437,6 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -448,7 +497,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -483,7 +532,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                                 (_isListening
                                         ? AppColors.flaggedRed
                                         : AppColors.primary)
-                                    .withOpacity(0.4),
+                                    .withValues(alpha: 0.4),
                             blurRadius: 20,
                             spreadRadius: 4,
                           ),
@@ -543,12 +592,12 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: AppColors.primary.withOpacity(0.4),
+                  color: AppColors.primary.withValues(alpha: 0.4),
                   width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -678,11 +727,11 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                   color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: AppColors.primaryAccent.withOpacity(0.5),
+                    color: AppColors.primaryAccent.withValues(alpha: 0.5),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryDark.withOpacity(0.06),
+                      color: AppColors.primaryDark.withValues(alpha: 0.06),
                       blurRadius: 10,
                       offset: const Offset(0, 3),
                     ),
@@ -777,8 +826,6 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-
             ],
           ],
         ),

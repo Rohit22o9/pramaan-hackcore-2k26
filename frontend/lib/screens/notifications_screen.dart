@@ -9,7 +9,8 @@ class NotificationsScreen extends StatelessWidget {
     final notifs = [
       {
         "title": "Spray Window Alert: Clear Skies Next 6 Hours",
-        "message": "Wind speed 5.4 km/h, humidity 64%. Optimal window for foliar nutrient sprays in Dindori.",
+        "message":
+            "Wind speed 5.4 km/h, humidity 64%. Optimal window for foliar nutrient sprays in Dindori.",
         "type": "WEATHER",
         "timestamp": "10 mins ago",
         "icon": Icons.wb_sunny_rounded,
@@ -17,7 +18,8 @@ class NotificationsScreen extends StatelessWidget {
       },
       {
         "title": "Evidence EV-2026-8812 Cryptographically Verified",
-        "message": "Field Agent approved Post-Treatment Efficacy record. Blockchain anchor SHA-256 updated.",
+        "message":
+            "Field Agent approved Post-Treatment Efficacy record. Blockchain anchor SHA-256 updated.",
         "type": "VERIFICATION",
         "icon": Icons.verified_user_rounded,
         "color": AppColors.primary,
@@ -25,7 +27,8 @@ class NotificationsScreen extends StatelessWidget {
       },
       {
         "title": "Buyer Quote Request: ITC Agri-Business",
-        "message": "ITC Agri offered ₹7,850/Qtl (+₹450 Pramaan Organic Verified Premium) for Lot #CT-881.",
+        "message":
+            "ITC Agri offered ₹7,850/Qtl (+₹450 Pramaan Organic Verified Premium) for Lot #CT-881.",
         "type": "BUYER",
         "icon": Icons.storefront_rounded,
         "color": AppColors.primaryDark,
@@ -33,7 +36,8 @@ class NotificationsScreen extends StatelessWidget {
       },
       {
         "title": "Regional Pest Outbreak Warning: Pink Bollworm",
-        "message": "Neighbouring plots reported light moth trap activity. Check pheromone traps daily.",
+        "message":
+            "Neighbouring plots reported light moth trap activity. Check pheromone traps daily.",
         "type": "PEST_ALERT",
         "icon": Icons.bug_report_rounded,
         "color": AppColors.flaggedRed,
@@ -44,7 +48,10 @@ class NotificationsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("System Alerts & Notifications", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "System Alerts & Notifications",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -61,10 +68,14 @@ class NotificationsScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: (n['color'] as Color).withOpacity(0.12),
+                      color: (n['color'] as Color).withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(n['icon'] as IconData, color: n['color'] as Color, size: 20),
+                    child: Icon(
+                      n['icon'] as IconData,
+                      color: n['color'] as Color,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
@@ -74,14 +85,41 @@ class NotificationsScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(n['type'] as String, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: n['color'] as Color)),
-                            Text(n['timestamp'] as String, style: const TextStyle(fontSize: 10.5, color: AppColors.textMuted)),
+                            Text(
+                              n['type'] as String,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: n['color'] as Color,
+                              ),
+                            ),
+                            Text(
+                              n['timestamp'] as String,
+                              style: const TextStyle(
+                                fontSize: 10.5,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
-                        Text(n['title'] as String, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        Text(
+                          n['title'] as String,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text(n['message'] as String, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3)),
+                        Text(
+                          n['message'] as String,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
                       ],
                     ),
                   ),

@@ -10,7 +10,6 @@ import '../widgets/evidence_card.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../core/localization/app_translations.dart';
 
-
 class FarmerDashboardScreen extends StatefulWidget {
   const FarmerDashboardScreen({super.key});
 
@@ -32,10 +31,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
   void _loadActiveFarmerLogs() {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final evProv = Provider.of<EvidenceProvider>(context, listen: false);
-    evProv.loadEvidenceForFarmer(
-      phone: auth.userPhone,
-      name: auth.userName,
-    );
+    evProv.loadEvidenceForFarmer(phone: auth.userPhone, name: auth.userName);
   }
 
   @override
@@ -60,24 +56,40 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.location_on_rounded, size: 14, color: AppColors.primary),
+                    const Icon(
+                      Icons.location_on_rounded,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
                     const SizedBox(width: 4),
                     Flexible(
                       child: Text(
                         farm?.village ?? auth.userVillage,
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, fontWeight: FontWeight.normal),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.normal,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: AppColors.textSecondary),
+                    const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      size: 16,
+                      color: AppColors.textSecondary,
+                    ),
                   ],
                 ),
 
                 Text(
                   "${auth.userName}'s Farm • ${auth.activeCrop}",
-                  style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  style: const TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -100,11 +112,19 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.translate_rounded, color: Color(0xFF059669), size: 14),
+                  const Icon(
+                    Icons.translate_rounded,
+                    color: Color(0xFF059669),
+                    size: 14,
+                  ),
                   const SizedBox(width: 4),
                   Text(
                     lang.toUpperCase(),
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF059669),
+                    ),
                   ),
                 ],
               ),
@@ -120,7 +140,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             onPressed: () => Navigator.pushNamed(context, '/sync_center'),
           ),
           IconButton(
-            icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textPrimary),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: AppColors.textPrimary,
+            ),
             onPressed: () => Navigator.pushNamed(context, '/notifications'),
           ),
           PopupMenuButton<String>(
@@ -129,7 +152,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               backgroundColor: AppColors.primarySurface,
               child: Text(
                 auth.userName.isNotEmpty ? auth.userName[0] : 'R',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryDark,
+                ),
               ),
             ),
             onSelected: (val) {
@@ -148,9 +174,20 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               }
             },
             itemBuilder: (context) => [
-              PopupMenuItem(value: 'profile', child: Text("Profile: ${auth.userName}")),
-              PopupMenuItem(value: 'language', child: Text("🌐 ${AppTranslations.tr(lang, "language")}: ${lang.toUpperCase()}")),
-              const PopupMenuItem(value: 'switch_role', child: Text("Switch Role")),
+              PopupMenuItem(
+                value: 'profile',
+                child: Text("Profile: ${auth.userName}"),
+              ),
+              PopupMenuItem(
+                value: 'language',
+                child: Text(
+                  "🌐 ${AppTranslations.tr(lang, "language")}: ${lang.toUpperCase()}",
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'switch_role',
+                child: Text("Switch Role"),
+              ),
               const PopupMenuItem(value: 'settings', child: Text("Settings")),
             ],
           ),
@@ -184,16 +221,32 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
 
               // Quick Actions Grid
               Text(
-                AppTranslations.tr(lang, 'quick_evidence_capture', "Quick Evidence Capture"),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                AppTranslations.tr(
+                  lang,
+                  'quick_evidence_capture',
+                  "Quick Evidence Capture",
+                ),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: _buildActionTile(
-                      title: AppTranslations.tr(lang, 'voice_log_title', "Voice Log"),
-                      subtitle: AppTranslations.tr(lang, 'voice_log_sub', "Speak in Hindi/Marathi"),
+                      title: AppTranslations.tr(
+                        lang,
+                        'voice_log_title',
+                        "Voice Log",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        'voice_log_sub',
+                        "Speak in Hindi/Marathi",
+                      ),
                       icon: Icons.mic_rounded,
                       color: Colors.purple,
                       onTap: () => Navigator.pushNamed(context, '/voice_log'),
@@ -202,8 +255,16 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildActionTile(
-                      title: AppTranslations.tr(lang, 'crop_camera_title', "Crop Camera"),
-                      subtitle: AppTranslations.tr(lang, 'crop_camera_sub', "AI Disease Diagnosis"),
+                      title: AppTranslations.tr(
+                        lang,
+                        'crop_camera_title',
+                        "Crop Camera",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        'crop_camera_sub',
+                        "AI Disease Diagnosis",
+                      ),
                       icon: Icons.camera_alt_rounded,
                       color: AppColors.primary,
                       onTap: () => Navigator.pushNamed(context, '/crop_camera'),
@@ -216,21 +277,39 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 children: [
                   Expanded(
                     child: _buildActionTile(
-                      title: AppTranslations.tr(lang, 'scan_bottle_title', "Scan Bottle"),
-                      subtitle: AppTranslations.tr(lang, 'scan_bottle_sub', "QR Authenticity Check"),
+                      title: AppTranslations.tr(
+                        lang,
+                        'scan_bottle_title',
+                        "Scan Bottle",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        'scan_bottle_sub',
+                        "QR Authenticity Check",
+                      ),
                       icon: Icons.qr_code_scanner_rounded,
                       color: Colors.blue,
-                      onTap: () => Navigator.pushNamed(context, '/scan_product'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/scan_product'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildActionTile(
-                      title: AppTranslations.tr(lang, 'new_spray_title', "New Spray Log"),
-                      subtitle: AppTranslations.tr(lang, 'new_spray_sub', "Record Dosage & PHI"),
+                      title: AppTranslations.tr(
+                        lang,
+                        'new_spray_title',
+                        "New Spray Log",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        'new_spray_sub',
+                        "Record Dosage & PHI",
+                      ),
                       icon: Icons.science_rounded,
                       color: AppColors.accentAmber,
-                      onTap: () => Navigator.pushNamed(context, '/new_application'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/new_application'),
                     ),
                   ),
                 ],
@@ -243,17 +322,29 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      AppTranslations.tr(lang, 'verified_field_logs', "Verified Field Evidence Logs"),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      AppTranslations.tr(
+                        lang,
+                        'verified_field_logs',
+                        "Verified Field Evidence Logs",
+                      ),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   TextButton(
-                    onPressed: () => Navigator.pushNamed(context, '/evidence_review'),
+                    onPressed: () =>
+                        Navigator.pushNamed(context, '/evidence_review'),
                     child: Text(
                       AppTranslations.tr(lang, 'view_all', "View All"),
-                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primary,
+                      ),
                     ),
                   ),
                 ],
@@ -269,7 +360,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                       children: [
                         CircularProgressIndicator(),
                         SizedBox(height: 10),
-                        Text("Loading verified logs from Google Sheet...", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(
+                          "Loading verified logs from Google Sheet...",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -285,50 +382,96 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Icon(Icons.note_alt_outlined, size: 40, color: AppColors.textMuted),
+                      const Icon(
+                        Icons.note_alt_outlined,
+                        size: 40,
+                        color: AppColors.textMuted,
+                      ),
                       const SizedBox(height: 8),
                       Text(
                         "No logs recorded yet for ${auth.userName}",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       const Text(
                         "Tap 'Voice Log' above to record your first field observation or spray event.",
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
                       const SizedBox(height: 12),
                       ElevatedButton.icon(
-                        onPressed: () => Navigator.pushNamed(context, '/voice_log'),
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/voice_log'),
                         icon: const Icon(Icons.mic_rounded, size: 16),
-                        label: const Text("RECORD VOICE LOG", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                        label: const Text(
+                          "RECORD VOICE LOG",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryDark,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                         ),
                       ),
                     ],
                   ),
                 )
               else
-                ...evProv.evidenceList.take(5).map((item) => EvidenceCard(
-                      item: item,
-                      onTap: () => Navigator.pushNamed(context, '/evidence_detail', arguments: item),
-                    )),
+                ...evProv.evidenceList
+                    .take(5)
+                    .map(
+                      (item) => EvidenceCard(
+                        item: item,
+                        onTap: () => Navigator.pushNamed(
+                          context,
+                          '/evidence_detail',
+                          arguments: item,
+                        ),
+                      ),
+                    ),
 
               const SizedBox(height: 12),
 
               // Season Journal Callout Card
               Card(
                 color: AppColors.surfaceVariant,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
                 child: ListTile(
-                  leading: const Icon(Icons.timeline_rounded, color: AppColors.primaryDark, size: 28),
-                  title: const Text("Kharif Season Journal", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  subtitle: const Text("Timeline of sowing, sprays, and AI verified events.", style: TextStyle(fontSize: 12)),
-                  trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.textSecondary),
+                  leading: const Icon(
+                    Icons.timeline_rounded,
+                    color: AppColors.primaryDark,
+                    size: 28,
+                  ),
+                  title: const Text(
+                    "Kharif Season Journal",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  subtitle: const Text(
+                    "Timeline of sowing, sprays, and AI verified events.",
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
+                    color: AppColors.textSecondary,
+                  ),
                   onTap: () => Navigator.pushNamed(context, '/season_journal'),
                 ),
               ),
@@ -374,7 +517,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               color: AppColors.primarySurface,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.eco_rounded, color: AppColors.primary, size: 28),
+            child: const Icon(
+              Icons.eco_rounded,
+              color: AppColors.primary,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -386,21 +533,44 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                     Expanded(
                       child: Text(
                         crop,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(6)),
-                      child: Text("$score% Compliance", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySurface,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        "$score% Compliance",
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryDark,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 4),
-                Text("Stage: $stage • $acres Acres", style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary)),
+                Text(
+                  "Stage: $stage • $acres Acres",
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -427,7 +597,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 22),
@@ -437,9 +607,24 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(subtitle, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textSecondary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -468,7 +653,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 children: [
                   const Text(
                     "Switch Agricultural Plot / Farm",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close_rounded),
@@ -486,15 +675,21 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                     color: isCurrent ? AppColors.primarySurface : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isCurrent ? AppColors.primary : const Color(0xFFE2E8F0),
+                      color: isCurrent
+                          ? AppColors.primary
+                          : const Color(0xFFE2E8F0),
                       width: isCurrent ? 1.5 : 1.0,
                     ),
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: isPunjab ? AppColors.primary : AppColors.accentGold,
+                      backgroundColor: isPunjab
+                          ? AppColors.primary
+                          : AppColors.accentGold,
                       child: Icon(
-                        isPunjab ? Icons.eco_rounded : Icons.agriculture_rounded,
+                        isPunjab
+                            ? Icons.eco_rounded
+                            : Icons.agriculture_rounded,
                         color: Colors.white,
                         size: 20,
                       ),
@@ -502,13 +697,21 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                     title: Text(
                       f.name,
                       style: TextStyle(
-                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w600,
+                        fontWeight: isCurrent
+                            ? FontWeight.bold
+                            : FontWeight.w600,
                         fontSize: 13.5,
                       ),
                     ),
-                    subtitle: Text("${f.village}, ${f.state} • ${f.activeCrop}", style: const TextStyle(fontSize: 11.5)),
+                    subtitle: Text(
+                      "${f.village}, ${f.state} • ${f.activeCrop}",
+                      style: const TextStyle(fontSize: 11.5),
+                    ),
                     trailing: isCurrent
-                        ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.primary,
+                          )
                         : null,
                     onTap: () {
                       farmProv.selectFarm(f);
@@ -524,7 +727,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
   }
 
-  void _showDownloadReportDialog(BuildContext context, dynamic farm, AuthProvider auth) {
+  void _showDownloadReportDialog(
+    BuildContext context,
+    dynamic farm,
+    AuthProvider auth,
+  ) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -567,7 +774,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(color: const Color(0xFFA7F3D0)),
                         ),
-                        child: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary, size: 26),
+                        child: const Icon(
+                          Icons.picture_as_pdf_rounded,
+                          color: AppColors.primary,
+                          size: 26,
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -576,11 +787,18 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                           children: [
                             const Text(
                               "Download Official 3-Page Report",
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
                             Text(
                               "Grounded in live voice logs, ICAR/PAU rules & SHA-256 seal",
-                              style: TextStyle(fontSize: 11.5, color: Colors.grey.shade600),
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.grey.shade600,
+                              ),
                             ),
                           ],
                         ),
@@ -602,16 +820,41 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("👤 Farmer: $farmer", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5)),
-                            Text("🌾 $crop", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5, color: AppColors.primaryDark)),
+                            Text(
+                              "👤 Farmer: $farmer",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 12.5,
+                              ),
+                            ),
+                            Text(
+                              "🌾 $crop",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 6),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text("📍 $village", style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700)),
-                            Text("📏 $acres Acres", style: TextStyle(fontSize: 11.5, color: Colors.grey.shade700)),
+                            Text(
+                              "📍 $village",
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
+                            Text(
+                              "📏 $acres Acres",
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: Colors.grey.shade700,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -621,7 +864,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
 
                   // 3-Language Document Breakdown Pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF0FDF4),
                       borderRadius: BorderRadius.circular(10),
@@ -632,15 +878,44 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.translate_rounded, color: AppColors.primary, size: 16),
+                            Icon(
+                              Icons.translate_rounded,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
                             SizedBox(width: 6),
-                            Text("Trilingual Complete Document (3 Pages)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryDark)),
+                            Text(
+                              "Trilingual Complete Document (3 Pages)",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
                           ],
                         ),
                         SizedBox(height: 6),
-                        Text("• Page 1: English (PAU / ICAR Evidence Audit & Chemical Rx)", style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
-                        Text("• Page 2: हिंदी (पूर्ण कृषी सल्ला, सेंद्रिय पर्याय व एमआरएल सुरक्षा)", style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
-                        Text("• Page 3: मराठी (अधिकृत पीक सल्ला, फवारणी विंडो व डिजिटल स्वाक्षरी)", style: TextStyle(fontSize: 11, color: Color(0xFF166534))),
+                        Text(
+                          "• Page 1: English (PAU / ICAR Evidence Audit & Chemical Rx)",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
+                        Text(
+                          "• Page 2: हिंदी (पूर्ण कृषी सल्ला, सेंद्रिय पर्याय व एमआरएल सुरक्षा)",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
+                        Text(
+                          "• Page 3: मराठी (अधिकृत पीक सल्ला, फवारणी विंडो व डिजिटल स्वाक्षरी)",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFF166534),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -671,12 +946,18 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                                   SnackBar(
                                     content: Row(
                                       children: [
-                                        const Icon(Icons.download_done_rounded, color: Colors.white, size: 20),
+                                        const Icon(
+                                          Icons.download_done_rounded,
+                                          color: Colors.white,
+                                          size: 20,
+                                        ),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             "Official 3-Page Report ($crop - English, हिंदी, मराठी) downloaded to storage!",
-                                            style: const TextStyle(fontSize: 12),
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -691,15 +972,32 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                         backgroundColor: const Color(0xFF047857),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         elevation: 2,
                       ),
                       icon: isDownloading
-                          ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : const Icon(Icons.file_download_rounded, color: AppColors.accentGold),
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.file_download_rounded,
+                              color: AppColors.accentGold,
+                            ),
                       label: Text(
-                        isDownloading ? "GENERATING 3-PAGE PDF..." : "DOWNLOAD 3-PAGE PDF REPORT",
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        isDownloading
+                            ? "GENERATING 3-PAGE PDF..."
+                            : "DOWNLOAD 3-PAGE PDF REPORT",
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ),
@@ -712,5 +1010,3 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
   }
 }
-
-

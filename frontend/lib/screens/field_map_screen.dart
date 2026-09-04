@@ -13,7 +13,7 @@ class FieldMapScreen extends StatefulWidget {
 
 class _FieldMapScreenState extends State<FieldMapScreen> {
   bool _showNdvi = true;
-  String _selectedPlot = "Plot North-04";
+  final String _selectedPlot = "Plot North-04";
 
   @override
   Widget build(BuildContext context) {
@@ -25,14 +25,20 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F172A),
         foregroundColor: Colors.white,
-        title: const Text("Geospatial Field Map", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "Geospatial Field Map",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         actions: [
           Row(
             children: [
-              const Text("NDVI Layer", style: TextStyle(fontSize: 11, color: Colors.white70)),
+              const Text(
+                "NDVI Layer",
+                style: TextStyle(fontSize: 11, color: Colors.white70),
+              ),
               Switch(
                 value: _showNdvi,
-                activeColor: AppColors.primaryAccent,
+                activeThumbColor: AppColors.primaryAccent,
                 onChanged: (v) => setState(() => _showNdvi = v),
               ),
             ],
@@ -54,10 +60,17 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
+                color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text("Farm: Sahyadri Bio-Cluster (12.5 Ac)", style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              child: const Text(
+                "Farm: Sahyadri Bio-Cluster (12.5 Ac)",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
 
@@ -65,17 +78,29 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
           Positioned(
             top: 180,
             left: 140,
-            child: _buildMapPin("EV-8812 (Post-Spray)", Icons.camera_alt_rounded, AppColors.primary),
+            child: _buildMapPin(
+              "EV-8812 (Post-Spray)",
+              Icons.camera_alt_rounded,
+              AppColors.primary,
+            ),
           ),
           Positioned(
             top: 280,
             left: 220,
-            child: _buildMapPin("EV-8810 (QR Bio-Neem)", Icons.qr_code_2_rounded, Colors.blue),
+            child: _buildMapPin(
+              "EV-8810 (QR Bio-Neem)",
+              Icons.qr_code_2_rounded,
+              Colors.blue,
+            ),
           ),
           Positioned(
             top: 360,
             left: 100,
-            child: _buildMapPin("EV-8813 (Rain Voice)", Icons.mic_rounded, Colors.purple),
+            child: _buildMapPin(
+              "EV-8813 (Rain Voice)",
+              Icons.mic_rounded,
+              Colors.purple,
+            ),
           ),
 
           // Bottom Plot Inspector Card
@@ -89,7 +114,11 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 16, offset: const Offset(0, 4)),
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
                 ],
               ),
               child: Column(
@@ -98,22 +127,62 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Plot North-04 (Sector C)", style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                      const Text(
+                        "Plot North-04 (Sector C)",
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: AppColors.primarySurface, borderRadius: BorderRadius.circular(6)),
-                        child: const Text("96.4% Verified", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primarySurface,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          "96.4% Verified",
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.primaryDark,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text("Cotton (Bt-II) • 12.5 Acres • Sown 15 Jun 2026", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  const Text(
+                    "Cotton (Bt-II) • 12.5 Acres • Sown 15 Jun 2026",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Canopy NDVI: 0.79 (Healthy)", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                      Text("Pest Pressure: Low (<2%)", style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.accentGold)),
+                      Text(
+                        "Canopy NDVI: 0.79 (Healthy)",
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      Text(
+                        "Pest Pressure: Low (<2%)",
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.accentGold,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -130,8 +199,18 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(color: Colors.black.withOpacity(0.8), borderRadius: BorderRadius.circular(4)),
-          child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 9.5, fontWeight: FontWeight.bold)),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 9.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         const SizedBox(height: 2),
         Container(
@@ -140,7 +219,9 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
             color: color,
             shape: BoxShape.circle,
             border: Border.all(color: Colors.white, width: 1.5),
-            boxShadow: [BoxShadow(color: color.withOpacity(0.5), blurRadius: 8)],
+            boxShadow: [
+              BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 8),
+            ],
           ),
           child: Icon(icon, color: Colors.white, size: 14),
         ),
@@ -177,7 +258,9 @@ class FieldMapPainter extends CustomPainter {
       ..close();
 
     final plotPaint = Paint()
-      ..color = showNdvi ? const Color(0xFF059669).withOpacity(0.45) : const Color(0xFF334155)
+      ..color = showNdvi
+          ? const Color(0xFF059669).withValues(alpha: 0.45)
+          : const Color(0xFF334155)
       ..style = PaintingStyle.fill;
 
     final borderPaint = Paint()
@@ -197,7 +280,9 @@ class FieldMapPainter extends CustomPainter {
       ..close();
 
     final plotPaint2 = Paint()
-      ..color = showNdvi ? const Color(0xFFF59E0B).withOpacity(0.35) : const Color(0xFF1E293B)
+      ..color = showNdvi
+          ? const Color(0xFFF59E0B).withValues(alpha: 0.35)
+          : const Color(0xFF1E293B)
       ..style = PaintingStyle.fill;
 
     final borderPaint2 = Paint()
@@ -210,5 +295,6 @@ class FieldMapPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant FieldMapPainter oldDelegate) => oldDelegate.showNdvi != showNdvi;
+  bool shouldRepaint(covariant FieldMapPainter oldDelegate) =>
+      oldDelegate.showNdvi != showNdvi;
 }

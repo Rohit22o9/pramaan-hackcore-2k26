@@ -16,19 +16,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     {
       "icon": Icons.mic_rounded,
       "title": "Voice-First Farm Logging",
-      "desc": "Speak naturally in Hindi, Marathi, Telugu, Punjabi, or English. Multi-agent AI automatically extracts crops, dosages, and actions.",
+      "desc":
+          "Speak naturally in Hindi, Marathi, Telugu, Punjabi, or English. Multi-agent AI automatically extracts crops, dosages, and actions.",
       "color": AppColors.primary,
     },
     {
       "icon": Icons.verified_user_rounded,
       "title": "Multi-Modal Evidence Verification",
-      "desc": "Capture crop photos, scan chemical QR lots, and lock observations with SHA-256 cryptographic verification hashes.",
+      "desc":
+          "Capture crop photos, scan chemical QR lots, and lock observations with SHA-256 cryptographic verification hashes.",
       "color": AppColors.primaryDark,
     },
     {
       "icon": Icons.analytics_rounded,
       "title": "Efficacy & Buyer Premiums",
-      "desc": "Track pre/post spray crop recovery, verify safe pre-harvest intervals, and unlock export-grade price premiums for certified harvest batches.",
+      "desc":
+          "Track pre/post spray crop recovery, verify safe pre-harvest intervals, and unlock export-grade price premiums for certified harvest batches.",
       "color": AppColors.accentGold,
     },
   ];
@@ -46,7 +49,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 onPressed: () {
                   Navigator.pushReplacementNamed(context, '/profile_selection');
                 },
-                child: const Text("SKIP", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.textSecondary)),
+                child: const Text(
+                  "SKIP",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
             Expanded(
@@ -64,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         Container(
                           padding: const EdgeInsets.all(32),
                           decoration: BoxDecoration(
-                            color: (p['color'] as Color).withOpacity(0.1),
+                            color: (p['color'] as Color).withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(p['icon'], size: 72, color: p['color']),
@@ -104,7 +113,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: _currentPage == index ? 24 : 8,
                   height: 8,
                   decoration: BoxDecoration(
-                    color: _currentPage == index ? AppColors.primary : const Color(0xFFE2E8F0),
+                    color: _currentPage == index
+                        ? AppColors.primary
+                        : const Color(0xFFE2E8F0),
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -123,10 +134,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         curve: Curves.easeInOut,
                       );
                     } else {
-                      Navigator.pushReplacementNamed(context, '/profile_selection');
+                      Navigator.pushReplacementNamed(
+                        context,
+                        '/profile_selection',
+                      );
                     }
                   },
-                  child: Text(_currentPage == _pages.length - 1 ? "GET STARTED" : "NEXT"),
+                  child: Text(
+                    _currentPage == _pages.length - 1 ? "GET STARTED" : "NEXT",
+                  ),
                 ),
               ),
             ),

@@ -25,7 +25,7 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
     "Battery Operated Knapsack (Foliar)",
     "Tractor Mounted Boom Sprayer",
     "Agri-Drone Precision ULV",
-    "Manual Hand Sprayer"
+    "Manual Hand Sprayer",
   ];
 
   @override
@@ -42,20 +42,27 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
     final evProv = Provider.of<EvidenceProvider>(context, listen: false);
 
     final phiDays = _selectedProduct!.preHarvestIntervalDays;
-    final safeHarvestDate = DateFormat('dd MMM yyyy').format(DateTime.now().add(Duration(days: phiDays)));
+    final safeHarvestDate = DateFormat(
+      'dd MMM yyyy',
+    ).format(DateTime.now().add(Duration(days: phiDays)));
 
     await evProv.addEvidence(
       title: "Spray Log: ${_selectedProduct!.name}",
-      description: "Applied ${_dosageController.text} ml/Acre with ${_waterVolumeController.text}L water across ${_areaController.text} Acres for $_targetPest using $_equipment. Safe harvest date: $safeHarvestDate.",
+      description:
+          "Applied ${_dosageController.text} ml/Acre with ${_waterVolumeController.text}L water across ${_areaController.text} Acres for $_targetPest using $_equipment. Safe harvest date: $safeHarvestDate.",
       evidenceType: 'APPLICATION_LOG',
       productName: _selectedProduct!.name,
       productQr: _selectedProduct!.qrCode,
-      dosagePerAcre: "${_dosageController.text} ml/Acre in ${_waterVolumeController.text}L Water",
+      dosagePerAcre:
+          "${_dosageController.text} ml/Acre in ${_waterVolumeController.text}L Water",
     );
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Application Logged & Cryptographically Verified!"), backgroundColor: AppColors.primary),
+        const SnackBar(
+          content: Text("Application Logged & Cryptographically Verified!"),
+          backgroundColor: AppColors.primary,
+        ),
       );
       Navigator.pop(context);
     }
@@ -67,12 +74,17 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
     final products = farmProv.products;
 
     final phiDays = _selectedProduct?.preHarvestIntervalDays ?? 1;
-    final safeHarvestDate = DateFormat('dd MMM yyyy').format(DateTime.now().add(Duration(days: phiDays)));
+    final safeHarvestDate = DateFormat(
+      'dd MMM yyyy',
+    ).format(DateTime.now().add(Duration(days: phiDays)));
 
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Log Chemical / Fertilizer Spray", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "Log Chemical / Fertilizer Spray",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -85,16 +97,26 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
               decoration: BoxDecoration(
                 color: AppColors.primarySurface,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+                border: Border.all(
+                  color: AppColors.primary.withValues(alpha: 0.3),
+                ),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.cloud_done_rounded, color: AppColors.primary, size: 20),
+                  Icon(
+                    Icons.cloud_done_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                   SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       "Weather Verified: Wind 6.8 km/h, 0% rain in next 12h. Optimal spray window active.",
-                      style: TextStyle(fontSize: 12, color: AppColors.primaryDark, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
@@ -102,12 +124,18 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
             ),
             const SizedBox(height: 20),
 
-            const Text("Select Verified Agrochemical / Input", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              "Select Verified Agrochemical / Input",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             DropdownButtonFormField<ProductInput>(
-              value: _selectedProduct,
+              initialValue: _selectedProduct,
               items: products.map((p) {
-                return DropdownMenuItem(value: p, child: Text(p.name, style: const TextStyle(fontSize: 13)));
+                return DropdownMenuItem(
+                  value: p,
+                  child: Text(p.name, style: const TextStyle(fontSize: 13)),
+                );
               }).toList(),
               onChanged: (val) => setState(() => _selectedProduct = val),
             ),
@@ -124,9 +152,22 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("Active Ingredient: ${_selectedProduct!.activeIngredient}", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(
+                      "Active Ingredient: ${_selectedProduct!.activeIngredient}",
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 4),
-                    Text("Pre-Harvest Interval (PHI): $phiDays Days • Safe to Harvest after $safeHarvestDate", style: const TextStyle(fontSize: 11.5, color: AppColors.primaryDark, fontWeight: FontWeight.w600)),
+                    Text(
+                      "Pre-Harvest Interval (PHI): $phiDays Days • Safe to Harvest after $safeHarvestDate",
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        color: AppColors.primaryDark,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -139,9 +180,18 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Dosage (ml or g / Acre)", style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Dosage (ml or g / Acre)",
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      TextField(controller: _dosageController, keyboardType: TextInputType.number),
+                      TextField(
+                        controller: _dosageController,
+                        keyboardType: TextInputType.number,
+                      ),
                     ],
                   ),
                 ),
@@ -150,9 +200,18 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text("Water Volume (Litres)", style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Water Volume (Litres)",
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                       const SizedBox(height: 6),
-                      TextField(controller: _waterVolumeController, keyboardType: TextInputType.number),
+                      TextField(
+                        controller: _waterVolumeController,
+                        keyboardType: TextInputType.number,
+                      ),
                     ],
                   ),
                 ),
@@ -160,19 +219,34 @@ class _NewApplicationScreenState extends State<NewApplicationScreen> {
             ),
             const SizedBox(height: 16),
 
-            const Text("Target Pest / Disease", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              "Target Pest / Disease",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             TextField(
-              decoration: const InputDecoration(hintText: "e.g. Whitefly, Bollworm, Rust"),
+              decoration: const InputDecoration(
+                hintText: "e.g. Whitefly, Bollworm, Rust",
+              ),
               onChanged: (v) => _targetPest = v,
             ),
             const SizedBox(height: 16),
 
-            const Text("Application Equipment", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              "Application Equipment",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
-              value: _equipment,
-              items: _equipmentList.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 12.5)))).toList(),
+              initialValue: _equipment,
+              items: _equipmentList
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e,
+                      child: Text(e, style: const TextStyle(fontSize: 12.5)),
+                    ),
+                  )
+                  .toList(),
               onChanged: (v) => setState(() => _equipment = v ?? _equipment),
             ),
             const SizedBox(height: 32),

@@ -11,7 +11,8 @@ class WaveformVisualizer extends StatefulWidget {
   State<WaveformVisualizer> createState() => _WaveformVisualizerState();
 }
 
-class _WaveformVisualizerState extends State<WaveformVisualizer> with SingleTickerProviderStateMixin {
+class _WaveformVisualizerState extends State<WaveformVisualizer>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   final Random _random = Random();
 
@@ -47,7 +48,9 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with SingleTick
               width: 4,
               height: height,
               decoration: BoxDecoration(
-                color: widget.isRecording ? AppColors.primary : AppColors.textMuted.withOpacity(0.3),
+                color: widget.isRecording
+                    ? AppColors.primary
+                    : AppColors.textMuted.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(4),
               ),
             );

@@ -20,20 +20,31 @@ class ProfileSelectionScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primarySurface,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
                   "STEP 1 OF 1",
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primaryDark,
+                  ),
                 ),
               ),
               const SizedBox(height: 12),
               const Text(
                 "Choose Your Role",
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
               ),
               const SizedBox(height: 8),
               const Text(
@@ -44,7 +55,8 @@ class ProfileSelectionScreen extends StatelessWidget {
               _buildRoleCard(
                 context,
                 title: "Farmer / Grower",
-                subtitle: "Voice logging, crop camera diagnosis, spray windows & season journal.",
+                subtitle:
+                    "Voice logging, crop camera diagnosis, spray windows & season journal.",
                 icon: Icons.agriculture_rounded,
                 role: UserRoleType.farmer,
                 isSelected: auth.currentRole == UserRoleType.farmer,
@@ -53,27 +65,31 @@ class ProfileSelectionScreen extends StatelessWidget {
                   auth.switchRole(UserRoleType.farmer);
                   Navigator.pushReplacementNamed(context, '/farmer_auth');
                 },
-
               ),
               const SizedBox(height: 16),
               _buildRoleCard(
                 context,
                 title: "Field Agent / Agronomist",
-                subtitle: "Multi-farm review queue, audit sign-off, geospatial maps & model feedback loop.",
+                subtitle:
+                    "Multi-farm review queue, audit sign-off, geospatial maps & model feedback loop.",
                 icon: Icons.assignment_turned_in_rounded,
                 role: UserRoleType.fieldAgent,
                 isSelected: auth.currentRole == UserRoleType.fieldAgent,
                 color: AppColors.primaryDark,
                 onTap: () {
                   auth.switchRole(UserRoleType.fieldAgent);
-                  Navigator.pushReplacementNamed(context, '/field_agent_dashboard');
+                  Navigator.pushReplacementNamed(
+                    context,
+                    '/field_agent_dashboard',
+                  );
                 },
               ),
               const SizedBox(height: 16),
               _buildRoleCard(
                 context,
                 title: "Buyer / Agri-Input Partner",
-                subtitle: "Lot valuation pricing, chemical compliance reports & verifiable proof certificates.",
+                subtitle:
+                    "Lot valuation pricing, chemical compliance reports & verifiable proof certificates.",
                 icon: Icons.storefront_rounded,
                 role: UserRoleType.buyer,
                 isSelected: auth.currentRole == UserRoleType.buyer,
@@ -118,7 +134,7 @@ class ProfileSelectionScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
+                  color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: color, size: 28),
@@ -130,17 +146,29 @@ class ProfileSelectionScreen extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.3),
+                      style: const TextStyle(
+                        fontSize: 12.5,
+                        color: AppColors.textSecondary,
+                        height: 1.3,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: AppColors.textMuted),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 16,
+                color: AppColors.textMuted,
+              ),
             ],
           ),
         ),

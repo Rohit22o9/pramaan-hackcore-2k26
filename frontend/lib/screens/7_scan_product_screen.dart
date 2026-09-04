@@ -33,7 +33,8 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
 
     await evProv.addEvidence(
       title: "Input Verified: ${_scannedProduct!.name}",
-      description: "Scanned QR ${_scannedProduct!.qrCode}. Batch ${_scannedProduct!.verifiedBatchNo} verified authentic with ${_scannedProduct!.manufacturer}.",
+      description:
+          "Scanned QR ${_scannedProduct!.qrCode}. Batch ${_scannedProduct!.verifiedBatchNo} verified authentic with ${_scannedProduct!.manufacturer}.",
       evidenceType: 'PRODUCT_SCAN',
       productQr: _scannedProduct!.qrCode,
       productName: _scannedProduct!.name,
@@ -59,7 +60,10 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Scan Input Bottle / Seed QR", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "Scan Input Bottle / Seed QR",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -86,13 +90,19 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
-                        child: Icon(Icons.qr_code_2_rounded, size: 100, color: Colors.white30),
+                        child: Icon(
+                          Icons.qr_code_2_rounded,
+                          size: 100,
+                          color: Colors.white30,
+                        ),
                       ),
                     ),
                   ),
                   if (_isScanning)
                     const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryAccent),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryAccent,
+                      ),
                     ),
                   Positioned(
                     bottom: 12,
@@ -100,9 +110,12 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
                     right: 0,
                     child: Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
+                          color: Colors.black.withValues(alpha: 0.6),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Text(
@@ -120,7 +133,11 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
             // Selectable Demo QR Samples
             const Text(
               "Select Bottle / Package to Scan:",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
             const SizedBox(height: 10),
             Wrap(
@@ -129,7 +146,15 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
               children: products.map((prod) {
                 final isSelected = _scannedProduct?.qrCode == prod.qrCode;
                 return ChoiceChip(
-                  label: Text(prod.name, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                  label: Text(
+                    prod.name,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.normal,
+                    ),
+                  ),
                   selected: isSelected,
                   selectedColor: AppColors.primarySurface,
                   onSelected: (selected) {
@@ -154,31 +179,65 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.verified_rounded, color: AppColors.primaryDark, size: 24),
+                        const Icon(
+                          Icons.verified_rounded,
+                          color: AppColors.primaryDark,
+                          size: 24,
+                        ),
                         const SizedBox(width: 8),
                         const Expanded(
                           child: Text(
                             "GENUINE BATCH VERIFIED",
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.primaryDark, letterSpacing: 0.5),
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryDark,
+                              letterSpacing: 0.5,
+                            ),
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(6)),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
                           child: Text(
                             _scannedProduct!.toxicityBand,
-                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryDark),
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryDark,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     const Divider(height: 20),
                     _buildDetailRow("Product Name", _scannedProduct!.name),
-                    _buildDetailRow("Manufacturer", _scannedProduct!.manufacturer),
-                    _buildDetailRow("Active Ingredient", _scannedProduct!.activeIngredient),
-                    _buildDetailRow("Batch Number", _scannedProduct!.verifiedBatchNo),
-                    _buildDetailRow("Recommended Dose", _scannedProduct!.recommendedDose),
-                    _buildDetailRow("Safe Pre-Harvest Interval (PHI)", "${_scannedProduct!.preHarvestIntervalDays} Days"),
+                    _buildDetailRow(
+                      "Manufacturer",
+                      _scannedProduct!.manufacturer,
+                    ),
+                    _buildDetailRow(
+                      "Active Ingredient",
+                      _scannedProduct!.activeIngredient,
+                    ),
+                    _buildDetailRow(
+                      "Batch Number",
+                      _scannedProduct!.verifiedBatchNo,
+                    ),
+                    _buildDetailRow(
+                      "Recommended Dose",
+                      _scannedProduct!.recommendedDose,
+                    ),
+                    _buildDetailRow(
+                      "Safe Pre-Harvest Interval (PHI)",
+                      "${_scannedProduct!.preHarvestIntervalDays} Days",
+                    ),
                     _buildDetailRow("Expiry Date", _scannedProduct!.expiryDate),
                   ],
                 ),
@@ -205,12 +264,22 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
           Flexible(
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              style: const TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ],

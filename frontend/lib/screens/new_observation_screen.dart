@@ -12,12 +12,23 @@ class NewObservationScreen extends StatefulWidget {
 }
 
 class _NewObservationScreenState extends State<NewObservationScreen> {
-  final _titleController = TextEditingController(text: "Canopy Health & Pest Scouting");
-  final _descController = TextEditingController(text: "Observed light infestation of leafhoppers on border rows. Upper canopy foliage remains green and vigorous.");
+  final _titleController = TextEditingController(
+    text: "Canopy Health & Pest Scouting",
+  );
+  final _descController = TextEditingController(
+    text:
+        "Observed light infestation of leafhoppers on border rows. Upper canopy foliage remains green and vigorous.",
+  );
   String _category = "Pest / Disease";
-  String _cropStage = "Flowering Stage";
+  final String _cropStage = "Flowering Stage";
 
-  final List<String> _categories = ["Pest / Disease", "Nutrient Deficiency", "Growth Milestone", "Irrigation Check", "Weed Pressure"];
+  final List<String> _categories = [
+    "Pest / Disease",
+    "Nutrient Deficiency",
+    "Growth Milestone",
+    "Irrigation Check",
+    "Weed Pressure",
+  ];
 
   void _submit() async {
     final evProv = Provider.of<EvidenceProvider>(context, listen: false);
@@ -25,12 +36,16 @@ class _NewObservationScreenState extends State<NewObservationScreen> {
       title: _titleController.text.trim(),
       description: _descController.text.trim(),
       evidenceType: 'FIELD_OBSERVATION',
-      mediaUrl: 'https://images.unsplash.com/photo-1592417817098-8f3d6eb22509?w=600&auto=format&fit=crop&q=80',
+      mediaUrl:
+          'https://images.unsplash.com/photo-1592417817098-8f3d6eb22509?w=600&auto=format&fit=crop&q=80',
     );
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Field Observation Logged & Verified!"), backgroundColor: AppColors.primary),
+        const SnackBar(
+          content: Text("Field Observation Logged & Verified!"),
+          backgroundColor: AppColors.primary,
+        ),
       );
       Navigator.pop(context);
     }
@@ -44,7 +59,10 @@ class _NewObservationScreenState extends State<NewObservationScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("New Field Observation", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "New Field Observation",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -60,14 +78,30 @@ class _NewObservationScreenState extends State<NewObservationScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.pin_drop_rounded, color: AppColors.primary, size: 20),
+                  const Icon(
+                    Icons.pin_drop_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("${farm?.name ?? 'Plot North-04'} • GPS: 20.1985° N, 73.8322° E", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                        const Text("Weather: 27.4°C | 66% RH (Auto-Captured)", style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        Text(
+                          "${farm?.name ?? 'Plot North-04'} • GPS: 20.1985° N, 73.8322° E",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const Text(
+                          "Weather: 27.4°C | 66% RH (Auto-Captured)",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -76,29 +110,50 @@ class _NewObservationScreenState extends State<NewObservationScreen> {
             ),
             const SizedBox(height: 20),
 
-            const Text("Observation Title", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              "Observation Title",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: _titleController,
-              decoration: const InputDecoration(hintText: "Enter observation title"),
+              decoration: const InputDecoration(
+                hintText: "Enter observation title",
+              ),
             ),
             const SizedBox(height: 16),
 
-            const Text("Category", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              "Category",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             DropdownButtonFormField<String>(
-              value: _category,
-              items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 13)))).toList(),
+              initialValue: _category,
+              items: _categories
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c,
+                      child: Text(c, style: const TextStyle(fontSize: 13)),
+                    ),
+                  )
+                  .toList(),
               onChanged: (val) => setState(() => _category = val ?? _category),
             ),
             const SizedBox(height: 16),
 
-            const Text("Detailed Field Notes", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            const Text(
+              "Detailed Field Notes",
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 6),
             TextField(
               controller: _descController,
               maxLines: 4,
-              decoration: const InputDecoration(hintText: "Describe symptoms, affected rows, leaf color, or pest count"),
+              decoration: const InputDecoration(
+                hintText:
+                    "Describe symptoms, affected rows, leaf color, or pest count",
+              ),
             ),
             const SizedBox(height: 20),
 
@@ -125,12 +180,28 @@ class _NewObservationScreenState extends State<NewObservationScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("Photo Attachment", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
-                        Text("HD Leaf Macro Capture • Tamper Proof", style: TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        Text(
+                          "Photo Attachment",
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          "HD Leaf Macro Capture • Tamper Proof",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 20),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
                 ],
               ),
             ),

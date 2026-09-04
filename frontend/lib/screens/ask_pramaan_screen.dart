@@ -13,7 +13,9 @@ class AskPramaanScreen extends StatefulWidget {
 }
 
 class _AskPramaanScreenState extends State<AskPramaanScreen> {
-  static const MethodChannel _speechChannel = MethodChannel("com.pramaan.app/speech");
+  static const MethodChannel _speechChannel = MethodChannel(
+    "com.pramaan.app/speech",
+  );
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   bool _isListening = false;
@@ -23,7 +25,10 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
     final farmProv = Provider.of<FarmProvider>(context, listen: false);
     final crop = farmProv.selectedFarm?.activeCrop ?? "Cotton";
 
-    Provider.of<ChatProvider>(context, listen: false).sendMessage(text.trim(), crop: crop);
+    Provider.of<ChatProvider>(
+      context,
+      listen: false,
+    ).sendMessage(text.trim(), crop: crop);
     _textController.clear();
     _scrollToBottom();
   }
@@ -78,10 +83,17 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
             CircleAvatar(
               radius: 14,
               backgroundColor: AppColors.primaryDark,
-              child: Icon(Icons.auto_awesome_rounded, color: AppColors.accentGold, size: 16),
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: AppColors.accentGold,
+                size: 16,
+              ),
             ),
             SizedBox(width: 8),
-            Text("Ask Pramaan AI", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(
+              "Ask Pramaan AI",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
           ],
         ),
       ),
@@ -100,14 +112,20 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 16),
                   child: Row(
-                    mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+                    mainAxisAlignment: isUser
+                        ? MainAxisAlignment.end
+                        : MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       if (!isUser) ...[
                         const CircleAvatar(
                           radius: 16,
                           backgroundColor: AppColors.primarySurface,
-                          child: Icon(Icons.psychology_rounded, color: AppColors.primary, size: 18),
+                          child: Icon(
+                            Icons.psychology_rounded,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
                         ),
                         const SizedBox(width: 8),
                       ],
@@ -117,12 +135,22 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                           decoration: BoxDecoration(
                             color: isUser ? AppColors.primary : Colors.white,
                             borderRadius: BorderRadius.circular(16).copyWith(
-                              bottomLeft: isUser ? const Radius.circular(16) : const Radius.circular(2),
-                              bottomRight: isUser ? const Radius.circular(2) : const Radius.circular(16),
+                              bottomLeft: isUser
+                                  ? const Radius.circular(16)
+                                  : const Radius.circular(2),
+                              bottomRight: isUser
+                                  ? const Radius.circular(2)
+                                  : const Radius.circular(16),
                             ),
-                            border: isUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                            border: isUser
+                                ? null
+                                : Border.all(color: const Color(0xFFE2E8F0)),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
                             ],
                           ),
                           child: Column(
@@ -132,7 +160,9 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                                 msg.text,
                                 style: TextStyle(
                                   fontSize: 13.5,
-                                  color: isUser ? Colors.white : AppColors.textPrimary,
+                                  color: isUser
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
                                   height: 1.4,
                                 ),
                               ),
@@ -141,7 +171,9 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                                 msg.timestamp,
                                 style: TextStyle(
                                   fontSize: 10,
-                                  color: isUser ? Colors.white.withOpacity(0.7) : AppColors.textMuted,
+                                  color: isUser
+                                      ? Colors.white.withValues(alpha: 0.7)
+                                      : AppColors.textMuted,
                                 ),
                               ),
                               if (msg.actionChips.isNotEmpty) ...[
@@ -151,9 +183,18 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                                   runSpacing: 6,
                                   children: msg.actionChips.map((chip) {
                                     return ActionChip(
-                                      label: Text(chip, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.primaryDark)),
+                                      label: Text(
+                                        chip,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.primaryDark,
+                                        ),
+                                      ),
                                       backgroundColor: AppColors.primarySurface,
-                                      side: const BorderSide(color: AppColors.primaryAccent),
+                                      side: const BorderSide(
+                                        color: AppColors.primaryAccent,
+                                      ),
                                       onPressed: () => _send(chip),
                                     );
                                   }).toList(),
@@ -163,7 +204,10 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                                 const SizedBox(height: 6),
                                 Text(
                                   "Sources: ${msg.citations.join(', ')}",
-                                  style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.textMuted,
+                                  ),
                                 ),
                               ],
                             ],
@@ -188,24 +232,41 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                   const SizedBox(
                     width: 14,
                     height: 14,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentGold),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.accentGold,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       "🎙️ Listening... Speak your farming question naturally",
-                      style: TextStyle(fontSize: 12.5, color: Colors.white, fontWeight: FontWeight.w600),
+                      style: TextStyle(
+                        fontSize: 12.5,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                   GestureDetector(
                     onTap: _toggleMic,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text("Stop", style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                      child: const Text(
+                        "Stop",
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -218,9 +279,22 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary)),
+                  SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  ),
                   SizedBox(width: 8),
-                  Text("Gemini AI is analyzing agronomic protocols...", style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Text(
+                    "Gemini AI is analyzing agronomic protocols...",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -236,8 +310,13 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                     child: TextField(
                       controller: _textController,
                       decoration: InputDecoration(
-                        hintText: _isListening ? "Listening to your voice..." : "Type or speak your farming question...",
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        hintText: _isListening
+                            ? "Listening to your voice..."
+                            : "Type or speak your farming question...",
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
                       ),
                       onSubmitted: _send,
                     ),
@@ -245,16 +324,26 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                   const SizedBox(width: 8),
                   IconButton.filled(
                     style: IconButton.styleFrom(
-                      backgroundColor: _isListening ? AppColors.flaggedRed : AppColors.surfaceVariant,
-                      foregroundColor: _isListening ? Colors.white : AppColors.primaryDark,
+                      backgroundColor: _isListening
+                          ? AppColors.flaggedRed
+                          : AppColors.surfaceVariant,
+                      foregroundColor: _isListening
+                          ? Colors.white
+                          : AppColors.primaryDark,
                     ),
-                    icon: Icon(_isListening ? Icons.mic_rounded : Icons.mic_none_rounded),
-                    tooltip: _isListening ? "Stop Listening" : "Speak In-App (No Popup)",
+                    icon: Icon(
+                      _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
+                    ),
+                    tooltip: _isListening
+                        ? "Stop Listening"
+                        : "Speak In-App (No Popup)",
                     onPressed: _toggleMic,
                   ),
                   const SizedBox(width: 4),
                   IconButton.filled(
-                    style: IconButton.styleFrom(backgroundColor: AppColors.primary),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                    ),
                     icon: const Icon(Icons.send_rounded, color: Colors.white),
                     onPressed: () => _send(_textController.text),
                   ),

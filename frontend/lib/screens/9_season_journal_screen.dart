@@ -18,7 +18,8 @@ class SeasonJournalScreen extends StatelessWidget {
         "title": "Certified Bt-II Seed Sowing & Trichoderma Soil Treatment",
         "type": "SOWING",
         "status": "COMPLETED",
-        "notes": "Treated seeds with Trichoderma Viride bio-fungicide before precision sowing."
+        "notes":
+            "Treated seeds with Trichoderma Viride bio-fungicide before precision sowing.",
       },
       {
         "date": "05 Jul 2026",
@@ -26,7 +27,8 @@ class SeasonJournalScreen extends StatelessWidget {
         "title": "Basal Organic Manure + Micro-Nutrient Application",
         "type": "FERTILIZER",
         "status": "COMPLETED",
-        "notes": "Applied 5 tons well-decomposed FYM and zinc sulphate foliar booster."
+        "notes":
+            "Applied 5 tons well-decomposed FYM and zinc sulphate foliar booster.",
       },
       {
         "date": "25 Aug 2026",
@@ -34,7 +36,8 @@ class SeasonJournalScreen extends StatelessWidget {
         "title": "Whitefly Detection & AI Diagnosis",
         "type": "OBSERVATION",
         "status": "COMPLETED",
-        "notes": "Pramaan Vision AI detected early whitefly; recommended botanical insecticide."
+        "notes":
+            "Pramaan Vision AI detected early whitefly; recommended botanical insecticide.",
       },
       {
         "date": "28 Aug 2026",
@@ -42,7 +45,8 @@ class SeasonJournalScreen extends StatelessWidget {
         "title": "Bio-Neem Spray Applied (Batch Verified)",
         "type": "APPLICATION",
         "status": "COMPLETED",
-        "notes": "QR scanned bottle BNP-2026-MAY-0441; 400ml/Acre applied during calm weather."
+        "notes":
+            "QR scanned bottle BNP-2026-MAY-0441; 400ml/Acre applied during calm weather.",
       },
       {
         "date": "29 Aug 2026",
@@ -50,7 +54,8 @@ class SeasonJournalScreen extends StatelessWidget {
         "title": "Efficacy Check: 86.4% Pest Reduction Verified",
         "type": "EFFICACY_REVIEW",
         "status": "COMPLETED",
-        "notes": "NDVI vitality proxy restored to 0.79. Safe for upcoming flowering phase."
+        "notes":
+            "NDVI vitality proxy restored to 0.79. Safe for upcoming flowering phase.",
       },
       {
         "date": "15 Oct 2026",
@@ -58,14 +63,18 @@ class SeasonJournalScreen extends StatelessWidget {
         "title": "Target Harvest & Export Quality Batch Seal",
         "type": "HARVEST_ESTIMATE",
         "status": "UPCOMING",
-        "notes": "Anticipated yield: 18.5 Quintals/Acre with Grade-A Purity Premium."
-      }
+        "notes":
+            "Anticipated yield: 18.5 Quintals/Acre with Grade-A Purity Premium.",
+      },
     ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("Season Journal & Timeline", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: const Text(
+          "Season Journal & Timeline",
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
       ),
       body: ListView.builder(
         padding: const EdgeInsets.all(16),
@@ -86,7 +95,12 @@ class SeasonJournalScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: isCompleted ? AppColors.primary : Colors.white,
                       shape: BoxShape.circle,
-                      border: Border.all(color: isCompleted ? AppColors.primary : AppColors.textMuted, width: 2),
+                      border: Border.all(
+                        color: isCompleted
+                            ? AppColors.primary
+                            : AppColors.textMuted,
+                        width: 2,
+                      ),
                     ),
                     child: isCompleted
                         ? const Icon(Icons.check, size: 14, color: Colors.white)
@@ -96,7 +110,9 @@ class SeasonJournalScreen extends StatelessWidget {
                     Container(
                       width: 2,
                       height: 100,
-                      color: isCompleted ? AppColors.primary.withOpacity(0.4) : const Color(0xFFE2E8F0),
+                      color: isCompleted
+                          ? AppColors.primary.withValues(alpha: 0.4)
+                          : const Color(0xFFE2E8F0),
                     ),
                 ],
               ),
@@ -114,23 +130,65 @@ class SeasonJournalScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(m['date']!, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primaryDark)),
+                            Text(
+                              m['date']!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
-                                color: isCompleted ? AppColors.primarySurface : AppColors.surfaceVariant,
+                                color: isCompleted
+                                    ? AppColors.primarySurface
+                                    : AppColors.surfaceVariant,
                                 borderRadius: BorderRadius.circular(4),
                               ),
-                              child: Text(m['status']!, style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: isCompleted ? AppColors.primaryDark : AppColors.textSecondary)),
+                              child: Text(
+                                m['status']!,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: isCompleted
+                                      ? AppColors.primaryDark
+                                      : AppColors.textSecondary,
+                                ),
+                              ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 6),
-                        Text(m['title']!, style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        Text(
+                          m['title']!,
+                          style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text("Stage: ${m['stage']}", style: const TextStyle(fontSize: 11.5, color: AppColors.accentAmber, fontWeight: FontWeight.w600)),
+                        Text(
+                          "Stage: ${m['stage']}",
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.accentAmber,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                         const SizedBox(height: 6),
-                        Text(m['notes']!, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.3)),
+                        Text(
+                          m['notes']!,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                            height: 1.3,
+                          ),
+                        ),
                       ],
                     ),
                   ),

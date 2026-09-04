@@ -17,6 +17,7 @@ class ApiService {
   String? _cachedWorkingHost;
 
   final List<String> _backendHosts = [
+    "http://192.168.1.101:8000/api/v1",
     "http://10.143.252.222:8000/api/v1",
     "http://192.168.137.1:8000/api/v1",
     "http://172.19.24.64:8000/api/v1",
@@ -138,7 +139,10 @@ class ApiService {
       'weather_output': weatherOutput,
     };
     try {
-      final response = await _postWithFallback("/validation/cross-validate", payload);
+      final response = await _postWithFallback(
+        "/validation/cross-validate",
+        payload,
+      );
       return jsonDecode(response.body);
     } catch (e) {
       // Offline fallback
@@ -601,7 +605,7 @@ class ApiService {
                   ? "CAUTION: Wind speed is $wind km/h (gusts $windGusts km/h). Elevated spray drift risk. Postpone foliar spray."
                   : (deltaT < 2.0
                         ? "CAUTION: High humidity & low Delta-T (${deltaT.toStringAsFixed(1)}°C). Dew formation may dilute chemical droplets."
-                        : "CAUTION: High temperature (${temp}°C) or Delta-T (${deltaT.toStringAsFixed(1)}°C). Rapid droplet evaporation risk."));
+                        : "CAUTION: High temperature ($temp°C) or Delta-T (${deltaT.toStringAsFixed(1)}°C). Rapid droplet evaporation risk."));
 
         final hourly = data['hourly'] ?? {};
         final hTemps = (hourly['temperature_2m'] as List? ?? [])
@@ -747,7 +751,7 @@ class ApiService {
             deltaT,
           ),
           microclimateAlert:
-              "🔴 Live Satellite Microclimate at $district: $condText, ${temp}°C (Feels $apparent°C), $rh% RH, Wind $wind km/h, ΔT ${deltaT.toStringAsFixed(1)}°C. $recText",
+              "🔴 Live Satellite Microclimate at $district: $condText, $temp°C (Feels $apparent°C), $rh% RH, Wind $wind km/h, ΔT ${deltaT.toStringAsFixed(1)}°C. $recText",
           punjabAgroZone: "PAU Punjab Agricultural Zone ($district)",
           deltaTStatus: deltaStatus,
         );
@@ -859,14 +863,14 @@ class ApiService {
     final c = crop.toLowerCase();
     if (c.contains('wheat') || c.contains('kanak') || c.contains('ਕਣਕ')) {
       if (rh > 75 && temp >= 10 && temp <= 24) {
-        return "⚠️ HIGH YELLOW / STRIPE RUST ALERT ($district): Cool weather (${temp}°C) & morning humidity (${rh.round()}%) favor Puccinia striiformis. Apply Propiconazole 25% EC @ 200ml/Ac.";
+        return "⚠️ HIGH YELLOW / STRIPE RUST ALERT ($district): Cool weather ($temp°C) & morning humidity (${rh.round()}%) favor Puccinia striiformis. Apply Propiconazole 25% EC @ 200ml/Ac.";
       }
       return "Low fungal rust pressure under current Delta-T (${deltaT.toStringAsFixed(1)}°C) in $district. Check lower canopy for aphid colonies.";
     } else if (c.contains('cotton') ||
         c.contains('narma') ||
         c.contains('ਕਪਾਹ')) {
       if (temp > 30) {
-        return "⚠️ COTTON WHITEFLY ALERT ($district - Malwa Belt): Warm microclimate (${temp}°C) accelerates nymph multiplication. Spray Bio-Neem 10,000 PPM @ 400ml/Ac.";
+        return "⚠️ COTTON WHITEFLY ALERT ($district - Malwa Belt): Warm microclimate ($temp°C) accelerates nymph multiplication. Spray Bio-Neem 10,000 PPM @ 400ml/Ac.";
       }
       return "Moderate sucking pest pressure in $district. Install 16 yellow sticky traps per acre.";
     } else if (c.contains('potato') || c.contains('ਆਲੂ')) {
@@ -992,38 +996,45 @@ class ApiService {
       'state': state ?? 'Maharashtra',
       'compliance_score': complianceScore ?? 98.6,
       'voice_log': {
-        'transcript': voiceTranscript ?? 'Sprayed Bio-Neem Power for whitefly control.',
+        'transcript':
+            voiceTranscript ?? 'Sprayed Bio-Neem Power for whitefly control.',
         'action_type': voiceAction ?? 'SPRAY',
         'product_mentioned': productApplied ?? 'Bio-Neem Power 10000 PPM',
         'dosage': dosage ?? '400 ml in 200L Water / Acre',
       },
-      if (voiceTranscript != null) 'voice_transcript': voiceTranscript,
-      if (voiceAction != null) 'voice_action': voiceAction,
-      if (productApplied != null) 'product_applied': productApplied,
-      if (dosage != null) 'dosage': dosage,
-      if (targetPest != null) 'target_pest': targetPest,
-      if (plotName != null) 'plot_name': plotName,
-      if (diseaseDetected != null) 'disease_detected': diseaseDetected,
-      if (healthStatus != null) 'health_status': healthStatus,
-      if (severityLevel != null) 'severity_level': severityLevel,
-      if (affectedPercentage != null)
-        'affected_percentage': affectedPercentage,
-      if (weatherTemp != null) 'weather_temp': weatherTemp,
-      if (weatherHumidity != null) 'weather_humidity': weatherHumidity,
-      if (weatherWind != null) 'weather_wind': weatherWind,
-      if (weatherDeltaT != null) 'weather_delta_t': weatherDeltaT,
-      if (spraySuitability != null) 'spray_suitability': spraySuitability,
+      'voice_transcript': ?voiceTranscript,
+      'voice_action': ?voiceAction,
+      'product_applied': ?productApplied,
+      'dosage': ?dosage,
+      'target_pest': ?targetPest,
+      'plot_name': ?plotName,
+      'disease_detected': ?diseaseDetected,
+      'health_status': ?healthStatus,
+      'severity_level': ?severityLevel,
+      'affected_percentage': ?affectedPercentage,
+      'weather_temp': ?weatherTemp,
+      'weather_humidity': ?weatherHumidity,
+      'weather_wind': ?weatherWind,
+      'weather_delta_t': ?weatherDeltaT,
+      'spray_suitability': ?spraySuitability,
     };
 
     try {
-      final response = await _postWithFallback("/report/generate", payload, timeoutSec: 10);
+      final response = await _postWithFallback(
+        "/report/generate",
+        payload,
+        timeoutSec: 10,
+      );
       return jsonDecode(response.body);
     } catch (e) {
       debugPrint("[Pramaan API] Backend report generation fallback used: $e");
       final isWheat = crop.toLowerCase().contains("wheat");
       return {
-        'report_id': 'PRM-REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}-${farmId.toUpperCase()}',
-        'farm_name': isWheat ? 'Punjab Kisan Adarsh Farm (PAU Model Plot)' : 'Sahyadri Bio-Farms (Plot North-04)',
+        'report_id':
+            'PRM-REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}-${farmId.toUpperCase()}',
+        'farm_name': isWheat
+            ? 'Punjab Kisan Adarsh Farm (PAU Model Plot)'
+            : 'Sahyadri Bio-Farms (Plot North-04)',
         'crop': crop,
         'total_evidence_count': 6,
         'verified_evidence_count': 6,
@@ -1031,10 +1042,15 @@ class ApiService {
         'chemical_residue_risk': 'Compliant / MRL Safe (Export Grade A+)',
         'sustainability_index': 96.5,
         'pdf_download_url': '/api/v1/report/download/sample_audit_report.pdf',
-        'blockchain_hash_anchor': 'a98f73b610c492e8810237dfb4a92c301e76bba920194857bca1029384756bc0',
+        'blockchain_hash_anchor':
+            'a98f73b610c492e8810237dfb4a92c301e76bba920194857bca1029384756bc0',
         'generated_at': '2026-09-04 08:50 AM UTC',
         'pages_count': 3,
-        'supported_languages': ['English (Page 1)', 'Hindi (Page 2)', 'Marathi (Page 3)'],
+        'supported_languages': [
+          'English (Page 1)',
+          'Hindi (Page 2)',
+          'Marathi (Page 3)',
+        ],
         'recommendations': {
           'chemical_treatment': isWheat
               ? 'Propiconazole 25% EC (Tilt / Bumper)'
@@ -1045,70 +1061,97 @@ class ApiService {
           'organic_alternative': isWheat
               ? 'Bio-Sulfur dusting @ 10 kg/Ac + Trichoderma viride 1.5% WP'
               : 'Bio-Neem Power 10,000 PPM @ 2.5 ml/L + 16 Yellow Sticky Traps/Ac',
-          'spray_window_advisory': 'Apply during calm morning window (06:30 - 10:00 AM) with Delta-T between 2.0 and 7.5°C.',
+          'spray_window_advisory':
+              'Apply during calm morning window (06:30 - 10:00 AM) with Delta-T between 2.0 and 7.5°C.',
           'pre_harvest_interval_days': isWheat ? 30 : 15,
           'safety_directives': [
             'Wear protective gloves, goggles, and face mask.',
             'Calibrate water volume to 200L/Acre using flat fan nozzle.',
-            'Maintain 5-meter buffer from open water bodies.'
+            'Maintain 5-meter buffer from open water bodies.',
           ],
           'cultural_prevention_tips': [
             'Monitor lower canopy foliage weekly for early pustule/nymph appearance.',
             'Install yellow sticky sheets at canopy height for early pest trapping.',
-            'Use certified disease-free seed varieties.'
-          ]
+            'Use certified disease-free seed varieties.',
+          ],
         },
         'trilingual_data': {
           'en': {
             'lang': 'English',
-            'cert_title': 'PRAMAAN VERIFIED AUDIT CERTIFICATE & AGRONOMY ADVISORY',
-            'subtitle': 'Autonomous Multi-Agent Traceability & Crop Health Assurance',
+            'cert_title':
+                'PRAMAAN VERIFIED AUDIT CERTIFICATE & AGRONOMY ADVISORY',
+            'subtitle':
+                'Autonomous Multi-Agent Traceability & Crop Health Assurance',
             'crop': crop,
-            'crop_stage': isWheat ? 'Active Tillering' : 'Boll Formation / Flowering',
+            'crop_stage': isWheat
+                ? 'Active Tillering'
+                : 'Boll Formation / Flowering',
             'recommendations': {
-              'chemical_rx': isWheat ? 'Propiconazole 25% EC (Tilt)' : 'Bio-Neem / Diafenthiuron 50% WP',
-              'dosage': isWheat ? '200 ml in 200L water / Acre' : '400 ml in 200L water / Acre',
+              'chemical_rx': isWheat
+                  ? 'Propiconazole 25% EC (Tilt)'
+                  : 'Bio-Neem / Diafenthiuron 50% WP',
+              'dosage': isWheat
+                  ? '200 ml in 200L water / Acre'
+                  : '400 ml in 200L water / Acre',
               'organic_alt': 'Bio-Neem 10,000 PPM + Yellow Sticky Traps',
-              'spray_window': 'Morning 06:30 - 10:00 AM (Calm Wind, Delta-T 3.6°C)',
+              'spray_window':
+                  'Morning 06:30 - 10:00 AM (Calm Wind, Delta-T 3.6°C)',
               'phi_days': '${isWheat ? 30 : 15} Days Mandatory Waiting Period',
-            }
+            },
           },
           'hi': {
             'lang': 'हिंदी (Hindi)',
-            'cert_title': 'प्रमाण बहु-एजेंट सत्यापन प्रमाण पत्र एवं कृषि अनुशंसा रिपोर्ट',
-            'subtitle': 'स्वायत्त बहु-एजेंट कृषि ट्रेसिबिलिटी एवं फसल स्वास्थ्य सुरक्षा',
+            'cert_title':
+                'प्रमाण बहु-एजेंट सत्यापन प्रमाण पत्र एवं कृषि अनुशंसा रिपोर्ट',
+            'subtitle':
+                'स्वायत्त बहु-एजेंट कृषि ट्रेसिबिलिटी एवं फसल स्वास्थ्य सुरक्षा',
             'crop': isWheat ? 'गेहूं (Wheat PBW-826)' : 'कपास (Bt Cotton-II)',
-            'crop_stage': isWheat ? 'सक्रिय कल्ले फूटना' : 'फूल व टिंडे बनने की अवस्था',
+            'crop_stage': isWheat
+                ? 'सक्रिय कल्ले फूटना'
+                : 'फूल व टिंडे बनने की अवस्था',
             'recommendations': {
-              'chemical_rx': isWheat ? 'प्रोपिकोनाज़ोल २५% ईसी (टिल्ट)' : 'डायफेन्थियूरॉन ५०% डब्ल्यूपी (पेगासस)',
-              'dosage': isWheat ? '२०० मिली प्रति २०० लीटर पानी / एकड़' : '४०० मिली प्रति २०० लीटर पानी / एकड़',
+              'chemical_rx': isWheat
+                  ? 'प्रोपिकोनाज़ोल २५% ईसी (टिल्ट)'
+                  : 'डायफेन्थियूरॉन ५०% डब्ल्यूपी (पेगासस)',
+              'dosage': isWheat
+                  ? '२०० मिली प्रति २०० लीटर पानी / एकड़'
+                  : '४०० मिली प्रति २०० लीटर पानी / एकड़',
               'organic_alt': 'बायो-नीम १०,००० पीपीएम + १६ पीले चिपचिपे ट्रैप',
-              'spray_window': 'सुबह ०६:३० से १०:०० बजे शांत हवा में छिड़काव करें',
-              'phi_days': '${isWheat ? 30 : 15} दिन तुड़ाई पूर्व प्रतीक्षा अवधि (PHI)',
-            }
+              'spray_window':
+                  'सुबह ०६:३० से १०:०० बजे शांत हवा में छिड़काव करें',
+              'phi_days':
+                  '${isWheat ? 30 : 15} दिन तुड़ाई पूर्व प्रतीक्षा अवधि (PHI)',
+            },
           },
           'mr': {
             'lang': 'मराठी (Marathi)',
-            'cert_title': 'प्रमाण बहु-एजंट पडताळणी प्रमाणपत्र आणि कृषी सल्ला अहवाल',
+            'cert_title':
+                'प्रमाण बहु-एजंट पडताळणी प्रमाणपत्र आणि कृषी सल्ला अहवाल',
             'subtitle': 'अखंड बहु-एजंट शेती पारदर्शकता आणि पीक आरोग्य हमी',
             'crop': isWheat ? 'गहू (Wheat PBW-826)' : 'कापूस (Bt Cotton-II)',
-            'crop_stage': isWheat ? 'फुटवे फुटण्याचा टप्पा' : 'फुलधारणा व बोंडे भरणे',
+            'crop_stage': isWheat
+                ? 'फुटवे फुटण्याचा टप्पा'
+                : 'फुलधारणा व बोंडे भरणे',
             'recommendations': {
-              'chemical_rx': isWheat ? 'प्रोपिकोनाझोल २५% ईसी (टिल्ट)' : 'डायफेंथियुरॉन ५०% डब्ल्यूपी (पेगासस)',
-              'dosage': isWheat ? '२०० मिली प्रति २०० लिटर पाणी / एकर' : '४०० मिली प्रति २०० लिटर पाणी / एकर',
+              'chemical_rx': isWheat
+                  ? 'प्रोपिकोनाझोल २५% ईसी (टिल्ट)'
+                  : 'डायफेंथियुरॉन ५०% डब्ल्यूपी (पेगासस)',
+              'dosage': isWheat
+                  ? '२०० मिली प्रति २०० लिटर पाणी / एकर'
+                  : '४०० मिली प्रति २०० लिटर पाणी / एकर',
               'organic_alt': 'बायो-नीम १०,००० पीपीएम + १६ पिवळे चिकट सापळे',
               'spray_window': 'सकाळी ०६:३० ते १०:०० शांत हवेत फवारणी करावी',
-              'phi_days': '${isWheat ? 30 : 15} दिवस तोडणीपूर्व प्रतीक्षा कालावधी (PHI)',
-            }
-          }
+              'phi_days':
+                  '${isWheat ? 30 : 15} दिवस तोडणीपूर्व प्रतीक्षा कालावधी (PHI)',
+            },
+          },
         },
         'mandi_base_price_per_qtl': isWheat ? 2475.0 : 7400.0,
         'pramaan_premium_per_qtl': isWheat ? 225.0 : 480.0,
-        'total_lot_value_inr': isWheat ? 72900.0 : 172700.0
+        'total_lot_value_inr': isWheat ? 72900.0 : 172700.0,
       };
     }
   }
-
 
   List<Farm> _fallbackFarms() => [
     Farm(
