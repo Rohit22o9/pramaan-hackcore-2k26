@@ -21,6 +21,11 @@ class EvidenceItem {
   final String? verificationHash;
   final Map<String, dynamic> agentVerdicts;
   final List<String> flagReasons;
+  final double completenessScore;
+  final String consistencyStatus;
+  final String validationStatus;
+  final String requiredAction;
+  final List<Map<String, dynamic>> flags;
 
   EvidenceItem({
     required this.id,
@@ -45,6 +50,11 @@ class EvidenceItem {
     this.verificationHash,
     this.agentVerdicts = const {},
     this.flagReasons = const [],
+    this.completenessScore = 0.95,
+    this.consistencyStatus = 'consistent',
+    this.validationStatus = 'validated',
+    this.requiredAction = 'none',
+    this.flags = const [],
   });
 
   factory EvidenceItem.fromJson(Map<String, dynamic> json) {
@@ -55,6 +65,16 @@ class EvidenceItem {
     final rawVillage = json['village']?.toString() ??
         (json['location'] is Map ? json['location']['village']?.toString() : null) ??
         'Nashik';
+
+    // Parse flags list
+    List<Map<String, dynamic>> parsedFlags = [];
+    if (json['flags'] is List) {
+      for (var f in json['flags']) {
+        if (f is Map) {
+          parsedFlags.add(Map<String, dynamic>.from(f));
+        }
+      }
+    }
 
     return EvidenceItem(
       id: json['id']?.toString() ?? json['log_id']?.toString() ?? 'EV-${DateTime.now().millisecondsSinceEpoch}',
@@ -81,11 +101,16 @@ class EvidenceItem {
       dosagePerAcre: json['dosage_per_acre']?.toString() ?? json['dosage']?.toString(),
       farmerName: json['farmer_name']?.toString(),
       farmerPhone: json['farmer_phone']?.toString(),
-      verificationStatus: json['verification_status']?.toString() ?? 'VERIFIED',
-      verificationScore: (json['verification_score'] ?? json['compliance_score'] as num?)?.toDouble() ?? 98.6,
-      verificationHash: json['verification_hash']?.toString() ?? json['hash_anchor']?.toString(),
+      verificationStatus: json['verification_status']?.toString() ?? (json['validation_status'] == 'needs_review' ? 'PENDING' : 'VERIFIED'),
+      verificationScore: (json['composite_trust_score'] ?? json['verification_score'] ?? json['compliance_score'] as num?)?.toDouble() ?? 98.6,
+      verificationHash: json['cryptographic_hash']?.toString() ?? json['verification_hash']?.toString() ?? json['hash_anchor']?.toString(),
       agentVerdicts: json['agent_verdicts'] != null ? Map<String, dynamic>.from(json['agent_verdicts']) : {},
-      flagReasons: json['flag_reasons'] != null ? List<String>.from(json['flag_reasons']) : [],
+      flagReasons: json['flag_reasons'] != null ? List<String>.from(json['flag_reasons']) : (json['anomalies'] != null ? List<String>.from(json['anomalies']) : []),
+      completenessScore: (json['completeness_score'] as num?)?.toDouble() ?? 0.95,
+      consistencyStatus: json['consistency_status']?.toString() ?? 'consistent',
+      validationStatus: json['validation_status']?.toString() ?? 'validated',
+      requiredAction: json['required_action']?.toString() ?? 'none',
+      flags: parsedFlags,
     );
   }
 

@@ -152,6 +152,23 @@ class VisionAnalysisResponse(BaseModel):
 
 
 # Validation Agent Models
+class ValidationFlag(BaseModel):
+    type: str  # e.g. "dose_mismatch", "crop_pest_mismatch", "weather_spray_conflict", "product_mismatch", "geo_fence_deviation"
+    message: str
+    severity: Optional[str] = "warning"  # "warning", "critical", "info"
+
+class MultiAgentValidationRequest(BaseModel):
+    evidence_id: Optional[str] = None
+    farm_id: Optional[str] = "farm-101"
+    crop_name: Optional[str] = None
+    timestamp: Optional[str] = None
+    location: Optional[GeoLocation] = None
+    nlp_output: Optional[Dict[str, Any]] = None
+    vision_output: Optional[Dict[str, Any]] = None
+    weather_output: Optional[Dict[str, Any]] = None
+    product_data: Optional[Dict[str, Any]] = None
+    observation_data: Optional[Dict[str, Any]] = None
+
 class ValidationRequest(BaseModel):
     evidence_id: str
     farm_id: str
@@ -161,15 +178,27 @@ class ValidationRequest(BaseModel):
     crop_name: str
     product_data: Optional[Dict[str, Any]] = None
     observation_data: Optional[Dict[str, Any]] = None
+    nlp_output: Optional[Dict[str, Any]] = None
+    vision_output: Optional[Dict[str, Any]] = None
+    weather_output: Optional[Dict[str, Any]] = None
 
 class ValidationResponse(BaseModel):
-    evidence_id: str
-    status: VerificationStatus
-    composite_score: float # 0 - 100
-    hash_signature: str
-    breakdown: Dict[str, float] # geo_match, weather_plausibility, product_authenticity, image_integrity
-    explanation: str
-    anomalies: List[str]
+    validation_status: str = "validated"  # "validated", "needs_review", "rejected"
+    completeness_score: float = 1.0  # 0.0 to 1.0
+    consistency_status: str = "consistent"  # "consistent", "warning", "failed"
+    flags: List[ValidationFlag] = Field(default_factory=list)
+    required_action: str = "none"  # "none", "user_confirmation", "field_agent_review", "re_record"
+    
+    # Extended & Compatibility fields
+    evidence_id: Optional[str] = None
+    status: VerificationStatus = VerificationStatus.VERIFIED
+    composite_score: float = 95.0  # 0.0 to 100.0
+    composite_trust_score: float = 95.0
+    hash_signature: Optional[str] = None
+    cryptographic_hash: Optional[str] = None
+    breakdown: Dict[str, float] = Field(default_factory=dict)
+    explanation: Optional[str] = None
+    anomalies: List[str] = Field(default_factory=list)
 
 # Efficacy Tracking Models
 class EfficacyRequest(BaseModel):

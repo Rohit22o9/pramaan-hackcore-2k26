@@ -72,9 +72,23 @@ class _EvidenceCardState extends State<EvidenceCard> {
     }
   }
 
+  String _formatDate(String raw) {
+    try {
+      if (raw.contains('T')) {
+        final dt = DateTime.parse(raw).toLocal();
+        final months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        return "${dt.day.toString().padLeft(2, '0')} ${months[dt.month - 1]} ${dt.year}";
+      }
+    } catch (_) {}
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = widget.item;
+    final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
+
     IconData typeIcon;
     Color typeColor;
 
@@ -90,6 +104,28 @@ class _EvidenceCardState extends State<EvidenceCard> {
     } else {
       typeIcon = Icons.eco_rounded;
       typeColor = AppColors.accentGold;
+    }
+
+    String downloadBtnText;
+    if (lang == 'hi') {
+      downloadBtnText = "3-पेज PDF रिपोर्ट डाउनलोड करें";
+    } else if (lang == 'mr') {
+      downloadBtnText = "३-पानी PDF अहवाल डाउनलोड करा";
+    } else if (lang == 'pa') {
+      downloadBtnText = "3-ਪੰਨਿਆਂ ਦੀ PDF ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ ਕਰੋ";
+    } else {
+      downloadBtnText = "DOWNLOAD 3-PAGE PDF REPORT";
+    }
+
+    String flagsText;
+    if (lang == 'hi') {
+      flagsText = "${item.flags.length} जांच आवश्यक";
+    } else if (lang == 'mr') {
+      flagsText = "${item.flags.length} तपासणी आवश्यक";
+    } else if (lang == 'pa') {
+      flagsText = "${item.flags.length} ਜਾਂਚ ਲੋੜੀਂਦੀ";
+    } else {
+      flagsText = "${item.flags.length} Flag${item.flags.length > 1 ? 's' : ''}";
     }
 
     return Card(
@@ -113,7 +149,7 @@ class _EvidenceCardState extends State<EvidenceCard> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: typeColor.withOpacity(0.12),
+                      color: typeColor.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Icon(typeIcon, color: typeColor, size: 20),
@@ -140,6 +176,8 @@ class _EvidenceCardState extends State<EvidenceCard> {
                             fontSize: 12,
                             color: AppColors.textSecondary,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
@@ -148,6 +186,7 @@ class _EvidenceCardState extends State<EvidenceCard> {
                     score: item.verificationScore,
                     status: item.verificationStatus,
                     compact: true,
+                    language: lang,
                   ),
                 ],
               ),
@@ -172,7 +211,7 @@ class _EvidenceCardState extends State<EvidenceCard> {
                   const Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted),
                   const SizedBox(width: 4),
                   Text(
-                    item.timestamp.contains('T') ? item.timestamp.split('T')[0] : item.timestamp,
+                    _formatDate(item.timestamp),
                     style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
                   ),
                   const SizedBox(width: 8),
@@ -190,6 +229,28 @@ class _EvidenceCardState extends State<EvidenceCard> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                  ],
+                  if (item.flags.isNotEmpty || item.consistencyStatus == 'warning') ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFFDE68A)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFD97706)),
+                          const SizedBox(width: 3),
+                          Text(
+                            flagsText,
+                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -210,7 +271,7 @@ class _EvidenceCardState extends State<EvidenceCard> {
                         )
                       : const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accentGold, size: 16),
                   label: Text(
-                    _isDownloading ? "DOWNLOADING 3-PAGE PDF..." : "DOWNLOAD 3-PAGE PDF (EN / HI / MR)",
+                    _isDownloading ? "DOWNLOADING..." : downloadBtnText,
                     style: const TextStyle(
                       fontSize: 11.5,
                       fontWeight: FontWeight.bold,

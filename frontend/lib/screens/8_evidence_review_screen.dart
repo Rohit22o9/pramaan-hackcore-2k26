@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/evidence_provider.dart';
+import '../core/localization/app_translations.dart';
 import '../widgets/evidence_card.dart';
 
 class EvidenceReviewScreen extends StatelessWidget {
@@ -11,13 +12,23 @@ class EvidenceReviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final evProv = Provider.of<EvidenceProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
 
-    final filters = ['ALL', 'VERIFIED', 'PENDING', 'FLAGGED'];
+    final filterKeys = [
+      {'code': 'ALL', 'label': AppTranslations.tr(lang, 'filter_all')},
+      {'code': 'VERIFIED', 'label': AppTranslations.tr(lang, 'filter_verified')},
+      {'code': 'PENDING', 'label': AppTranslations.tr(lang, 'filter_pending')},
+      {'code': 'FLAGGED', 'label': AppTranslations.tr(lang, 'filter_flagged')},
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text("Evidence Verification Pipeline", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          AppTranslations.tr(lang, 'evidence_pipeline_title', "Evidence Verification Pipeline"),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
@@ -35,17 +46,19 @@ class EvidenceReviewScreen extends StatelessWidget {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: filters.map((f) {
-                  final isSelected = evProv.selectedFilter == f;
+                children: filterKeys.map((f) {
+                  final code = f['code']!;
+                  final label = f['label']!;
+                  final isSelected = evProv.selectedFilter == code;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),
                     child: FilterChip(
-                      label: Text(f, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
+                      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
                       selected: isSelected,
                       selectedColor: AppColors.primarySurface,
                       checkmarkColor: AppColors.primary,
                       onSelected: (val) {
-                        if (val) evProv.setFilter(f);
+                        if (val) evProv.setFilter(code);
                       },
                     ),
                   );
@@ -59,7 +72,6 @@ class EvidenceReviewScreen extends StatelessWidget {
           Expanded(
             child: RefreshIndicator(
               onRefresh: () async {
-                final auth = Provider.of<AuthProvider>(context, listen: false);
                 await evProv.loadEvidenceForFarmer(phone: auth.userPhone, name: auth.userName);
               },
               child: evProv.isLoading
@@ -75,7 +87,16 @@ class EvidenceReviewScreen extends StatelessWidget {
                                 children: [
                                   const Icon(Icons.folder_open_rounded, size: 48, color: AppColors.textMuted),
                                   const SizedBox(height: 12),
-                                  Text("No ${evProv.selectedFilter} evidence items found.", style: const TextStyle(color: AppColors.textSecondary)),
+                                  Text(
+                                    lang == 'mr'
+                                        ? "कोणतीही नोंद आढळली नाही."
+                                        : lang == 'hi'
+                                            ? "कोई रिकॉर्ड नहीं मिला।"
+                                            : lang == 'pa'
+                                                ? "ਕੋਈ ਰਿਕਾਰਡ ਨਹੀਂ ਮਿਲਿਆ।"
+                                                : "No ${evProv.selectedFilter} evidence items found.",
+                                    style: const TextStyle(color: AppColors.textSecondary),
+                                  ),
                                 ],
                               ),
                             ),
@@ -100,3 +121,4 @@ class EvidenceReviewScreen extends StatelessWidget {
     );
   }
 }
+

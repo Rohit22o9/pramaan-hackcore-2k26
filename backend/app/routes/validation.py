@@ -2,22 +2,43 @@ from fastapi import APIRouter, HTTPException
 from typing import List, Dict, Any, Optional
 from backend.app.models.schemas import (
     ValidationRequest,
+    MultiAgentValidationRequest,
     ValidationResponse,
     EvidenceItem
 )
 from backend.app.ai.validation_agent import validation_agent
 from backend.app.database.db import db
 
-router = APIRouter(prefix="/validation", tags=["Validation Agent & Evidence Chain"])
+router = APIRouter(prefix="/validation", tags=["Trust & Validation Agent"])
+
+@router.post("/cross-validate", response_model=ValidationResponse)
+def cross_validate_multi_agent(request: MultiAgentValidationRequest):
+    """
+    Agent #4: Trust & Validation Agent Endpoint.
+    Receives outputs from NLP Agent + Vision Agent + Weather Agent,
+    performs cross-agent consistency checks, anomaly detection, completeness scoring,
+    and returns flags and required actions.
+    """
+    result = validation_agent.validate_multi_agent(request)
+    if request.evidence_id:
+        db.update_evidence_status(
+            evidence_id=request.evidence_id,
+            status=result.status.value,
+            score=result.composite_trust_score,
+            reasons=result.anomalies
+        )
+    return result
 
 @router.post("/verify", response_model=ValidationResponse)
 def verify_evidence(request: ValidationRequest):
+    """
+    Verifies an evidence record against multi-agent criteria and updates database state.
+    """
     result = validation_agent.validate_evidence(request)
-    # Update state in DB
     db.update_evidence_status(
         evidence_id=request.evidence_id,
         status=result.status.value,
-        score=result.composite_score,
+        score=result.composite_trust_score,
         reasons=result.anomalies
     )
     return result

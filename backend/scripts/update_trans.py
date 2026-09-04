@@ -1,4 +1,6 @@
-import 'package:flutter/material.dart';
+import os
+
+code = """import 'package:flutter/material.dart';
 
 class AppTranslations {
   static const List<Map<String, String>> supportedLanguages = [
@@ -653,3 +655,8 @@ class AppTranslations {
     );
   }
 }
+"""
+
+with open(r"frontend/lib/core/localization/app_translations.dart", "w", encoding="utf-8") as f:
+    f.write(code)
+print("Updated app_translations.dart successfully")

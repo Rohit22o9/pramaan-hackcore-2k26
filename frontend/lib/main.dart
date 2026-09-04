@@ -35,6 +35,7 @@ import 'screens/learning_loop_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/notifications_screen.dart';
+import 'screens/trust_validation_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -94,6 +95,7 @@ class PramaanApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/notifications': (context) => const NotificationsScreen(),
+        '/trust_validation': (context) => const TrustValidationScreen(),
       },
     );
   }

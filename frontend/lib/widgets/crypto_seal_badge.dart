@@ -1,20 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/providers/auth_provider.dart';
 
 class CryptoSealBadge extends StatelessWidget {
   final double score;
   final String status;
   final bool compact;
+  final String? language;
 
   const CryptoSealBadge({
     super.key,
     required this.score,
     required this.status,
     this.compact = false,
+    this.language,
   });
+
+  String _localizedStatus(String lang, String status) {
+    if (status == 'VERIFIED') {
+      if (lang == 'hi') return 'सत्यापित';
+      if (lang == 'mr') return 'प्रमाणित';
+      if (lang == 'pa') return 'ਤਸਦੀਕ';
+      return 'VERIFIED';
+    } else if (status == 'PENDING') {
+      if (lang == 'hi') return 'प्रतीक्षारत';
+      if (lang == 'mr') return 'प्रलंबित';
+      if (lang == 'pa') return 'ਬਕਾਇਆ';
+      return 'PENDING';
+    } else {
+      if (lang == 'hi') return 'जांच आवश्यक';
+      if (lang == 'mr') return 'तपासणी आवश्यक';
+      if (lang == 'pa') return 'ਜਾਂਚ ਲੋੜੀਂਦੀ';
+      return 'REVIEW';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    String lang = language ?? 'en';
+    try {
+      final auth = Provider.of<AuthProvider>(context);
+      lang = language ?? auth.selectedLanguage;
+    } catch (_) {}
+
     Color bg;
     Color fg;
     IconData icon;
@@ -59,7 +88,7 @@ class CryptoSealBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: fg.withOpacity(0.3), width: 1),
+        border: Border.all(color: fg.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -67,7 +96,7 @@ class CryptoSealBadge extends StatelessWidget {
           Icon(icon, size: 16, color: fg),
           const SizedBox(width: 6),
           Text(
-            "$status ($score%)",
+            "${_localizedStatus(lang, status)} ($score%)",
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
@@ -80,3 +109,4 @@ class CryptoSealBadge extends StatelessWidget {
     );
   }
 }
+

@@ -183,17 +183,17 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               const SizedBox(height: 16),
 
               // Quick Actions Grid
-              const Text(
-                "Quick Evidence Capture",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+              Text(
+                AppTranslations.tr(lang, 'quick_evidence_capture', "Quick Evidence Capture"),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
                     child: _buildActionTile(
-                      title: "Voice Log",
-                      subtitle: "Speak in Hindi/Marathi",
+                      title: AppTranslations.tr(lang, 'voice_log_title', "Voice Log"),
+                      subtitle: AppTranslations.tr(lang, 'voice_log_sub', "Speak in Hindi/Marathi"),
                       icon: Icons.mic_rounded,
                       color: Colors.purple,
                       onTap: () => Navigator.pushNamed(context, '/voice_log'),
@@ -202,8 +202,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildActionTile(
-                      title: "Crop Camera",
-                      subtitle: "AI Disease Diagnosis",
+                      title: AppTranslations.tr(lang, 'crop_camera_title', "Crop Camera"),
+                      subtitle: AppTranslations.tr(lang, 'crop_camera_sub', "AI Disease Diagnosis"),
                       icon: Icons.camera_alt_rounded,
                       color: AppColors.primary,
                       onTap: () => Navigator.pushNamed(context, '/crop_camera'),
@@ -216,8 +216,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 children: [
                   Expanded(
                     child: _buildActionTile(
-                      title: "Scan Bottle",
-                      subtitle: "QR Authenticity Check",
+                      title: AppTranslations.tr(lang, 'scan_bottle_title', "Scan Bottle"),
+                      subtitle: AppTranslations.tr(lang, 'scan_bottle_sub', "QR Authenticity Check"),
                       icon: Icons.qr_code_scanner_rounded,
                       color: Colors.blue,
                       onTap: () => Navigator.pushNamed(context, '/scan_product'),
@@ -226,8 +226,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildActionTile(
-                      title: "New Spray Log",
-                      subtitle: "Record Dosage & PHI",
+                      title: AppTranslations.tr(lang, 'new_spray_title', "New Spray Log"),
+                      subtitle: AppTranslations.tr(lang, 'new_spray_sub', "Record Dosage & PHI"),
                       icon: Icons.science_rounded,
                       color: AppColors.accentAmber,
                       onTap: () => Navigator.pushNamed(context, '/new_application'),
@@ -241,13 +241,20 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Verified Field Evidence Logs",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  Expanded(
+                    child: Text(
+                      AppTranslations.tr(lang, 'verified_field_logs', "Verified Field Evidence Logs"),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                   TextButton(
                     onPressed: () => Navigator.pushNamed(context, '/evidence_review'),
-                    child: const Text("View All", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    child: Text(
+                      AppTranslations.tr(lang, 'view_all', "View All"),
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
                   ),
                 ],
               ),
