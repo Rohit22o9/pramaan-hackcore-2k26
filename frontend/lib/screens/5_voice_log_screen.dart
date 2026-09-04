@@ -4,8 +4,10 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/providers/evidence_provider.dart';
 import '../core/providers/auth_provider.dart';
+import '../core/providers/sync_provider.dart';
 import '../core/services/api_service.dart';
 import '../core/services/google_sheets_service.dart';
+import '../core/services/local_agronomy_engine.dart';
 import '../widgets/waveform_visualizer.dart';
 
 class VoiceLogScreen extends StatefulWidget {
@@ -126,8 +128,6 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
   }
 
   void _processInput() async {
-    debugPrint("[Voice Agent] _processInput CALLED");
-
     if (_isProcessing) {
       debugPrint("[Voice Agent] Already processing — ignoring duplicate call.");
       return;
@@ -143,7 +143,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
     });
 
     try {
-      final result = await _api.parseVoiceNote(text, _selectedLang);
+      final result = await _api.parseVoiceNote(text, _selectedLang).timeout(const Duration(seconds: 4));
 
       if (mounted) {
         setState(() {
@@ -153,12 +153,23 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
         });
       }
     } catch (e) {
-      debugPrint("[Voice Agent] Processing failed: $e");
+      debugPrint("[Voice Agent] Online AI processing fallback to on-device engine: $e");
+
+      if (!mounted) return;
+
+      // On-Device Agronomy Engine Fallback (100% Offline)
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final offlineResult = LocalAgronomyEngine().parseOfflineObservation(
+        transcript: text,
+        defaultCrop: auth.activeCrop,
+        language: _selectedLang,
+      );
 
       if (mounted) {
         setState(() {
           _isProcessing = false;
-          _statusMessage = "Unable to analyze observation. Please try again.";
+          _parsedData = offlineResult;
+          _statusMessage = "⚡ Analyzed via On-Device Agronomy Engine (SHA-256 Anchored)";
         });
       }
     }
@@ -168,6 +179,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
     if (_parsedData == null) return;
     final evProv = Provider.of<EvidenceProvider>(context, listen: false);
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    final syncProv = Provider.of<SyncProvider>(context, listen: false);
 
     final transcript = _inputController.text.trim();
     final crop = _parsedData!['crop'] ?? auth.activeCrop;
@@ -176,7 +188,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
     final dosage = _parsedData!['dosage'];
     final pest = _parsedData!['target_pest'];
 
-    // 1. Save to Evidence Provider & local/backend database under logged-in farmer
+    // 1. Save to Evidence Provider & local database under logged-in farmer
     await evProv.addEvidence(
       title: "Voice Log: $action $crop",
       description: transcript,
@@ -190,8 +202,8 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       cropName: crop,
     );
 
-    // 2. Sync to Google Apps Script / Excel Spreadsheet
-    GoogleSheetsService().logFarmerVoiceEntry(
+    // 2. Sync to Google Apps Script / Excel Spreadsheet (or save to offline queue)
+    await GoogleSheetsService().logFarmerVoiceEntry(
       farmerName: auth.userName,
       farmerPhone: auth.userPhone,
       village: auth.userVillage,
@@ -209,6 +221,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       hashAnchor:
           "a8f5b4c9103982eef11082cba972e345b98a0021c32ff8812de4b21903fa7e41",
     );
+
+    // 3. Refresh offline queue
+    await syncProv.loadOfflineQueue();
 
     if (mounted) {
       _showLogSavedAndDownloadModal(crop, action, product, dosage, transcript);

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'offline_storage_service.dart';
 
 class GoogleSheetsService {
   static final GoogleSheetsService _instance = GoogleSheetsService._internal();
@@ -26,10 +27,7 @@ class GoogleSheetsService {
       final response = await client
           .post(
             uri,
-            headers: {
-              "Content-Type": "text/plain;charset=utf-8",
-              "Accept": "application/json",
-            },
+            headers: {"Content-Type": "application/json"},
             body: jsonEncode(bodyJson),
           )
           .timeout(Duration(seconds: timeoutSec));
@@ -37,8 +35,13 @@ class GoogleSheetsService {
       if (response.statusCode == 302 || response.statusCode == 301 || response.statusCode == 307 || response.statusCode == 308) {
         final redirectUrl = response.headers['location'];
         if (redirectUrl != null && redirectUrl.isNotEmpty) {
-          debugPrint("[Google Sheets Service] Following 302 redirect to: $redirectUrl");
-          return await client.get(Uri.parse(redirectUrl)).timeout(Duration(seconds: timeoutSec));
+          return await client
+              .post(
+                Uri.parse(redirectUrl),
+                headers: {"Content-Type": "application/json"},
+                body: jsonEncode(bodyJson),
+              )
+              .timeout(Duration(seconds: timeoutSec));
         }
       }
 
@@ -48,14 +51,12 @@ class GoogleSheetsService {
     }
   }
 
-  /// Sends a GET request and follows redirects
+  /// Sends a GET request and manually follows 302/301/307 redirects for Google Apps Script
   Future<http.Response> _getWithRedirect(String url, {int timeoutSec = 15}) async {
     final client = http.Client();
     try {
       final uri = Uri.parse(url);
-      final response = await client
-          .get(uri, headers: {"Accept": "application/json"})
-          .timeout(Duration(seconds: timeoutSec));
+      final response = await client.get(uri).timeout(Duration(seconds: timeoutSec));
 
       if (response.statusCode == 302 || response.statusCode == 301 || response.statusCode == 307 || response.statusCode == 308) {
         final redirectUrl = response.headers['location'];
@@ -134,29 +135,37 @@ class GoogleSheetsService {
     debugPrint("[Google Sheets Service] Fetching farmer logs from: $getUrl");
 
     try {
-      final response = await _getWithRedirect(getUrl);
+      final response = await _getWithRedirect(getUrl, timeoutSec: 4);
       debugPrint("[Google Sheets Service] Fetch logs response (${response.statusCode}): ${response.body}");
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
         if (data['status'] == 'success' && data['logs'] is List) {
-          return List<Map<String, dynamic>>.from(data['logs']);
+          final logs = List<Map<String, dynamic>>.from(data['logs']);
+          await OfflineStorageService().cacheFarmerLogs(phone, logs);
+          return logs;
         }
       }
     } catch (e) {
-      debugPrint("[Google Sheets Service] fetchFarmerLogs notice: $e");
+      debugPrint("[Google Sheets Service] fetchFarmerLogs notice (falling back to offline cache): $e");
+    }
+
+    // Offline cache fallback
+    final cached = await OfflineStorageService().getCachedFarmerLogs(phone);
+    if (cached.isNotEmpty) {
+      debugPrint("[Google Sheets Service] Loaded ${cached.length} farmer logs from local offline cache");
+      return cached;
     }
     return [];
   }
 
-  /// Fetch All Verified Logs across All Farmers from the Google Sheet ONLY
+  /// Fetch All Verified Logs across All Farmers from the Google Sheet ONLY (with Offline Cache Fallback)
   Future<List<Map<String, dynamic>>> fetchAllCommunityLogs() async {
-    // Primary endpoint: action=get_farmer_logs without phone returns all logs from the Sheet
     final getUrl = "$currentWebhookUrl?action=get_farmer_logs";
     debugPrint("[Google Sheets Service] Fetching live community logs from Sheet: $getUrl");
 
     try {
-      final response = await _getWithRedirect(getUrl);
+      final response = await _getWithRedirect(getUrl, timeoutSec: 4);
       debugPrint("[Google Sheets Service] Community logs response (${response.statusCode}): ${response.body}");
 
       if (response.statusCode == 200 && response.body.isNotEmpty) {
@@ -175,18 +184,27 @@ class GoogleSheetsService {
             return true;
           }).toList();
 
+          if (validLogs.isNotEmpty) {
+            await OfflineStorageService().cacheCommunityLogs(validLogs);
+          }
           return validLogs;
         }
       }
     } catch (e) {
-      debugPrint("[Google Sheets Service] fetchAllCommunityLogs error: $e");
+      debugPrint("[Google Sheets Service] fetchAllCommunityLogs error (falling back to offline cache): $e");
     }
 
-    // Return empty list if no logs in sheet - strictly NO mock/random data
+    // Offline cache fallback
+    final cached = await OfflineStorageService().getCachedCommunityLogs();
+    if (cached.isNotEmpty) {
+      debugPrint("[Google Sheets Service] Loaded ${cached.length} community logs from local offline cache");
+      return cached;
+    }
+
     return [];
   }
 
-  /// Appends a new voice observation entry to Google Sheets (Farmer_Logs Tab)
+  /// Appends a new voice observation entry to Google Sheets (or saves to offline queue if offline)
   Future<bool> logFarmerVoiceEntry({
     required String farmerName,
     required String farmerPhone,
@@ -226,16 +244,40 @@ class GoogleSheetsService {
     debugPrint("[Google Sheets Service] Posting voice log to $currentWebhookUrl: ${jsonEncode(payload)}");
 
     try {
-      final response = await _postWithRedirect(currentWebhookUrl, payload);
+      final response = await _postWithRedirect(currentWebhookUrl, payload, timeoutSec: 4);
       debugPrint("[Google Sheets Service] Add log response (${response.statusCode}): ${response.body}");
       if (response.statusCode == 200 && response.body.isNotEmpty) {
         final data = jsonDecode(response.body);
-        return data['status'] == 'success';
+        if (data['status'] == 'success') return true;
       }
-      return response.statusCode == 200;
+      if (response.statusCode == 200) return true;
     } catch (e) {
-      debugPrint("[Google Sheets Service] Direct sync notice: $e. Log preserved locally.");
-      return false;
+      debugPrint("[Google Sheets Service] Direct sync notice: $e. Saving to offline queue.");
     }
+
+    // Save to local offline queue for sync when internet is restored
+    await OfflineStorageService().savePendingVoiceLog(payload);
+    return false;
+  }
+
+  /// Drains the local offline queue by uploading pending voice logs to Google Sheets
+  Future<int> syncPendingOfflineLogs() async {
+    final pending = await OfflineStorageService().getPendingVoiceLogs();
+    if (pending.isEmpty) return 0;
+
+    int syncedCount = 0;
+    for (var log in List<Map<String, dynamic>>.from(pending)) {
+      final logId = (log['id'] ?? log['log_id'] ?? '').toString();
+      try {
+        final response = await _postWithRedirect(currentWebhookUrl, log, timeoutSec: 4);
+        if (response.statusCode == 200) {
+          await OfflineStorageService().removePendingLog(logId);
+          syncedCount++;
+        }
+      } catch (e) {
+        debugPrint("[Google Sheets Service] Error syncing offline log $logId: $e");
+      }
+    }
+    return syncedCount;
   }
 }

@@ -22,6 +22,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
 
   List<Map<String, dynamic>> _sheetLogs = [];
   bool _isLoading = true;
+  bool _isLoadedFromCache = false;
   String _selectedCrop = "All";
   String _selectedRegion = "All";
   String _searchQuery = "";
@@ -47,6 +48,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
         setState(() {
           _sheetLogs = logs;
           _isLoading = false;
+          _isLoadedFromCache = logs.isNotEmpty;
           // Reset filters if previous selection not in new data
           if (!_availableCrops.contains(_selectedCrop)) _selectedCrop = "All";
           if (!_availableRegions.contains(_selectedRegion)) _selectedRegion = "All";
@@ -55,7 +57,10 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
     } catch (e) {
       debugPrint("[CommunityLogsScreen] Error loading live sheet logs: $e");
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isLoading = false;
+          _isLoadedFromCache = true;
+        });
       }
     }
   }
@@ -470,6 +475,25 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
         color: AppColors.primary,
         child: Column(
           children: [
+            if (_isLoadedFromCache)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                color: const Color(0xFFFEF3C7),
+                child: Row(
+                  children: [
+                    const Icon(Icons.cloud_off_rounded, size: 16, color: Color(0xFFB45309)),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        AppTranslations.tr(lang, "offline_community_banner", "Working Offline • Displaying cached community records"),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
             // Clean Dropdown Filter Bar
             _buildDropdownFilterBar(lang),
 

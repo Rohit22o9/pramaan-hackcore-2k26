@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/evidence_provider.dart';
+import '../core/providers/sync_provider.dart';
 import '../core/localization/app_translations.dart';
 import '../widgets/evidence_card.dart';
 
@@ -13,6 +14,7 @@ class EvidenceReviewScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final evProv = Provider.of<EvidenceProvider>(context);
     final auth = Provider.of<AuthProvider>(context);
+    final syncProv = Provider.of<SyncProvider>(context);
     final lang = auth.selectedLanguage;
 
     final filterKeys = [
@@ -39,6 +41,58 @@ class EvidenceReviewScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
+          // Pending Offline Sync Banner
+          if (syncProv.pendingCount > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: const Color(0xFFFEF3C7),
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_upload_outlined, size: 18, color: Color(0xFFB45309)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "${syncProv.pendingCount} offline logs pending cloud sync",
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: syncProv.isSyncing
+                        ? null
+                        : () async {
+                            final count = await syncProv.syncAll();
+                            if (count > 0 && context.mounted) {
+                              evProv.loadEvidenceForFarmer(phone: auth.userPhone, name: auth.userName);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  backgroundColor: const Color(0xFF065F46),
+                                  content: Text("✓ Successfully synced $count offline logs to Google Sheets!"),
+                                ),
+                              );
+                            }
+                          },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFB45309),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: syncProv.isSyncing
+                          ? const SizedBox(
+                              width: 12,
+                              height: 12,
+                              child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
+                            )
+                          : const Text(
+                              "Sync Now",
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Filter Chips Strip
           Container(
             color: Colors.white,

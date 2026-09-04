@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/offline_storage_service.dart';
+import '../services/google_sheets_service.dart';
 
 class PendingSyncItem {
   final String id;
@@ -7,6 +9,7 @@ class PendingSyncItem {
   final String timestamp;
   final String sizeKb;
   String status; // PENDING, SYNCING, SYNCED, FAILED
+  final Map<String, dynamic>? rawPayload;
 
   PendingSyncItem({
     required this.id,
@@ -15,59 +18,85 @@ class PendingSyncItem {
     required this.timestamp,
     required this.sizeKb,
     this.status = 'PENDING',
+    this.rawPayload,
   });
 }
 
 class SyncProvider extends ChangeNotifier {
+  final OfflineStorageService _storage = OfflineStorageService();
+  final GoogleSheetsService _sheets = GoogleSheetsService();
+
   bool _isOnline = true;
   bool _isSyncing = false;
-  final List<PendingSyncItem> _syncQueue = [
-    PendingSyncItem(
-      id: 'Q-01',
-      title: 'Voice Note: Foliar Nitrogen Application',
-      type: 'VOICE_AUDIO',
-      timestamp: 'Today, 08:30 AM',
-      sizeKb: '420 KB',
-      status: 'PENDING',
-    ),
-    PendingSyncItem(
-      id: 'Q-02',
-      title: 'Crop Photo: Lower Canopy Leaf Cluster',
-      type: 'HIGH_RES_IMAGE',
-      timestamp: 'Today, 08:32 AM',
-      sizeKb: '2.1 MB',
-      status: 'PENDING',
-    ),
-  ];
+  List<PendingSyncItem> _syncQueue = [];
 
   bool get isOnline => _isOnline;
   bool get isSyncing => _isSyncing;
   List<PendingSyncItem> get syncQueue => _syncQueue;
   int get pendingCount => _syncQueue.where((i) => i.status == 'PENDING').length;
 
+  SyncProvider() {
+    loadOfflineQueue();
+  }
+
+  Future<void> loadOfflineQueue() async {
+    try {
+      final pendingLogs = await _storage.getPendingVoiceLogs();
+      _syncQueue = pendingLogs.map((log) {
+        final id = (log['id'] ?? log['log_id'] ?? 'Q-OFFLINE').toString();
+        final crop = (log['crop'] ?? 'Crop').toString();
+        final action = (log['action_type'] ?? 'SPRAY').toString();
+        final product = (log['product_name'] ?? 'Agri-Input').toString();
+
+        return PendingSyncItem(
+          id: id,
+          title: "Voice Log: $action $crop ($product)",
+          type: "VOICE_EVIDENCE",
+          timestamp: log['timestamp']?.toString() ?? DateTime.now().toIso8601String(),
+          sizeKb: "18.4 KB",
+          status: "PENDING",
+          rawPayload: log,
+        );
+      }).toList();
+      notifyListeners();
+    } catch (e) {
+      debugPrint("[SyncProvider] Error loading queue: $e");
+    }
+  }
+
   void toggleNetwork(bool online) {
     _isOnline = online;
     notifyListeners();
+    if (online) {
+      syncAll();
+    }
   }
 
-  Future<void> syncAll() async {
-    if (!_isOnline) return;
+  Future<int> syncAll() async {
+    if (_isSyncing) return 0;
     _isSyncing = true;
     notifyListeners();
 
-    for (var item in _syncQueue) {
-      item.status = 'SYNCING';
+    int syncedCount = 0;
+    try {
+      for (var item in _syncQueue) {
+        item.status = 'SYNCING';
+      }
       notifyListeners();
-      await Future.delayed(const Duration(milliseconds: 700));
-      item.status = 'SYNCED';
-    }
 
-    _isSyncing = false;
-    notifyListeners();
+      syncedCount = await _sheets.syncPendingOfflineLogs();
+      await loadOfflineQueue();
+    } catch (e) {
+      debugPrint("[SyncProvider] Sync error: $e");
+    } finally {
+      _isSyncing = false;
+      notifyListeners();
+    }
+    return syncedCount;
   }
 
-  void clearSynced() {
-    _syncQueue.removeWhere((i) => i.status == 'SYNCED');
-    notifyListeners();
+  Future<void> clearSynced() async {
+    await _storage.clearPendingLogs();
+    await loadOfflineQueue();
   }
 }

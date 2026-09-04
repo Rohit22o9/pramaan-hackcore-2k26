@@ -45,6 +45,7 @@ dependencies:
   printing: ^5.15.0
   pdf: ^3.13.0
   video_player: ^2.14.0
+  crypto: ^3.0.7
 
 
 
