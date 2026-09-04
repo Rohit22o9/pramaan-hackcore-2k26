@@ -17,7 +17,7 @@ class Settings:
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GOOGLE_APPS_SCRIPT_URL: str = os.getenv(
         "GOOGLE_APPS_SCRIPT_URL",
-        "https://script.google.com/macros/s/AKfycbwxRj7cBAnn3Xy2lBe4GI6R9srzyhPxDb5QSlD36wGk3nhexPbC2luDQoNl68GNhfA4/exec"
+        "https://script.google.com/macros/s/AKfycbyOODzqfRrLXNPV4BB7av2P4DncYniqln-Qy98CauxCsxeGiNe_zX1sF9_PmToi92QJ/exec"
     )
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     DATA_DIR: Path = Path(__file__).resolve().parent.parent / "data"

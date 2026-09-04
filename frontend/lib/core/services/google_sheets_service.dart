@@ -16,7 +16,7 @@ class GoogleSheetsService {
 
   String get currentWebhookUrl =>
       _customWebhookUrl ??
-      "https://script.google.com/macros/s/AKfycbwxRj7cBAnn3Xy2lBe4GI6R9srzyhPxDb5QSlD36wGk3nhexPbC2luDQoNl68GNhfA4/exec";
+      "https://script.google.com/macros/s/AKfycbyOODzqfRrLXNPV4BB7av2P4DncYniqln-Qy98CauxCsxeGiNe_zX1sF9_PmToi92QJ/exec";
 
   /// Sends a POST request and manually follows 302/301/307 redirects for Google Apps Script
   Future<http.Response> _postWithRedirect(String url, Map<String, dynamic> bodyJson, {int timeoutSec = 15}) async {
