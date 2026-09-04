@@ -61,7 +61,7 @@ class BackendTestSuite(unittest.TestCase):
 
     def test_voice_agent_processing(self):
         payload = {
-            "audio_transcript": "Sprayed 400ml Bio Neem per acre in North plot today morning for whitefly control.",
+            "audio_transcript": "Sprayed 400ml Bio Neem on cotton crop in North plot today morning for whitefly control.",
             "language": "en",
             "farm_id": "farm-101"
         }
