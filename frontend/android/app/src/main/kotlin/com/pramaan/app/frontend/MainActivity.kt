@@ -9,6 +9,7 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import io.flutter.embedding.android.FlutterActivity
@@ -19,17 +20,25 @@ import java.util.ArrayList
 class MainActivity : FlutterActivity() {
     private val CHANNEL = "com.pramaan.app/speech"
     private val RECORD_AUDIO_PERMISSION_CODE = 2001
+    private var methodChannel: MethodChannel? = null
     private var speechRecognizer: SpeechRecognizer? = null
     private var pendingResult: MethodChannel.Result? = null
+    private var requestedLanguage: String = "hi-IN"
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    companion object {
+        private const val TAG = "PramaanSpeech"
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL).setMethodCallHandler { call, result ->
+        methodChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
+        methodChannel?.setMethodCallHandler { call, result ->
             when (call.method) {
                 "startListening" -> {
-                    val lang = call.argument<String>("language") ?: "en-IN"
+                    val lang = call.argument<String>("language") ?: "hi-IN"
+                    requestedLanguage = lang
                     pendingResult = result
 
                     // Check RECORD_AUDIO permission
@@ -42,9 +51,17 @@ class MainActivity : FlutterActivity() {
                 }
                 "stopListening" -> {
                     mainHandler.post {
-                        speechRecognizer?.stopListening()
+                        try {
+                            speechRecognizer?.stopListening()
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error stopping recognizer: ${e.message}")
+                        }
                     }
                     result.success(true)
+                }
+                "isRecognitionAvailable" -> {
+                    val available = SpeechRecognizer.isRecognitionAvailable(this)
+                    result.success(available)
                 }
                 else -> result.notImplemented()
             }
@@ -54,46 +71,96 @@ class MainActivity : FlutterActivity() {
     private fun startHeadlessSpeechRecognition(lang: String) {
         mainHandler.post {
             try {
+                if (!SpeechRecognizer.isRecognitionAvailable(this)) {
+                    Log.w(TAG, "Speech recognition service not available on device")
+                    pendingResult?.error("NOT_AVAILABLE", "Speech recognition not available on device", null)
+                    pendingResult = null
+                    return@post
+                }
+
                 speechRecognizer?.destroy()
                 speechRecognizer = SpeechRecognizer.createSpeechRecognizer(this)
 
                 val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, lang)
+                    putExtra(RecognizerIntent.EXTRA_LANGUAGE_PREFERENCE, lang)
+                    putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, false)
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
+                    putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, packageName)
                 }
 
                 speechRecognizer?.setRecognitionListener(object : RecognitionListener {
-                    override fun onReadyForSpeech(params: Bundle?) {}
-                    override fun onBeginningOfSpeech() {}
-                    override fun onRmsChanged(rmsdB: Float) {}
+                    override fun onReadyForSpeech(params: Bundle?) {
+                        Log.d(TAG, "onReadyForSpeech")
+                        methodChannel?.invokeMethod("onSpeechReady", null)
+                    }
+
+                    override fun onBeginningOfSpeech() {
+                        Log.d(TAG, "onBeginningOfSpeech")
+                        methodChannel?.invokeMethod("onSpeechBeginning", null)
+                    }
+
+                    override fun onRmsChanged(rmsdB: Float) {
+                        methodChannel?.invokeMethod("onRmsChanged", rmsdB.toDouble())
+                    }
+
                     override fun onBufferReceived(buffer: ByteArray?) {}
-                    override fun onEndOfSpeech() {}
+
+                    override fun onEndOfSpeech() {
+                        Log.d(TAG, "onEndOfSpeech")
+                        methodChannel?.invokeMethod("onSpeechEnd", null)
+                    }
 
                     override fun onError(error: Int) {
-                        // Error 7: No match; Error 6: Speecher timeout
-                        pendingResult?.error("ERROR", "Speech recognizer code: $error", null)
+                        Log.e(TAG, "Speech recognizer error code: $error")
+                        val errorMessage = when (error) {
+                            SpeechRecognizer.ERROR_AUDIO -> "Audio recording error"
+                            SpeechRecognizer.ERROR_CLIENT -> "Client side error"
+                            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> "Insufficient permissions"
+                            SpeechRecognizer.ERROR_NETWORK -> "Network error"
+                            SpeechRecognizer.ERROR_NETWORK_TIMEOUT -> "Network timeout"
+                            SpeechRecognizer.ERROR_NO_MATCH -> "No speech recognized"
+                            SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> "Recognition service busy"
+                            SpeechRecognizer.ERROR_SERVER -> "Server error"
+                            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> "No speech detected"
+                            else -> "Speech error $error"
+                        }
+                        methodChannel?.invokeMethod("onSpeechError", errorMessage)
+                        pendingResult?.error("SPEECH_ERROR", errorMessage, error)
                         pendingResult = null
                     }
 
                     override fun onResults(results: Bundle?) {
                         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                         if (!matches.isNullOrEmpty()) {
-                            pendingResult?.success(matches[0])
+                            val recognizedText = matches[0]
+                            Log.d(TAG, "Speech recognized: $recognizedText")
+                            methodChannel?.invokeMethod("onSpeechResult", recognizedText)
+                            pendingResult?.success(recognizedText)
                         } else {
+                            methodChannel?.invokeMethod("onSpeechError", "No speech recognized")
                             pendingResult?.error("NO_MATCH", "No speech recognized", null)
                         }
                         pendingResult = null
                     }
 
-                    override fun onPartialResults(partialResults: Bundle?) {}
+                    override fun onPartialResults(partialResults: Bundle?) {
+                        val partial = partialResults?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
+                        if (!partial.isNullOrEmpty()) {
+                            val partialText = partial[0]
+                            Log.d(TAG, "Partial speech: $partialText")
+                            methodChannel?.invokeMethod("onSpeechPartial", partialText)
+                        }
+                    }
+
                     override fun onEvent(eventType: Int, params: Bundle?) {}
                 })
 
-                // Starts headless in-app listening with ZERO black Google dialog popups
                 speechRecognizer?.startListening(intent)
             } catch (e: Exception) {
+                Log.e(TAG, "Exception starting speech recognition: ${e.message}")
                 pendingResult?.error("UNAVAILABLE", e.message, null)
                 pendingResult = null
             }
@@ -104,7 +171,7 @@ class MainActivity : FlutterActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == RECORD_AUDIO_PERMISSION_CODE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startHeadlessSpeechRecognition("en-IN")
+                startHeadlessSpeechRecognition(requestedLanguage)
             } else {
                 pendingResult?.error("PERMISSION_DENIED", "Microphone permission required", null)
                 pendingResult = null
@@ -115,5 +182,6 @@ class MainActivity : FlutterActivity() {
     override fun onDestroy() {
         super.onDestroy()
         speechRecognizer?.destroy()
+        speechRecognizer = null
     }
 }

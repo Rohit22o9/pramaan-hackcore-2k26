@@ -465,7 +465,7 @@ class OrchestratorWorkflowEngine:
         else:
             role_view = RoleOutputFormatter.format_farmer_output(state, lang=state.input.get("language", "en"))
 
-        crop = nlp.get("crop") or state.input.get("crop_hint") or "Crop"
+        crop = (nlp.get("crop") or state.input.get("crop_hint") or "Crop").title()
         product = nlp.get("product_mentioned") or nlp.get("product") or "Bio-Input"
         dosage = nlp.get("dosage") or nlp.get("dosage_per_acre") or "Standard Dose"
         action_date = (state.input.get("timestamp") or datetime.utcnow().isoformat()).split("T")[0]

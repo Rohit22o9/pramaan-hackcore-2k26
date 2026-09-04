@@ -48,10 +48,19 @@ logger = logging.getLogger(__name__)
 # CONFIGURATION
 # ============================================================
 
+VOICE_MODELS = [
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
+    "gemini-3.5-flash",
+    "gemini-3.6-flash",
+    "gemini-flash-latest",
+    "gemini-3.7-flash",
+]
+
 VOICE_MODEL = getattr(
     settings,
     "VOICE_MODEL",
-    "gemini-3.7-flash",
+    "gemini-flash-lite-latest",
 )
 
 
@@ -71,43 +80,66 @@ SUPPORTED_ACTIONS = {
 # ============================================================
 # OPTIONAL FALLBACK VOCABULARY
 # ============================================================
-#
-# IMPORTANT:
-# These aliases are NOT the primary multilingual extraction
-# mechanism.
-#
-# Gemini performs semantic understanding.
-#
-# These mappings exist only as an evidence-preserving fallback
-# when Gemini is unavailable.
-#
-# Do NOT keep expanding this indefinitely.
-# For production, these should eventually come from a managed
-# agricultural ontology / product registry.
-# ============================================================
 
 CROP_ALIASES = {
     "cotton": "Cotton",
+    "कॉटन": "Cotton",
     "कापूस": "Cotton",
     "कपास": "Cotton",
+    "कपाशी": "Cotton",
+
+    "soybean": "Soybean",
+    "सोयाबीन": "Soybean",
+    "soya": "Soybean",
+
+    "onion": "Onion",
+    "कांदा": "Onion",
+    "कांद्यावर": "Onion",
+    "प्याज": "Onion",
 
     "chilli": "Chilli",
     "chili": "Chilli",
     "मिर्च": "Chilli",
     "मिरची": "Chilli",
+    "मिरचीवर": "Chilli",
 
     "wheat": "Wheat",
     "गेहूं": "Wheat",
     "गहू": "Wheat",
-
-    "paddy": "Paddy",
-    "rice": "Paddy",
-    "धान": "Paddy",
-    "तांदूळ": "Paddy",
+    "गव्हाच्या": "Wheat",
+    "कणक": "Wheat",
 
     "tomato": "Tomato",
     "टमाटर": "Tomato",
     "टोमॅटो": "Tomato",
+    "टोमॅटोवर": "Tomato",
+
+    "grape": "Grapes",
+    "grapes": "Grapes",
+    "द्राक्षे": "Grapes",
+    "द्राक्ष": "Grapes",
+    "अंगूर": "Grapes",
+
+    "sugarcane": "Sugarcane",
+    "ऊस": "Sugarcane",
+    "उसाच्या": "Sugarcane",
+    "गन्ना": "Sugarcane",
+
+    "maize": "Maize",
+    "corn": "Maize",
+    "मका": "Maize",
+    "मक्का": "Maize",
+
+    "gram": "Gram / Chana",
+    "chana": "Gram / Chana",
+    "हरभरा": "Gram / Chana",
+    "चना": "Gram / Chana",
+
+    "paddy": "Paddy",
+    "rice": "Paddy",
+    "भात": "Paddy",
+    "धान": "Paddy",
+    "तांदूळ": "Paddy",
 }
 
 
@@ -116,51 +148,103 @@ PEST_ALIASES = {
     "white fly": "Whitefly",
     "पांढरी माशी": "Whitefly",
     "पांढऱ्या माशी": "Whitefly",
+    "पांढऱ्या माशीसाठी": "Whitefly",
+    "सफेद मक्खी": "Whitefly",
 
-    "thrips": "Thrips",
-    "thrip": "Thrips",
-    "ट्रिप्स": "Thrips",
-    "थ्रिप्स": "Thrips",
-    "फुलकिडे": "Thrips",
-    "फुलकिडा": "Thrips",
+    "bollworm": "Bollworm & Caterpillar",
+    "boll worm": "Bollworm & Caterpillar",
+    "caterpillar": "Bollworm & Caterpillar",
+    "बोंडअळी": "Bollworm & Caterpillar",
+    "अळी": "Bollworm & Caterpillar",
+    "अळीसाठी": "Bollworm & Caterpillar",
+    "इल्ली": "Bollworm & Caterpillar",
 
-    "jassid": "Jassid",
-    "jassids": "Jassid",
-    "leafhopper": "Jassid",
-    "leaf hopper": "Jassid",
-    "leafhoppers": "Jassid",
-    "तुडतुडे": "Jassid",
-    "तुडतुड": "Jassid",
-    "तुडतुडा": "Jassid",
-    "तुडतुड्या": "Jassid",
+    "karpa": "Leaf Blight / Karpa",
+    "blight": "Leaf Blight / Karpa",
+    "करपा": "Leaf Blight / Karpa",
+    "करप्यासाठी": "Leaf Blight / Karpa",
 
-    "bollworm": "Bollworm",
-    "boll worm": "Bollworm",
-    "बोंडअळी": "Bollworm",
+    "thrips": "Thrips & Leaf Curl",
+    "thrip": "Thrips & Leaf Curl",
+    "leaf curl": "Thrips & Leaf Curl",
+    "बोकड्या": "Thrips & Leaf Curl",
+    "चुरडा-मुरडा": "Thrips & Leaf Curl",
+    "ट्रिप्स": "Thrips & Leaf Curl",
+    "थ्रिप्स": "Thrips & Leaf Curl",
+    "फुलकिडे": "Thrips & Leaf Curl",
+    "फुलकिडा": "Thrips & Leaf Curl",
 
-    "rust": "Rust",
+    "jassid": "Jassids",
+    "jassids": "Jassids",
+    "leafhopper": "Jassids",
+    "तुडतुडे": "Jassids",
+    "तुडतुड": "Jassids",
+    "तुडतुडा": "Jassids",
+
+    "aphid": "Aphids",
+    "aphids": "Aphids",
+    "मावा": "Aphids",
+    "माहू": "Aphids",
+
+    "rust": "Yellow Rust",
     "yellow rust": "Yellow Rust",
+    "तांबेरा": "Yellow Rust",
     "रतुआ": "Yellow Rust",
+    "पीला रतुआ": "Yellow Rust",
+
+    "early protection": "Early Stage Protection",
+    "protection": "Early Stage Protection",
+    "अर्ली प्रोटेक्शन": "Early Stage Protection",
+    "प्रोटेक्शन": "Early Stage Protection",
 }
 
 
 PRODUCT_ALIASES = {
-    "bio neem": "Bio-Neem",
-    "bio-neem": "Bio-Neem",
-    "bio neem power": "Bio-Neem Power",
+    "coragen": "Coragen 18.5% SC",
+    "कोराजन": "Coragen 18.5% SC",
 
-    "pegasus": "Pegasus",
+    "mancozeb": "Mancozeb 75% WP",
+    "m-45": "Mancozeb 75% WP",
+    "मॅन्कोझेब": "Mancozeb 75% WP",
+    "मैन्कोजेब": "Mancozeb 75% WP",
+
+    "pegasus": "Pegasus 50% WP",
     "pegasus 50% wp": "Pegasus 50% WP",
+    "पेगॅसस": "Pegasus 50% WP",
+    "पेगासस": "Pegasus 50% WP",
+    "पॅगॅसस": "Pegasus 50% WP",
 
-    "coragen": "Coragen",
-    "tilt": "Tilt",
-    "nano urea": "Nano Urea",
+    "bio neem": "Bio-Neem Power 10000 PPM",
+    "bio-neem": "Bio-Neem Power 10000 PPM",
+    "bio neem power": "Bio-Neem Power 10000 PPM",
+    "bio": "Bio-Neem Power 10000 PPM",
+    "बायो": "Bio-Neem Power 10000 PPM",
+    "बायो नीम": "Bio-Neem Power 10000 PPM",
+    "बायो-नीम": "Bio-Neem Power 10000 PPM",
+    "बायोनीम": "Bio-Neem Power 10000 PPM",
+    "बायो पावर": "Bio-Neem Power 10000 PPM",
 
-    # Speech-recognition spellings commonly observed
-    # in current supported-language testing.
-    "पेगॅसस": "Pegasus",
-    "पेगासस": "Pegasus",
-    "पॅगॅसस": "Pegasus",
+    "nano urea": "IFFCO Nano Urea (Liquid)",
+    "नॅनो युरिया": "IFFCO Nano Urea (Liquid)",
+    "नैनो यूरिया": "IFFCO Nano Urea (Liquid)",
+
+    "urea": "Neem Coated Urea",
+    "युरिया": "Neem Coated Urea",
+    "यूरिया": "Neem Coated Urea",
+
+    "dap": "DAP 18:46:0",
+    "डीएपी": "DAP 18:46:0",
+
+    "tilt": "Propiconazole 25% EC (Tilt)",
+    "टिल्ट": "Propiconazole 25% EC (Tilt)",
+    "propiconazole": "Propiconazole 25% EC (Tilt)",
+    "प्रोपिकोनाज़ोल": "Propiconazole 25% EC (Tilt)",
+
+    "emamectin": "Emamectin Benzoate 5% SG",
+    "इमामेक्टिन": "Emamectin Benzoate 5% SG",
+
+    "confidor": "Confidor 17.8% SL",
+    "कॉन्फिडोर": "Confidor 17.8% SL",
 }
 
 
@@ -168,33 +252,41 @@ ACTION_ALIASES = {
     "spray": "SPRAY",
     "sprayed": "SPRAY",
     "spraying": "SPRAY",
-
     "फवारणी": "SPRAY",
+    "फवारले": "SPRAY",
+    "मारले": "SPRAY",
     "छिड़काव": "SPRAY",
-
-    "observe": "OBSERVE",
-    "observed": "OBSERVE",
-    "seen": "OBSERVE",
-
-    "दिसले": "OBSERVE",
-    "दिसत": "OBSERVE",
-
-    "irrigate": "IRRIGATE",
-    "irrigated": "IRRIGATE",
-    "irrigation": "IRRIGATE",
-
-    "पाणी": "IRRIGATE",
+    "स्प्रे": "SPRAY",
+    "प्रोटेक्शन": "SPRAY",
+    "अर्ली प्रोटेक्शन": "SPRAY",
+    "सुरक्षा": "SPRAY",
 
     "fertilize": "FERTILIZE",
     "fertilized": "FERTILIZE",
     "fertilizer": "FERTILIZE",
-
     "खत": "FERTILIZE",
+    "खाद": "FERTILIZE",
+    "खत दिले": "FERTILIZE",
+
+    "irrigate": "IRRIGATE",
+    "irrigated": "IRRIGATE",
+    "irrigation": "IRRIGATE",
+    "पाणी": "IRRIGATE",
+    "पानी": "IRRIGATE",
+    "सिंचन": "IRRIGATE",
 
     "harvest": "HARVEST",
     "harvested": "HARVEST",
-
     "कापणी": "HARVEST",
+    "कटाई": "HARVEST",
+
+    "observe": "OBSERVE",
+    "observed": "OBSERVE",
+    "seen": "OBSERVE",
+    "दिसले": "OBSERVE",
+    "दिसत": "OBSERVE",
+    "देखा": "OBSERVE",
+    "दिखा": "OBSERVE",
 }
 
 
@@ -899,34 +991,42 @@ Return ONLY the structured schema.
 Do not return explanations outside the schema.
 """
 
-        response = self.client.models.generate_content(
-            model=VOICE_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=VoiceExtractionResult,
-            ),
-        )
+        last_error = None
+        for model_name in VOICE_MODELS:
+            try:
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=VoiceExtractionResult,
+                    ),
+                )
 
-        if not response.text:
-            raise ValueError(
-                "Gemini returned an empty response."
-            )
+                if not response.text:
+                    continue
 
-        try:
+                result = VoiceExtractionResult.model_validate_json(
+                    response.text
+                )
+                logger.info(
+                    "Voice extraction succeeded using model: %s",
+                    model_name,
+                )
+                return result
 
-            return VoiceExtractionResult.model_validate_json(
-                response.text
-            )
+            except Exception as exc:
+                logger.warning(
+                    "Voice extraction with model %s failed: %s",
+                    model_name,
+                    exc,
+                )
+                last_error = exc
+                continue
 
-        except ValidationError as exc:
-
-            logger.error(
-                "Structured voice output validation failed: %s",
-                exc,
-            )
-
-            raise
+        if last_error:
+            raise last_error
+        raise ValueError("All configured Gemini models failed for voice extraction.")
 
     # ========================================================
     # DETERMINISTIC FALLBACK
@@ -1145,6 +1245,16 @@ Do not return explanations outside the schema.
     ) -> str:
 
         replacements = {
+            # Gram / Kilogram
+            "ग्रॅम": "g",
+            "ग्राम": "g",
+            "ग्राम्स": "g",
+            "किलोग्राम": "kg",
+            "किलो": "kg",
+            "केजी": "kg",
+            "gm": "g",
+            "gms": "g",
+            "kg": "kg",
 
             # Marathi
             "मिलीलीटर": "ml",
@@ -1152,17 +1262,25 @@ Do not return explanations outside the schema.
             "मिली लिटर": "ml",
             "मिली": "ml",
             "मि.ली.": "ml",
+            "मि.ली": "ml",
+            "मि ली": "ml",
 
             "लिटरमध्ये": "L",
             "लिटर": "L",
 
-            # Hindi
-            "मिलीलीटर": "ml",
-            "मिलीलीटर": "ml",
-            "मिलीलीटर": "ml",
+            # Hindi & Hinglish Phonetics
+            "एमएल": "ml",
+            "एम एल": "ml",
+            "मल": "ml",
 
             "लीटर": "L",
             "लीटर में": "L",
+            "एल": "L",
+            "वॉटर": "water",
+            "वाटर": "water",
+            "पानी": "water",
+            "पाण्यात": "water",
+            "पाणी": "water",
 
             # English
             "milliliters": "ml",
@@ -1211,15 +1329,11 @@ Do not return explanations outside the schema.
         # ----------------------------------------------------
         # Pattern 1:
         #
-        # 250 ml ... 200 L
-        #
-        # Example:
-        #
-        # 250 ml औषध 200 लिटर पाण्यात
+        # 250 ml ... 200 L / 500 g ... 200 L
         # ----------------------------------------------------
 
         pattern = (
-            r"(\d+(?:\.\d+)?)\s*ml"
+            r"(\d+(?:\.\d+)?)\s*(ml|g|kg|L)"
             r".{0,40}?"
             r"(\d+(?:\.\d+)?)\s*L"
         )
@@ -1233,10 +1347,11 @@ Do not return explanations outside the schema.
         if match:
 
             amount = match.group(1)
-            water = match.group(2)
+            unit = match.group(2)
+            water = match.group(3)
 
             return (
-                f"{amount} ml "
+                f"{amount} {unit} "
                 f"in {water} L water"
             )
 
