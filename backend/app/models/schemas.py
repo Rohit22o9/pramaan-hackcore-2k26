@@ -234,6 +234,36 @@ class AuditReportRequest(BaseModel):
     season: str = "Kharif 2026"
     include_cryptographic_audit: bool = True
     buyer_name: Optional[str] = "ITC Agri-Business"
+    voice_transcript: Optional[str] = None
+    voice_action: Optional[str] = None
+    product_applied: Optional[str] = None
+    dosage: Optional[str] = None
+    target_pest: Optional[str] = None
+    plot_name: Optional[str] = "Plot North-04"
+    disease_detected: Optional[str] = None
+    health_status: Optional[str] = "Healthy Crop"
+    severity_level: Optional[str] = "Low"
+    affected_percentage: Optional[float] = 0.0
+    weather_temp: Optional[float] = 28.5
+    weather_humidity: Optional[float] = 68.0
+    weather_wind: Optional[float] = 5.4
+    weather_delta_t: Optional[float] = 3.6
+    spray_suitability: Optional[str] = "OPTIMAL"
+    spray_recommendation: Optional[str] = None
+
+class AgronomyRecommendation(BaseModel):
+    chemical_treatment: str
+    chemical_dosage: str
+    organic_alternative: str
+    spray_window_advisory: str
+    pre_harvest_interval_days: int
+    safety_directives: List[str] = Field(default_factory=list)
+    cultural_prevention_tips: List[str] = Field(default_factory=list)
+
+class TrilingualReportContent(BaseModel):
+    en: Dict[str, Any] = Field(default_factory=dict)
+    hi: Dict[str, Any] = Field(default_factory=dict)
+    mr: Dict[str, Any] = Field(default_factory=dict)
 
 class AuditReportResponse(BaseModel):
     report_id: str
@@ -248,6 +278,13 @@ class AuditReportResponse(BaseModel):
     json_manifest_url: str
     blockchain_hash_anchor: str
     generated_at: str
+    pages_count: int = 3
+    supported_languages: List[str] = ["English (Page 1)", "Hindi (Page 2)", "Marathi (Page 3)"]
+    recommendations: Optional[AgronomyRecommendation] = None
+    trilingual_data: Optional[TrilingualReportContent] = None
+    mandi_base_price_per_qtl: Optional[float] = 7400.0
+    pramaan_premium_per_qtl: Optional[float] = 450.0
+    total_lot_value_inr: Optional[float] = 172700.0
 
 # Buyer Pricing Models
 class BuyerPricingRequest(BaseModel):

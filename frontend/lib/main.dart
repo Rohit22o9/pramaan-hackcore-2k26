@@ -11,8 +11,10 @@ import 'core/providers/sync_provider.dart';
 import 'screens/1_splash_screen.dart';
 import 'screens/2_onboarding_screen.dart';
 import 'screens/3_profile_selection_screen.dart';
+import 'screens/farmer_auth_screen.dart';
 import 'screens/4_farmer_dashboard_screen.dart';
 import 'screens/field_agent_dashboard_screen.dart';
+
 import 'screens/5_voice_log_screen.dart';
 import 'screens/6_crop_camera_screen.dart';
 import 'screens/7_scan_product_screen.dart';
@@ -68,7 +70,9 @@ class PramaanApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/onboarding': (context) => const OnboardingScreen(),
         '/profile_selection': (context) => const ProfileSelectionScreen(),
+        '/farmer_auth': (context) => const FarmerAuthScreen(),
         '/farmer_dashboard': (context) => const FarmerDashboardScreen(),
+
         '/field_agent_dashboard': (context) => const FieldAgentDashboardScreen(),
         '/voice_log': (context) => const VoiceLogScreen(),
         '/crop_camera': (context) => const CropCameraScreen(),

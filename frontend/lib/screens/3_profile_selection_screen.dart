@@ -51,8 +51,9 @@ class ProfileSelectionScreen extends StatelessWidget {
                 color: AppColors.primary,
                 onTap: () {
                   auth.switchRole(UserRoleType.farmer);
-                  Navigator.pushReplacementNamed(context, '/farmer_dashboard');
+                  Navigator.pushReplacementNamed(context, '/farmer_auth');
                 },
+
               ),
               const SizedBox(height: 16),
               _buildRoleCard(

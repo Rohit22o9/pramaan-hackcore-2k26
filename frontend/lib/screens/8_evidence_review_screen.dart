@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/providers/auth_provider.dart';
 import '../core/providers/evidence_provider.dart';
 import '../widgets/evidence_card.dart';
 
@@ -56,30 +57,43 @@ class EvidenceReviewScreen extends StatelessWidget {
 
           // Evidence List
           Expanded(
-            child: evProv.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : evProv.evidenceList.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                final auth = Provider.of<AuthProvider>(context, listen: false);
+                await evProv.loadEvidenceForFarmer(phone: auth.userPhone, name: auth.userName);
+              },
+              child: evProv.isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : evProv.evidenceList.isEmpty
+                      ? ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            const Icon(Icons.folder_open_rounded, size: 48, color: AppColors.textMuted),
-                            const SizedBox(height: 12),
-                            Text("No ${evProv.selectedFilter} evidence items found.", style: const TextStyle(color: AppColors.textSecondary)),
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                            Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(Icons.folder_open_rounded, size: 48, color: AppColors.textMuted),
+                                  const SizedBox(height: 12),
+                                  Text("No ${evProv.selectedFilter} evidence items found.", style: const TextStyle(color: AppColors.textSecondary)),
+                                ],
+                              ),
+                            ),
                           ],
+                        )
+                      : ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(16),
+                          itemCount: evProv.evidenceList.length,
+                          itemBuilder: (context, index) {
+                            final item = evProv.evidenceList[index];
+                            return EvidenceCard(
+                              item: item,
+                              onTap: () => Navigator.pushNamed(context, '/evidence_detail', arguments: item),
+                            );
+                          },
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: evProv.evidenceList.length,
-                        itemBuilder: (context, index) {
-                          final item = evProv.evidenceList[index];
-                          return EvidenceCard(
-                            item: item,
-                            onTap: () => Navigator.pushNamed(context, '/evidence_detail', arguments: item),
-                          );
-                        },
-                      ),
+            ),
           ),
         ],
       ),
