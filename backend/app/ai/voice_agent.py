@@ -720,9 +720,33 @@ source_text:
 confidence:
     Confidence in interpreting that phrase.
 
-The source_text must be supported by the transcript.
+The source_text must be an exact contiguous phrase copied
+from the RAW TRANSCRIPT.
 
-Never fabricate evidence.
+Do not translate source_text.
+
+Do not replace source_text with the canonical English value.
+
+For example, if the transcript contains:
+"गव्हावर"
+
+then:
+
+value = "Wheat"
+source_text = "गव्हावर"
+
+NOT:
+
+source_text = "Wheat"
+
+Every non-null value MUST have supporting source_text.
+
+If supporting source_text cannot be identified confidently,
+return:
+
+value = null
+source_text = null
+confidence = 0
 
 
 ============================================================
@@ -755,16 +779,76 @@ Extract the crop only when the transcript identifies it.
 
 Return the canonical English crop name.
 
-Examples of acceptable semantic normalization:
+IMPORTANT:
+Understand crop names semantically, including grammatical,
+inflected, declined, or contextually modified forms used by
+farmers in Hindi and Marathi.
 
-A farmer may say:
-    cotton
-    कपास
-    कापूस
+Do NOT require the crop word to exactly match a dictionary
+entry or canonical crop name.
 
-The output should represent the same crop canonically.
+For example, in Marathi:
 
-Do NOT select a crop merely because another field suggests it.
+    गहू
+    गव्हावर
+    गव्हाच्या
+    गव्हात
+    गव्हाचे
+
+may refer to the crop:
+
+    Wheat
+
+when the surrounding sentence clearly establishes that meaning.
+
+Similarly, understand normal Hindi grammatical variations
+of agricultural crop names.
+
+The grammatical suffix or inflection does NOT change the
+underlying crop identity.
+
+When a grammatical or inflected form clearly identifies a crop:
+
+1. Normalize the value to the canonical English crop name.
+2. Preserve the exact phrase from the original transcript
+   in source_text.
+3. Set field confidence according to how clearly the phrase
+   identifies the crop.
+
+Example:
+
+Transcript:
+"गव्हावर मावा दिसल्याने फवारणी केली"
+
+Correct:
+{
+    "value": "Wheat",
+    "source_text": "गव्हावर",
+    "confidence": 0.95
+}
+
+Incorrect:
+{
+    "value": null,
+    "source_text": null,
+    "confidence": 0
+}
+
+Also incorrect:
+{
+    "value": "Wheat",
+    "source_text": null,
+    "confidence": 0.95
+}
+
+The crop must be supported by the transcript itself.
+
+Do NOT select a crop merely because:
+- it is common in agriculture
+- another field suggests it
+- it appears in previous context
+- it exists in the farmer's profile
+- it exists as the active crop in the application
 
 
 ============================================================
@@ -812,6 +896,64 @@ name.
 
 Do not guess a pest from crop or treatment.
 
+============================================================
+FIELD-BY-FIELD EXTRACTION PROCESS
+============================================================
+
+Before producing the final JSON, evaluate each field independently
+against the RAW TRANSCRIPT.
+
+For each field, ask:
+
+1. Is there an explicit phrase in the transcript referring to this field?
+2. What exact words in the transcript support that interpretation?
+3. Can those words be normalized to a canonical value?
+4. Is the interpretation sufficiently clear?
+
+Do NOT stop extraction of one field because another field is
+missing or unclear.
+
+For example, if the transcript contains:
+
+"गव्हावर मावा दिसल्याने फवारणी केली"
+
+evaluate independently:
+
+crop:
+    "गव्हावर" identifies Wheat
+
+target_pest:
+    "मावा" identifies Aphids
+
+action_type:
+    "फवारणी केली" identifies SPRAY
+
+product:
+    no explicit product name -> null
+
+plot:
+    no explicit plot -> null
+
+The presence or absence of one field must not affect extraction
+of another field.
+
+IMPORTANT:
+When an agricultural noun appears with a Marathi or Hindi
+grammatical suffix, identify the underlying agricultural entity
+from the linguistic context.
+
+For example:
+
+"गव्हावर" -> Wheat
+"कापसावर" -> Cotton
+"सोयाबीनमध्ये" -> Soybean
+"टोमॅटोवर" -> Tomato
+
+These are examples of linguistic interpretation, NOT a request
+to use a hard-coded dictionary.
+
+Use the actual transcript as evidence and preserve the exact
+surface form in source_text.
 
 ============================================================
 DOSAGE / QUANTITY
@@ -1764,7 +1906,40 @@ Do not return explanations outside the schema.
     # ========================================================
     # SEMANTIC / STRUCTURAL VALIDATION
     # ========================================================
+def _has_valid_source_text(
+    self,
+    field: ExtractedField,
+    original_transcript: str,
+) -> bool:
+    """
+    Validate that an extracted field has genuine evidence
+    from the original transcript.
 
+    We do not accept the entire transcript as provenance for
+    an individual field.
+    """
+
+    if field.value is None:
+        return True
+
+    if not field.source_text:
+        return False
+
+    source = field.source_text.strip()
+    transcript = original_transcript.strip()
+
+    if not source:
+        return False
+
+    # Source must actually occur in the original transcript.
+    if source not in transcript:
+        return False
+
+    # A field should not use the entire transcript as its evidence.
+    if source == transcript:
+        return False
+
+    return True
     @staticmethod
     def _validate_extraction(
         extraction: VoiceExtractionResult,

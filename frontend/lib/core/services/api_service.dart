@@ -982,40 +982,97 @@ class ApiService {
     double? weatherDeltaT,
     String? spraySuitability,
   }) async {
-    final payload = {
+    final Map<String, dynamic> payload = {
       'farm_id': farmId,
       'crop_name': crop,
       'crop': crop,
       'season': season,
-      'buyer_name': 'ITC Agri-Business Division',
-      'farmer_name': farmerName ?? 'Ramesh Patil',
-      'farmer_phone': farmerPhone ?? '9876543210',
-      'village': village ?? 'Dindori, Nashik',
-      'state': state ?? 'Maharashtra',
-      'compliance_score': complianceScore ?? 98.6,
-      'voice_log': {
-        'transcript':
-            voiceTranscript ?? 'Sprayed Bio-Neem Power for whitefly control.',
-        'action_type': voiceAction ?? 'SPRAY',
-        'product_mentioned': productApplied ?? 'Bio-Neem Power 10000 PPM',
-        'dosage': dosage ?? '400 ml in 200L Water / Acre',
-      },
-      'voice_transcript': ?voiceTranscript,
-      'voice_action': ?voiceAction,
-      'product_applied': ?productApplied,
-      'dosage': ?dosage,
-      'target_pest': ?targetPest,
-      'plot_name': ?plotName,
-      'disease_detected': ?diseaseDetected,
-      'health_status': ?healthStatus,
-      'severity_level': ?severityLevel,
-      'affected_percentage': ?affectedPercentage,
-      'weather_temp': ?weatherTemp,
-      'weather_humidity': ?weatherHumidity,
-      'weather_wind': ?weatherWind,
-      'weather_delta_t': ?weatherDeltaT,
-      'spray_suitability': ?spraySuitability,
     };
+
+    // Add farmer information only when actually available.
+    if (farmerName != null && farmerName.trim().isNotEmpty) {
+      payload['farmer_name'] = farmerName.trim();
+    }
+
+    if (farmerPhone != null && farmerPhone.trim().isNotEmpty) {
+      payload['farmer_phone'] = farmerPhone.trim();
+    }
+
+    if (village != null && village.trim().isNotEmpty) {
+      payload['village'] = village.trim();
+    }
+
+    if (state != null && state.trim().isNotEmpty) {
+      payload['state'] = state.trim();
+    }
+
+    // Do NOT convert interpretation confidence into compliance.
+    if (complianceScore != null) {
+      payload['compliance_score'] = complianceScore;
+    }
+
+    final Map<String, dynamic> voiceLog = {};
+
+    if (voiceTranscript != null && voiceTranscript.trim().isNotEmpty) {
+      voiceLog['transcript'] = voiceTranscript.trim();
+    }
+
+    if (voiceAction != null && voiceAction.trim().isNotEmpty) {
+      voiceLog['action_type'] = voiceAction.trim();
+    }
+
+    if (productApplied != null && productApplied.trim().isNotEmpty) {
+      voiceLog['product_mentioned'] = productApplied.trim();
+    }
+
+    if (dosage != null && dosage.trim().isNotEmpty) {
+      voiceLog['dosage'] = dosage.trim();
+    }
+
+    if (targetPest != null && targetPest.trim().isNotEmpty) {
+      voiceLog['target_pest'] = targetPest.trim();
+    }
+
+    if (plotName != null && plotName.trim().isNotEmpty) {
+      voiceLog['plot_name'] = plotName.trim();
+    }
+
+    if (voiceLog.isNotEmpty) {
+      payload['voice_log'] = voiceLog;
+    }
+
+    // Optional structured fields.
+    final optionalFields = <String, dynamic>{
+      'voice_transcript': voiceTranscript,
+      'voice_action': voiceAction,
+      'product_applied': productApplied,
+      'dosage': dosage,
+      'target_pest': targetPest,
+      'plot_name': plotName,
+      'disease_detected': diseaseDetected,
+      'health_status': healthStatus,
+      'severity_level': severityLevel,
+      'affected_percentage': affectedPercentage,
+      'weather_temp': weatherTemp,
+      'weather_humidity': weatherHumidity,
+      'weather_wind': weatherWind,
+      'weather_delta_t': weatherDeltaT,
+      'spray_suitability': spraySuitability,
+    };
+
+    for (final entry in optionalFields.entries) {
+      final value = entry.value;
+
+      if (value == null) continue;
+
+      if (value is String && value.trim().isEmpty) {
+        continue;
+      }
+
+      payload[entry.key] = value;
+    }
+
+    debugPrint("[Pramaan API] AUDIT REPORT REQUEST: ${jsonEncode(payload)}");
 
     try {
       final response = await _postWithFallback(
@@ -1023,131 +1080,20 @@ class ApiService {
         payload,
         timeoutSec: 10,
       );
-      return jsonDecode(response.body);
+
+      final data = jsonDecode(response.body);
+
+      if (data is Map<String, dynamic>) {
+        return data;
+      }
+
+      throw Exception("Invalid report response from backend.");
     } catch (e) {
-      debugPrint("[Pramaan API] Backend report generation fallback used: $e");
-      final isWheat = crop.toLowerCase().contains("wheat");
-      return {
-        'report_id':
-            'PRM-REP-${DateTime.now().millisecondsSinceEpoch.toString().substring(5)}-${farmId.toUpperCase()}',
-        'farm_name': isWheat
-            ? 'Punjab Kisan Adarsh Farm (PAU Model Plot)'
-            : 'Sahyadri Bio-Farms (Plot North-04)',
-        'crop': crop,
-        'total_evidence_count': 6,
-        'verified_evidence_count': 6,
-        'compliance_score_percent': 98.6,
-        'chemical_residue_risk': 'Compliant / MRL Safe (Export Grade A+)',
-        'sustainability_index': 96.5,
-        'pdf_download_url': '/api/v1/report/download/sample_audit_report.pdf',
-        'blockchain_hash_anchor':
-            'a98f73b610c492e8810237dfb4a92c301e76bba920194857bca1029384756bc0',
-        'generated_at': '2026-09-04 08:50 AM UTC',
-        'pages_count': 3,
-        'supported_languages': [
-          'English (Page 1)',
-          'Hindi (Page 2)',
-          'Marathi (Page 3)',
-        ],
-        'recommendations': {
-          'chemical_treatment': isWheat
-              ? 'Propiconazole 25% EC (Tilt / Bumper)'
-              : 'Pyriproxyfen 10% EC or Diafenthiuron 50% WP (Pegasus)',
-          'chemical_dosage': isWheat
-              ? '1.0 ml/L (200 ml in 200L water per acre)'
-              : '1.5 g/L or 400 ml in 200L water per acre',
-          'organic_alternative': isWheat
-              ? 'Bio-Sulfur dusting @ 10 kg/Ac + Trichoderma viride 1.5% WP'
-              : 'Bio-Neem Power 10,000 PPM @ 2.5 ml/L + 16 Yellow Sticky Traps/Ac',
-          'spray_window_advisory':
-              'Apply during calm morning window (06:30 - 10:00 AM) with Delta-T between 2.0 and 7.5°C.',
-          'pre_harvest_interval_days': isWheat ? 30 : 15,
-          'safety_directives': [
-            'Wear protective gloves, goggles, and face mask.',
-            'Calibrate water volume to 200L/Acre using flat fan nozzle.',
-            'Maintain 5-meter buffer from open water bodies.',
-          ],
-          'cultural_prevention_tips': [
-            'Monitor lower canopy foliage weekly for early pustule/nymph appearance.',
-            'Install yellow sticky sheets at canopy height for early pest trapping.',
-            'Use certified disease-free seed varieties.',
-          ],
-        },
-        'trilingual_data': {
-          'en': {
-            'lang': 'English',
-            'cert_title':
-                'PRAMAAN VERIFIED AUDIT CERTIFICATE & AGRONOMY ADVISORY',
-            'subtitle':
-                'Autonomous Multi-Agent Traceability & Crop Health Assurance',
-            'crop': crop,
-            'crop_stage': isWheat
-                ? 'Active Tillering'
-                : 'Boll Formation / Flowering',
-            'recommendations': {
-              'chemical_rx': isWheat
-                  ? 'Propiconazole 25% EC (Tilt)'
-                  : 'Bio-Neem / Diafenthiuron 50% WP',
-              'dosage': isWheat
-                  ? '200 ml in 200L water / Acre'
-                  : '400 ml in 200L water / Acre',
-              'organic_alt': 'Bio-Neem 10,000 PPM + Yellow Sticky Traps',
-              'spray_window':
-                  'Morning 06:30 - 10:00 AM (Calm Wind, Delta-T 3.6°C)',
-              'phi_days': '${isWheat ? 30 : 15} Days Mandatory Waiting Period',
-            },
-          },
-          'hi': {
-            'lang': 'हिंदी (Hindi)',
-            'cert_title':
-                'प्रमाण बहु-एजेंट सत्यापन प्रमाण पत्र एवं कृषि अनुशंसा रिपोर्ट',
-            'subtitle':
-                'स्वायत्त बहु-एजेंट कृषि ट्रेसिबिलिटी एवं फसल स्वास्थ्य सुरक्षा',
-            'crop': isWheat ? 'गेहूं (Wheat PBW-826)' : 'कपास (Bt Cotton-II)',
-            'crop_stage': isWheat
-                ? 'सक्रिय कल्ले फूटना'
-                : 'फूल व टिंडे बनने की अवस्था',
-            'recommendations': {
-              'chemical_rx': isWheat
-                  ? 'प्रोपिकोनाज़ोल २५% ईसी (टिल्ट)'
-                  : 'डायफेन्थियूरॉन ५०% डब्ल्यूपी (पेगासस)',
-              'dosage': isWheat
-                  ? '२०० मिली प्रति २०० लीटर पानी / एकड़'
-                  : '४०० मिली प्रति २०० लीटर पानी / एकड़',
-              'organic_alt': 'बायो-नीम १०,००० पीपीएम + १६ पीले चिपचिपे ट्रैप',
-              'spray_window':
-                  'सुबह ०६:३० से १०:०० बजे शांत हवा में छिड़काव करें',
-              'phi_days':
-                  '${isWheat ? 30 : 15} दिन तुड़ाई पूर्व प्रतीक्षा अवधि (PHI)',
-            },
-          },
-          'mr': {
-            'lang': 'मराठी (Marathi)',
-            'cert_title':
-                'प्रमाण बहु-एजंट पडताळणी प्रमाणपत्र आणि कृषी सल्ला अहवाल',
-            'subtitle': 'अखंड बहु-एजंट शेती पारदर्शकता आणि पीक आरोग्य हमी',
-            'crop': isWheat ? 'गहू (Wheat PBW-826)' : 'कापूस (Bt Cotton-II)',
-            'crop_stage': isWheat
-                ? 'फुटवे फुटण्याचा टप्पा'
-                : 'फुलधारणा व बोंडे भरणे',
-            'recommendations': {
-              'chemical_rx': isWheat
-                  ? 'प्रोपिकोनाझोल २५% ईसी (टिल्ट)'
-                  : 'डायफेंथियुरॉन ५०% डब्ल्यूपी (पेगासस)',
-              'dosage': isWheat
-                  ? '२०० मिली प्रति २०० लिटर पाणी / एकर'
-                  : '४०० मिली प्रति २०० लिटर पाणी / एकर',
-              'organic_alt': 'बायो-नीम १०,००० पीपीएम + १६ पिवळे चिकट सापळे',
-              'spray_window': 'सकाळी ०६:३० ते १०:०० शांत हवेत फवारणी करावी',
-              'phi_days':
-                  '${isWheat ? 30 : 15} दिवस तोडणीपूर्व प्रतीक्षा कालावधी (PHI)',
-            },
-          },
-        },
-        'mandi_base_price_per_qtl': isWheat ? 2475.0 : 7400.0,
-        'pramaan_premium_per_qtl': isWheat ? 225.0 : 480.0,
-        'total_lot_value_inr': isWheat ? 72900.0 : 172700.0,
-      };
+      debugPrint("[Pramaan API] Audit report generation failed: $e");
+
+      // IMPORTANT:
+      // Do not fabricate a report when backend generation fails.
+      rethrow;
     }
   }
 
