@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen> {
         _isVideoInitialized = true;
       });
 
-      _videoController!.setVolume(1.0);
+      _videoController!.setVolume(0.0); // Mute audio
       _videoController!.play();
 
       _videoController!.addListener(() {
@@ -78,17 +78,15 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Video Player or Animated Fallback
+          // 1. Fullscreen Video Player (BoxFit.cover fills screen completely)
           if (_isVideoInitialized && _videoController != null)
-            Center(
-              child: SizedBox.expand(
-                child: FittedBox(
-                  fit: BoxFit.contain,
-                  child: SizedBox(
-                    width: _videoController!.value.size.width,
-                    height: _videoController!.value.size.height,
-                    child: VideoPlayer(_videoController!),
-                  ),
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _videoController!.value.size.width,
+                  height: _videoController!.value.size.height,
+                  child: VideoPlayer(_videoController!),
                 ),
               ),
             )
