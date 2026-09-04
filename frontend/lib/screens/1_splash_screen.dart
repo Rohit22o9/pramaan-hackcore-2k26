@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import '../core/theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -8,108 +9,174 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _fadeAnimation;
+class _SplashScreenState extends State<SplashScreen> {
+  VideoPlayerController? _videoController;
+  bool _isVideoInitialized = false;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    );
+    _initializeVideo();
+  }
 
-    _scaleAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeIn));
+  Future<void> _initializeVideo() async {
+    try {
+      _videoController = VideoPlayerController.asset('assets/videos/logo_video.mp4');
+      await _videoController!.initialize();
 
-    _controller.forward();
+      if (!mounted) return;
 
-    Future.delayed(const Duration(milliseconds: 2200), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, '/onboarding');
-      }
-    });
+      setState(() {
+        _isVideoInitialized = true;
+      });
+
+      _videoController!.setVolume(1.0);
+      _videoController!.play();
+
+      _videoController!.addListener(() {
+        if (_videoController != null &&
+            _videoController!.value.isInitialized &&
+            !_hasNavigated) {
+          final position = _videoController!.value.position;
+          final duration = _videoController!.value.duration;
+
+          // When video finishes playing, navigate to Choose Your Role
+          if (duration > Duration.zero && position >= duration) {
+            _navigateToRoleSelection();
+          }
+        }
+      });
+    } catch (e) {
+      debugPrint("[SplashScreen] Video playback fallback: $e");
+      // Fallback timer if video playback is not supported
+      Future.delayed(const Duration(milliseconds: 2500), () {
+        if (mounted && !_hasNavigated) {
+          _navigateToRoleSelection();
+        }
+      });
+    }
+  }
+
+  void _navigateToRoleSelection() {
+    if (_hasNavigated) return;
+    _hasNavigated = true;
+    _videoController?.pause();
+    Navigator.pushReplacementNamed(context, '/profile_selection');
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _videoController?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryDark,
-      body: Center(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: ScaleTransition(
-            scale: _scaleAnimation,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primaryAccent.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                        spreadRadius: 8,
+      backgroundColor: Colors.black,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          // 1. Video Player or Animated Fallback
+          if (_isVideoInitialized && _videoController != null)
+            Center(
+              child: SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  child: SizedBox(
+                    width: _videoController!.value.size.width,
+                    height: _videoController!.value.size.height,
+                    child: VideoPlayer(_videoController!),
+                  ),
+                ),
+              ),
+            )
+          else
+            // Elegant loading fallback
+            Container(
+              color: AppColors.primaryDark,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(22),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryAccent.withValues(alpha: 0.3),
+                            blurRadius: 28,
+                            spreadRadius: 6,
+                          ),
+                        ],
                       ),
+                      child: const Icon(
+                        Icons.eco_rounded,
+                        size: 58,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    const Text(
+                      "PRAMAAN",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 3,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    const Text(
+                      "AgTech Evidence Verification",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.primaryAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // 2. Skip Button in Top Right
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextButton(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.4),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  ),
+                  onPressed: _navigateToRoleSelection,
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        "SKIP",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                      SizedBox(width: 4),
+                      Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 12),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.eco_rounded,
-                    size: 64,
-                    color: AppColors.primary,
-                  ),
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  "PRAMAAN",
-                  style: TextStyle(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 3,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  "AgTech Evidence Verification & Agronomy",
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.5,
-                    color: AppColors.primaryAccent,
-                  ),
-                ),
-                const SizedBox(height: 48),
-                const SizedBox(
-                  width: 32,
-                  height: 32,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white70),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

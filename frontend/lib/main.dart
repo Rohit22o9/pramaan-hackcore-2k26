@@ -9,7 +9,6 @@ import 'core/providers/sync_provider.dart';
 
 // Screens
 import 'screens/1_splash_screen.dart';
-import 'screens/2_onboarding_screen.dart';
 import 'screens/3_profile_selection_screen.dart';
 import 'screens/farmer_auth_screen.dart';
 import 'screens/4_farmer_dashboard_screen.dart';
@@ -70,7 +69,6 @@ class PramaanApp extends StatelessWidget {
       initialRoute: '/',
       routes: {
         '/': (context) => const SplashScreen(),
-        '/onboarding': (context) => const OnboardingScreen(),
         '/profile_selection': (context) => const ProfileSelectionScreen(),
         '/farmer_auth': (context) => const FarmerAuthScreen(),
         '/farmer_dashboard': (context) => const FarmerDashboardScreen(),
