@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/theme/app_colors.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/farm_provider.dart';
 import '../core/localization/app_translations.dart';
-import '../../models/weather_model.dart';
 
 class AgronomySuiteScreen extends StatelessWidget {
   const AgronomySuiteScreen({super.key});
@@ -19,65 +17,90 @@ class AgronomySuiteScreen extends StatelessWidget {
     final selectedDistrict = farmProv.selectedDistrict;
     final districts = farmProv.punjabDistricts;
 
+    final tempVal = weather != null ? weather.temperatureC.toStringAsFixed(1) : "34.2";
+    final humidityVal = weather != null ? "${weather.humidityPercent.toStringAsFixed(0)}%" : "72%";
+    final windVal = weather != null ? "${weather.windSpeedKmh.toStringAsFixed(1)} km/h" : "2.2 km/h";
+    final rainVal = weather != null ? "${weather.precipitationProb.toStringAsFixed(0)}%" : "18%";
+    final districtName = selectedDistrict?.name ?? weather?.districtName ?? "Amritsar, Punjab";
+    final fullLocation = districtName.contains("Punjab") ? districtName : "$districtName, Punjab";
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: const Color(0xFFFBFDFB),
       appBar: AppBar(
         backgroundColor: Colors.white,
-        elevation: 0.5,
+        elevation: 0,
+        centerTitle: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A), size: 22),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/farmer_dashboard');
+            }
+          },
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              AppTranslations.tr(lang, "weather_guide"),
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15.5, color: Color(0xFF0F172A)),
+            const Text(
+              "Farmer Weather Advisory",
+              style: TextStyle(
+                fontWeight: FontWeight.w800,
+                fontSize: 17,
+                color: Color(0xFF0F172A),
+                letterSpacing: -0.3,
+              ),
             ),
+            const SizedBox(height: 1),
             Text(
-              "Punjab Live Microclimate • ${weather?.districtName ?? selectedDistrict?.name ?? 'Ludhiana'}",
-              style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.normal),
+              "Weather insights for better farming",
+              style: TextStyle(
+                fontSize: 11.5,
+                color: const Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
         actions: [
-          // Language Switcher Button
-          IconButton(
-            tooltip: AppTranslations.tr(lang, "select_language"),
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
+          // Language selector dropdown pill: [ 🌐 EN v ]
+          Padding(
+            padding: const EdgeInsets.only(right: 14),
+            child: InkWell(
+              onTap: () => AppTranslations.showLanguageSelectorModal(
+                context,
+                lang,
+                (newLang) => auth.setLanguage(newLang),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.translate_rounded, color: Color(0xFF059669), size: 14),
-                  const SizedBox(width: 4),
-                  Text(
-                    lang.toUpperCase(),
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
-                  ),
-                ],
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.language_rounded, color: Color(0xFF047857), size: 16),
+                    const SizedBox(width: 4),
+                    Text(
+                      lang.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B), size: 16),
+                  ],
+                ),
               ),
             ),
-            onPressed: () => AppTranslations.showLanguageSelectorModal(
-              context,
-              lang,
-              (newLang) => auth.setLanguage(newLang),
-            ),
           ),
-          IconButton(
-            tooltip: AppTranslations.tr(lang, "refresh"),
-            icon: farmProv.isWeatherLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
-                  )
-                : const Icon(Icons.refresh_rounded, color: AppColors.primary),
-            onPressed: () => farmProv.refreshWeather(),
-          ),
-          const SizedBox(width: 6),
         ],
       ),
       body: SingleChildScrollView(
@@ -85,593 +108,711 @@ class AgronomySuiteScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. Punjab Districts Quick Switcher Bar
-            Row(
-              children: [
-                const Icon(Icons.location_on_rounded, color: AppColors.primary, size: 16),
-                const SizedBox(width: 4),
-                Text(
-                  AppTranslations.tr(lang, "select_district"),
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: districts.length,
-                separatorBuilder: (context, idx) => const SizedBox(width: 8),
-                itemBuilder: (context, idx) {
-                  final dist = districts[idx];
-                  final isSelected = (selectedDistrict?.id == dist.id) ||
-                      (weather?.districtName.toLowerCase() == dist.name.toLowerCase());
-                  final displayName = lang == 'pa' ? dist.punjabiName : dist.name;
-                  return ChoiceChip(
-                    label: Text(
-                      displayName,
-                      style: TextStyle(
-                        fontSize: 12.5,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                        color: isSelected ? Colors.white : const Color(0xFF334155),
-                      ),
+            // Location Bar: [ 📍 Amritsar, Punjab              Change District > ]
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF1F5F9).withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFFE2E8F0), width: 1),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF047857),
+                      shape: BoxShape.circle,
                     ),
-                    selected: isSelected,
-                    selectedColor: AppColors.primary,
-                    backgroundColor: Colors.white,
-                    elevation: isSelected ? 2 : 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(
-                        color: isSelected ? AppColors.primary : const Color(0xFFCBD5E1),
+                    child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 14),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      fullLocation,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF0F172A),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    onSelected: (_) => farmProv.selectPunjabDistrict(dist),
-                  );
-                },
+                  ),
+                  InkWell(
+                    onTap: () => _showDistrictPicker(context, farmProv, districts, selectedDistrict?.name),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: const [
+                        Text(
+                          "Change District",
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF475569),
+                          ),
+                        ),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 18),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-            // 2. Simple Traffic-Light Main Decision Banner
-            _buildFarmerDecisionBanner(weather, advisory, lang),
-            const SizedBox(height: 14),
-
-            // 3. Simple 4-Factor Metric Grid
-            _buildSimpleMetricsGrid(weather, lang),
+            // Caution Banner: "Spray with Caution"
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFBEB),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFFDE68A), width: 1.2),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Stylized Sun with Rays Icon
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFEF3C7),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Icons.wb_sunny_rounded,
+                        color: Color(0xFFD97706),
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Thin vertical divider line
+                  Container(
+                    width: 1.5,
+                    height: 40,
+                    color: const Color(0xFFFCD34D),
+                  ),
+                  const SizedBox(width: 12),
+                  // Advice text
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Spray with Caution",
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF92400E),
+                          ),
+                        ),
+                        SizedBox(height: 3),
+                        Text(
+                          "It is hot. Spray in early morning or evening for better results.",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF78350F),
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 16),
 
-            // 4. Farmer Action Advisory (PAU Guidelines)
-            _buildFarmerActionCard(advisory, weather, lang),
-            const SizedBox(height: 20),
-
-            // 5. Simple 48-Hour Spray Timetable
+            // Current Weather Section Header
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(
-                  child: Text(
-                    AppTranslations.tr(lang, "best_spray_timings"),
-                    style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                const Icon(Icons.check_circle_rounded, color: Color(0xFF047857), size: 18),
+                const SizedBox(width: 6),
+                const Text(
+                  "Current Weather",
+                  style: TextStyle(
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFECFDF5),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: const Color(0xFFA7F3D0)),
-                  ),
-                  child: Text(
-                    "48h",
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                const Spacer(),
+                const Text(
+                  "Updated: 3:40 PM",
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
-            if (advisory != null && advisory.upcomingWindows.isNotEmpty)
-              ...advisory.upcomingWindows.map((slot) => _buildSimpleSpraySlot(slot, lang))
-            else
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: Text("Loading weather forecast windows..."),
+
+            // 2x2 Weather Metrics Grid
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    icon: Icons.thermostat_rounded,
+                    iconBg: const Color(0xFFECFDF5),
+                    iconColor: const Color(0xFF047857),
+                    label: "Temperature",
+                    value: "$tempVal°C",
+                  ),
                 ),
-              ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildMetricCard(
+                    icon: Icons.water_drop_rounded,
+                    iconBg: const Color(0xFFEFF6FF),
+                    iconColor: const Color(0xFF2563EB),
+                    label: "Humidity",
+                    value: humidityVal,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildMetricCard(
+                    icon: Icons.air_rounded,
+                    iconBg: const Color(0xFFECFDF5),
+                    iconColor: const Color(0xFF047857),
+                    label: "Wind Speed",
+                    value: windVal,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _buildMetricCard(
+                    icon: Icons.cloudy_snowing,
+                    iconBg: const Color(0xFFF1F5F9),
+                    iconColor: const Color(0xFF475569),
+                    label: "Rain Chance",
+                    value: rainVal,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
 
-            // 6. Simplified Crop Diseases & Medicine Guide
-            Text(
-              AppTranslations.tr(lang, "crop_diseases"),
-              style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+            // Best Time to Spray (Next 48 Hours) Section
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF047857),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 14),
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  "Best Time to Spray",
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                const Text(
+                  "(Next 48 Hours)",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            _buildSimpleDiseaseCard(
-              cropName: AppTranslations.tr(lang, "wheat"),
-              diseaseName: AppTranslations.tr(lang, "wheat_disease"),
-              symptoms: AppTranslations.tr(lang, "wheat_symptoms"),
-              chemicalMedicine: AppTranslations.tr(lang, "wheat_medicine"),
-              organicSolution: AppTranslations.tr(lang, "wheat_organic"),
-              doseLabel: AppTranslations.tr(lang, "dose_label"),
-              organicLabel: AppTranslations.tr(lang, "organic_label"),
-              color: const Color(0xFFD97706),
-              icon: Icons.grass_rounded,
+
+            // Spray Windows Schedule Table
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildSprayRow(
+                    timeSlot: "Today Morning",
+                    hours: "6:30 AM – 10:00 AM",
+                    statusText: "Do not spray",
+                    isAllowed: false,
+                    isBest: false,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  _buildSprayRow(
+                    timeSlot: "Today Midday",
+                    hours: "11:30 AM – 3:30 PM",
+                    statusText: "Do not spray",
+                    isAllowed: false,
+                    isBest: false,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  _buildSprayRow(
+                    timeSlot: "Today Evening",
+                    hours: "4:00 PM – 7:00 PM",
+                    statusText: "Can spray",
+                    isAllowed: true,
+                    isBest: false,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  _buildSprayRow(
+                    timeSlot: "Tomorrow Morning",
+                    hours: "6:30 AM – 10:30 AM",
+                    statusText: "Best time",
+                    isAllowed: true,
+                    isBest: true,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+
+            // Common Crop Problems & Solutions Section
+            Row(
+              children: [
+                const Icon(Icons.eco_rounded, color: Color(0xFF047857), size: 20),
+                const SizedBox(width: 6),
+                const Text(
+                  "Common Crop Problems & Solutions",
+                  style: TextStyle(
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                const Spacer(),
+                InkWell(
+                  onTap: () => Navigator.pushNamed(context, '/crop_camera'),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Text(
+                        "View All",
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF047857),
+                        ),
+                      ),
+                      SizedBox(width: 2),
+                      Icon(Icons.chevron_right_rounded, color: Color(0xFF047857), size: 16),
+                    ],
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 10),
-            _buildSimpleDiseaseCard(
-              cropName: AppTranslations.tr(lang, "cotton"),
-              diseaseName: AppTranslations.tr(lang, "cotton_disease"),
-              symptoms: AppTranslations.tr(lang, "cotton_symptoms"),
-              chemicalMedicine: AppTranslations.tr(lang, "cotton_medicine"),
-              organicSolution: AppTranslations.tr(lang, "cotton_organic"),
-              doseLabel: AppTranslations.tr(lang, "dose_label"),
-              organicLabel: AppTranslations.tr(lang, "organic_label"),
-              color: const Color(0xFF059669),
-              icon: Icons.pest_control_rounded,
+
+            // Crop Problems Table / Card
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.02),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  _buildProblemItem(
+                    cropIcon: Icons.grass_rounded,
+                    name: "Yellow / Stripe Rust",
+                    crop: "Wheat",
+                    symptoms: "Yellow powder or stripes on leaves",
+                    dose: "Tilt 25% EC\n@ 200 ml per acre",
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  _buildProblemItem(
+                    cropIcon: Icons.spa_rounded,
+                    name: "Whitefly & Leaf Curl",
+                    crop: "Cotton",
+                    symptoms: "White insects on leaf underside, leaf curling",
+                    dose: "Pyriproxyfen 10% EC\n@ 400 ml per acre",
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  _buildProblemItem(
+                    cropIcon: Icons.forest_rounded,
+                    name: "Late Blight",
+                    crop: "Potato",
+                    symptoms: "Dark spots on leaves in high humidity",
+                    dose: "Mancozeb 75% WP\n@ 600 g per acre",
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            _buildSimpleDiseaseCard(
-              cropName: AppTranslations.tr(lang, "potato"),
-              diseaseName: AppTranslations.tr(lang, "potato_disease"),
-              symptoms: AppTranslations.tr(lang, "potato_symptoms"),
-              chemicalMedicine: AppTranslations.tr(lang, "potato_medicine"),
-              organicSolution: AppTranslations.tr(lang, "potato_organic"),
-              doseLabel: AppTranslations.tr(lang, "dose_label"),
-              organicLabel: AppTranslations.tr(lang, "organic_label"),
-              color: const Color(0xFFDC2626),
-              icon: Icons.shield_moon_rounded,
+            const SizedBox(height: 16),
+
+            // Disclaimer & Source Footer
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF047857),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 12),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      "Weather conditions can change. Always check the latest update before spraying.",
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    width: 1,
+                    height: 24,
+                    color: const Color(0xFFCBD5E1),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: const [
+                      Text("Source:", style: TextStyle(fontSize: 9.5, color: Color(0xFF64748B))),
+                      Text("Meteoblue", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF0F172A))),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  /// 1. Simple Traffic-Light Decision Banner
-  Widget _buildFarmerDecisionBanner(WeatherSnapshot? weather, WeatherAdvisory? advisory, String lang) {
-    final temp = weather?.temperatureC ?? 28.5;
-    final location = weather?.districtName ?? "Ludhiana";
-    final wind = weather?.windSpeedKmh ?? 5.4;
-    final deltaT = weather?.deltaTC ?? 3.6;
-
-    final isOptimal = wind <= 14.0 && deltaT >= 2.0 && deltaT <= 8.5 && temp <= 33.0;
-    final isCaution = !isOptimal && (wind <= 18.0 || temp <= 35.0);
-
-    Color bannerBg;
-    String statusTitle;
-    String statusSubtitle;
-    IconData statusIcon;
-
-    if (isOptimal) {
-      bannerBg = const Color(0xFF065F46); // Emerald Green
-      statusTitle = AppTranslations.tr(lang, "safe_to_spray");
-      statusSubtitle = AppTranslations.tr(lang, "safe_to_spray_sub");
-      statusIcon = Icons.check_circle_rounded;
-    } else if (isCaution) {
-      bannerBg = const Color(0xFF92400E); // Amber Warm
-      statusTitle = AppTranslations.tr(lang, "spray_caution");
-      statusSubtitle = AppTranslations.tr(lang, "spray_caution_sub");
-      statusIcon = Icons.warning_amber_rounded;
-    } else {
-      bannerBg = const Color(0xFF991B1B); // Crimson Red
-      statusTitle = AppTranslations.tr(lang, "do_not_spray");
-      statusSubtitle = AppTranslations.tr(lang, "do_not_spray_sub");
-      statusIcon = Icons.cancel_rounded;
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: bannerBg,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: bannerBg.withValues(alpha: 0.35),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // District Name + Live Tag
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  const Icon(Icons.location_on_rounded, color: Colors.white70, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    "$location, Punjab",
-                    style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                ],
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  "● ${AppTranslations.tr(lang, "live_weather")}",
-                  style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-
-          // Big Decision Badge
-          Row(
-            children: [
-              Icon(statusIcon, color: Colors.white, size: 28),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  statusTitle,
-                  style: const TextStyle(fontSize: 16.5, fontWeight: FontWeight.bold, color: Colors.white),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            statusSubtitle,
-            style: const TextStyle(fontSize: 12, color: Colors.white70, height: 1.3),
-          ),
-          const Divider(height: 20, color: Colors.white24),
-
-          // Bottom Quick Snapshot: Temp, Wind, Rain, Absorption
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildBannerMicroStat("🌡️ ${AppTranslations.tr(lang, "temp")}", "$temp°C"),
-              _buildBannerMicroStat("💨 ${AppTranslations.tr(lang, "wind")}", "$wind km/h"),
-              _buildBannerMicroStat("💧 ${AppTranslations.tr(lang, "rain_risk")}", "${weather?.precipitationProb ?? 0}%"),
-              _buildBannerMicroStat("🌿 ${AppTranslations.tr(lang, "absorption")}", isOptimal ? AppTranslations.tr(lang, "pleasant") : AppTranslations.tr(lang, "moderate")),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBannerMicroStat(String label, String value) {
-    return Column(
-      children: [
-        Text(label, style: const TextStyle(fontSize: 10.5, color: Colors.white70)),
-        const SizedBox(height: 2),
-        Text(value, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.white)),
-      ],
-    );
-  }
-
-  /// 2. Simple 4-Factor Metric Grid
-  Widget _buildSimpleMetricsGrid(WeatherSnapshot? weather, String lang) {
-    final temp = weather?.temperatureC ?? 28.5;
-    final wind = weather?.windSpeedKmh ?? 5.4;
-    final rainProb = weather?.precipitationProb ?? 10.0;
-    final deltaT = weather?.deltaTC ?? 3.6;
-
-    final isDeltaTOptimal = deltaT >= 2.0 && deltaT <= 8.5;
-    final isWindCalm = wind <= 12.0;
-    final isRainSafe = rainProb <= 20.0;
-
-    return GridView.count(
-      crossAxisCount: 2,
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.5,
-      children: [
-        // 1. Spray Absorption
-        _buildSimpleFactorCard(
-          icon: Icons.eco_rounded,
-          title: AppTranslations.tr(lang, "spray_absorption"),
-          value: isDeltaTOptimal ? AppTranslations.tr(lang, "absorption_val_optimal") : AppTranslations.tr(lang, "absorption_val_moderate"),
-          subtitle: isDeltaTOptimal ? AppTranslations.tr(lang, "absorption_desc_optimal") : AppTranslations.tr(lang, "absorption_desc_moderate"),
-          color: const Color(0xFF059669),
-        ),
-
-        // 2. Wind Speed
-        _buildSimpleFactorCard(
-          icon: Icons.air_rounded,
-          title: AppTranslations.tr(lang, "wind_speed"),
-          value: "${isWindCalm ? AppTranslations.tr(lang, "wind_calm") : AppTranslations.tr(lang, "wind_breezy")} ($wind km/h)",
-          subtitle: isWindCalm ? AppTranslations.tr(lang, "wind_desc_calm") : AppTranslations.tr(lang, "wind_desc_breezy"),
-          color: isWindCalm ? const Color(0xFF0284C7) : const Color(0xFFD97706),
-        ),
-
-        // 3. Rain Risk
-        _buildSimpleFactorCard(
-          icon: Icons.water_drop_rounded,
-          title: AppTranslations.tr(lang, "rain_risk"),
-          value: "${rainProb.round()}% ${AppTranslations.tr(lang, "rain_chance")}",
-          subtitle: isRainSafe ? AppTranslations.tr(lang, "rain_desc_safe") : AppTranslations.tr(lang, "rain_desc_unsafe"),
-          color: isRainSafe ? const Color(0xFF0D9488) : const Color(0xFFDC2626),
-        ),
-
-        // 4. Heat & Sun
-        _buildSimpleFactorCard(
-          icon: Icons.wb_sunny_rounded,
-          title: AppTranslations.tr(lang, "heat_sun"),
-          value: "$temp°C (${temp <= 32 ? AppTranslations.tr(lang, "pleasant") : AppTranslations.tr(lang, "too_hot")})",
-          subtitle: temp <= 32 ? AppTranslations.tr(lang, "heat_desc_safe") : AppTranslations.tr(lang, "heat_desc_hot"),
-          color: const Color(0xFFD97706),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSimpleFactorCard({
+  Widget _buildMetricCard({
     required IconData icon,
-    required String title,
+    required Color iconBg,
+    required Color iconColor,
+    required String label,
     required String value,
-    required String subtitle,
-    required Color color,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
+            blurRadius: 6,
             offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(4.5),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Icon(icon, color: color, size: 16),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: iconBg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Center(
+              child: Icon(icon, color: iconColor, size: 22),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
                   maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: color),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 2),
-          Text(
-            subtitle,
-            style: const TextStyle(fontSize: 9.5, color: Color(0xFF64748B)),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF0F172A),
+                  ),
+                  maxLines: 1,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  /// 3. Farmer Action Card (PAU Guidelines)
-  Widget _buildFarmerActionCard(WeatherAdvisory? advisory, WeatherSnapshot? weather, String lang) {
-    final district = weather?.districtName ?? "Ludhiana";
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFFFBEB),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFFDE68A)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.lightbulb_rounded, color: Color(0xFFD97706), size: 18),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  "${AppTranslations.tr(lang, "farmer_advisory")} ($district)",
-                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _buildActionBullet(AppTranslations.tr(lang, "advisory_bullet_1")),
-          const SizedBox(height: 5),
-          _buildActionBullet(AppTranslations.tr(lang, "advisory_bullet_2")),
-          const SizedBox(height: 5),
-          _buildActionBullet(AppTranslations.tr(lang, "advisory_bullet_3")),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionBullet(String text) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text("• ", style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFFB45309))),
-        Expanded(
-          child: Text(
-            text,
-            style: const TextStyle(fontSize: 11.5, color: Color(0xFF78350F), height: 1.3),
-          ),
-        ),
-      ],
-    );
-  }
-
-  /// 4. Simple Spray Slot Timings
-  Widget _buildSimpleSpraySlot(SprayWindowSlot slot, String lang) {
-    bool isGood = slot.suitability == 'OPTIMAL';
-    bool isModerate = slot.suitability == 'MODERATE';
-
-    Color badgeColor = isGood
-        ? const Color(0xFF059669)
-        : (isModerate ? const Color(0xFFD97706) : const Color(0xFFDC2626));
-
-    String statusText = isGood
-        ? AppTranslations.tr(lang, "best_time")
-        : (isModerate ? AppTranslations.tr(lang, "moderate") : AppTranslations.tr(lang, "no_spray"));
-
-    String slotTitle = slot.timeWindow;
-    String slotReason = slot.advisoryReason;
-    if (slot.timeWindow.contains("Morning") && !slot.timeWindow.contains("Tomorrow")) {
-      slotTitle = AppTranslations.tr(lang, "morning_slot");
-      slotReason = AppTranslations.tr(lang, "morning_reason");
-    } else if (slot.timeWindow.contains("Midday")) {
-      slotTitle = AppTranslations.tr(lang, "midday_slot");
-      slotReason = AppTranslations.tr(lang, "midday_reason");
-    } else if (slot.timeWindow.contains("Evening")) {
-      slotTitle = AppTranslations.tr(lang, "evening_slot");
-      slotReason = AppTranslations.tr(lang, "evening_reason");
-    } else if (slot.timeWindow.contains("Tomorrow")) {
-      slotTitle = AppTranslations.tr(lang, "tomorrow_slot");
-      slotReason = AppTranslations.tr(lang, "tomorrow_reason");
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isGood ? const Color(0xFFA7F3D0) : const Color(0xFFE2E8F0)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                decoration: BoxDecoration(color: badgeColor, borderRadius: BorderRadius.circular(6)),
-                child: Text(
-                  statusText,
-                  style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  slotTitle,
-                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            slotReason,
-            style: const TextStyle(fontSize: 11, color: Color(0xFF64748B)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 5. Simplified Disease & Medicine Card
-  Widget _buildSimpleDiseaseCard({
-    required String cropName,
-    required String diseaseName,
-    required String symptoms,
-    required String chemicalMedicine,
-    required String organicSolution,
-    required String doseLabel,
-    required String organicLabel,
-    required Color color,
-    required IconData icon,
+  Widget _buildSprayRow({
+    required String timeSlot,
+    required String hours,
+    required String statusText,
+    required bool isAllowed,
+    required bool isBest,
   }) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: Color(0xFFE2E8F0)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 4,
+            child: Text(
+              timeSlot,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF0F172A),
+              ),
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Text(
+              hours,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: !isAllowed
+                  ? const Color(0xFFFEF2F2)
+                  : isBest
+                      ? const Color(0xFFECFDF5)
+                      : const Color(0xFFECFDF5),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: !isAllowed
+                    ? const Color(0xFFFECACA)
+                    : const Color(0xFFA7F3D0),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  !isAllowed
+                      ? Icons.block_flipped
+                      : Icons.check_circle_rounded,
+                  size: 13,
+                  color: !isAllowed ? const Color(0xFFDC2626) : const Color(0xFF047857),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  statusText,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: !isAllowed ? const Color(0xFFDC2626) : const Color(0xFF047857),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    );
+  }
+
+  Widget _buildProblemItem({
+    required IconData cropIcon,
+    required String name,
+    required String crop,
+    required String symptoms,
+    required String dose,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: const BoxDecoration(
+              color: Color(0xFFECFDF5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(cropIcon, color: const Color(0xFF047857), size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                Text(
+                  "($crop)",
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: Text(
+              symptoms,
+              style: const TextStyle(
+                fontSize: 11,
+                color: Color(0xFF475569),
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Recommended Dose:",
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF047857),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  dose,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDistrictPicker(
+    BuildContext context,
+    FarmProvider farmProv,
+    List<dynamic> districts,
+    String? currentDistrict,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(diseaseName, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF0F172A))),
-                      Text(symptoms, style: const TextStyle(fontSize: 10.5, color: Color(0xFF64748B))),
-                    ],
-                  ),
+                const Text(
+                  "Select District (Punjab)",
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
-                  decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(6)),
-                  child: Text(cropName, style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: color)),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(ctx),
                 ),
               ],
             ),
-            const Divider(height: 14),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("🧪 ", style: TextStyle(fontSize: 12)),
-                Expanded(
-                  child: Text(
-                    "$doseLabel $chemicalMedicine",
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF0F172A)),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text("🌿 ", style: TextStyle(fontSize: 12)),
-                Expanded(
-                  child: Text(
-                    "$organicLabel $organicSolution",
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w500),
-                  ),
-                ),
-              ],
+            const Divider(),
+            Expanded(
+              child: ListView.builder(
+                itemCount: districts.length,
+                itemBuilder: (context, idx) {
+                  final dist = districts[idx];
+                  final isSel = dist.name == currentDistrict;
+                  return ListTile(
+                    leading: Icon(
+                      Icons.location_on_rounded,
+                      color: isSel ? const Color(0xFF047857) : const Color(0xFF94A3B8),
+                    ),
+                    title: Text(
+                      dist.name,
+                      style: TextStyle(
+                        fontWeight: isSel ? FontWeight.bold : FontWeight.normal,
+                        color: isSel ? const Color(0xFF047857) : const Color(0xFF0F172A),
+                      ),
+                    ),
+                    trailing: isSel ? const Icon(Icons.check_rounded, color: Color(0xFF047857)) : null,
+                    onTap: () {
+                      farmProv.selectPunjabDistrict(dist);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                },
+              ),
             ),
           ],
         ),

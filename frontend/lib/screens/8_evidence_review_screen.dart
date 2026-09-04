@@ -6,6 +6,7 @@ import '../core/providers/evidence_provider.dart';
 import '../core/providers/sync_provider.dart';
 import '../core/localization/app_translations.dart';
 import '../widgets/evidence_card.dart';
+import '../widgets/custom_bottom_nav.dart';
 
 class EvidenceReviewScreen extends StatelessWidget {
   const EvidenceReviewScreen({super.key});
@@ -17,31 +18,112 @@ class EvidenceReviewScreen extends StatelessWidget {
     final syncProv = Provider.of<SyncProvider>(context);
     final lang = auth.selectedLanguage;
 
-    final filterKeys = [
-      {'code': 'ALL', 'label': AppTranslations.tr(lang, 'filter_all')},
-      {'code': 'VERIFIED', 'label': AppTranslations.tr(lang, 'filter_verified')},
-      {'code': 'PENDING', 'label': AppTranslations.tr(lang, 'filter_pending')},
-      {'code': 'FLAGGED', 'label': AppTranslations.tr(lang, 'filter_flagged')},
+    final filterOptions = [
+      {'code': 'ALL', 'label': 'ALL'},
+      {'code': 'VERIFIED', 'label': 'VERIFIED'},
+      {'code': 'PENDING', 'label': 'PENDING'},
+      {'code': 'FLAGGED', 'label': 'FLAGGED'},
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: false,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A)),
+          onPressed: () {
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacementNamed(context, '/farmer_dashboard');
+            }
+          },
+        ),
         title: Text(
           AppTranslations.tr(lang, 'evidence_pipeline_title', "Evidence Verification Pipeline"),
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Color(0xFF0F172A),
+          ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.picture_as_pdf_rounded, color: AppColors.primary),
-            tooltip: "Audit Report",
-            onPressed: () => Navigator.pushNamed(context, '/evidence_report'),
+          Container(
+            margin: const EdgeInsets.only(right: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFECFDF5),
+              border: Border.all(color: const Color(0xFFA7F3D0), width: 1.2),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: IconButton(
+              padding: const EdgeInsets.all(6),
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.picture_as_pdf_outlined, color: Color(0xFF047857), size: 20),
+              tooltip: "Audit Report",
+              onPressed: () => Navigator.pushNamed(context, '/evidence_report'),
+            ),
           ),
         ],
       ),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: 2),
       body: Column(
         children: [
-          // Pending Offline Sync Banner
+          // Filter Tabs
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: filterOptions.map((f) {
+                  final code = f['code']!;
+                  final label = f['label']!;
+                  final isSelected = evProv.selectedFilter == code;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: InkWell(
+                      onTap: () => evProv.setFilter(code),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: isSelected ? const Color(0xFF047857) : Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? const Color(0xFF047857) : const Color(0xFFE2E8F0),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isSelected) ...[
+                              const Icon(Icons.check_rounded, color: Colors.white, size: 16),
+                              const SizedBox(width: 4),
+                            ],
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: isSelected ? Colors.white : const Color(0xFF334155),
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ),
+
+          // Offline Sync Alert (if pending items)
           if (syncProv.pendingCount > 0)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -66,7 +148,7 @@ class EvidenceReviewScreen extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   backgroundColor: const Color(0xFF065F46),
-                                  content: Text("✓ Successfully synced $count offline logs to Google Sheets!"),
+                                  content: Text("✓ Successfully synced $count offline logs!"),
                                 ),
                               );
                             }
@@ -93,48 +175,91 @@ class EvidenceReviewScreen extends StatelessWidget {
               ),
             ),
 
-          // Filter Chips Strip
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
+          // Info Banner: "Track the verification status of your spray and farm activities."
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFDF5),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFD1FAE5), width: 1.2),
+              ),
               child: Row(
-                children: filterKeys.map((f) {
-                  final code = f['code']!;
-                  final label = f['label']!;
-                  final isSelected = evProv.selectedFilter == code;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: FilterChip(
-                      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                      selected: isSelected,
-                      selectedColor: AppColors.primarySurface,
-                      checkmarkColor: AppColors.primary,
-                      onSelected: (val) {
-                        if (val) evProv.setFilter(code);
-                      },
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFD1FAE5),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  );
-                }).toList(),
+                    child: const Center(
+                      child: Icon(Icons.spa_rounded, color: Color(0xFF047857), size: 22),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      "Track the verification status of your spray and farm activities.",
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF065F46),
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Sun & Leaves decorative illustration
+                  SizedBox(
+                    width: 50,
+                    height: 38,
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          right: 4,
+                          top: 2,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFBBF24),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Icon(
+                            Icons.eco_rounded,
+                            size: 26,
+                            color: const Color(0xFF047857).withValues(alpha: 0.35),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const Divider(height: 1),
 
           // Evidence List
           Expanded(
             child: RefreshIndicator(
+              color: const Color(0xFF047857),
               onRefresh: () async {
                 await evProv.loadEvidenceForFarmer(phone: auth.userPhone, name: auth.userName);
               },
               child: evProv.isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(child: CircularProgressIndicator(color: Color(0xFF047857)))
                   : evProv.evidenceList.isEmpty
                       ? ListView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           children: [
-                            SizedBox(height: MediaQuery.of(context).size.height * 0.25),
+                            SizedBox(height: MediaQuery.of(context).size.height * 0.2),
                             Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -142,14 +267,8 @@ class EvidenceReviewScreen extends StatelessWidget {
                                   const Icon(Icons.folder_open_rounded, size: 48, color: AppColors.textMuted),
                                   const SizedBox(height: 12),
                                   Text(
-                                    lang == 'mr'
-                                        ? "कोणतीही नोंद आढळली नाही."
-                                        : lang == 'hi'
-                                            ? "कोई रिकॉर्ड नहीं मिला।"
-                                            : lang == 'pa'
-                                                ? "ਕੋਈ ਰਿਕਾਰਡ ਨਹੀਂ ਮਿਲਿਆ।"
-                                                : "No ${evProv.selectedFilter} evidence items found.",
-                                    style: const TextStyle(color: AppColors.textSecondary),
+                                    "No ${evProv.selectedFilter} evidence items found.",
+                                    style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                                   ),
                                 ],
                               ),
@@ -158,7 +277,7 @@ class EvidenceReviewScreen extends StatelessWidget {
                         )
                       : ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 20),
                           itemCount: evProv.evidenceList.length,
                           itemBuilder: (context, index) {
                             final item = evProv.evidenceList[index];
@@ -175,4 +294,3 @@ class EvidenceReviewScreen extends StatelessWidget {
     );
   }
 }
-

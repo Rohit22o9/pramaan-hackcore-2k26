@@ -100,6 +100,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  void updateFarmerProfile({
+    String? name,
+    String? phone,
+    String? village,
+    String? state,
+    String? crop,
+  }) {
+    if (name != null && name.isNotEmpty) _userName = name;
+    if (phone != null && phone.isNotEmpty) _userPhone = phone;
+    if (village != null && village.isNotEmpty) _userVillage = village;
+    if (state != null && state.isNotEmpty) _userState = state;
+    if (crop != null && crop.isNotEmpty) _activeCrop = crop;
+    notifyListeners();
+  }
+
   void toggleTheme() {
     _isDarkMode = !_isDarkMode;
     notifyListeners();

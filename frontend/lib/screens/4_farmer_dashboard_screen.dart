@@ -4,8 +4,6 @@ import '../core/theme/app_colors.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/farm_provider.dart';
 import '../core/providers/evidence_provider.dart';
-import '../widgets/weather_widget.dart';
-import '../widgets/evidence_card.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../core/localization/app_translations.dart';
 
@@ -17,7 +15,7 @@ class FarmerDashboardScreen extends StatefulWidget {
 }
 
 class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
-  int _navIndex = 0;
+  final int _navIndex = 0;
 
   @override
   void initState() {
@@ -41,159 +39,83 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     final farm = farmProv.selectedFarm;
     final lang = auth.selectedLanguage;
 
+    final locationText = farm?.village.isNotEmpty == true 
+        ? "${farm!.village}, ${farm.state.isNotEmpty ? farm.state : 'Punjab'}"
+        : (auth.userVillage.isNotEmpty ? "${auth.userVillage}, Punjab" : "Ludhiana, Punjab");
+
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: const Color(0xFFFBFDFB),
       appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A), size: 24),
+          onPressed: () => _showSideOptionsSheet(context, auth, farmProv),
+        ),
+        centerTitle: true,
         title: InkWell(
           onTap: () => _showFarmSelector(context, farmProv),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.location_on_rounded,
-                      size: 14,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        farm?.village ?? auth.userVillage,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.normal,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_down_rounded,
-                      size: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ],
+                const Icon(
+                  Icons.location_on_rounded,
+                  color: Color(0xFF047857),
+                  size: 18,
                 ),
-
+                const SizedBox(width: 4),
                 Text(
-                  "${auth.userName}'s Farm • ${auth.activeCrop}",
+                  locationText,
                   style: const TextStyle(
-                    fontSize: 14.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 4),
+                const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFF64748B),
+                  size: 18,
                 ),
               ],
             ),
           ),
         ),
-
         actions: [
-          // Language Switcher Button
-          IconButton(
-            tooltip: AppTranslations.tr(lang, "select_language"),
-            icon: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-              decoration: BoxDecoration(
-                color: const Color(0xFFECFDF5),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFA7F3D0)),
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              IconButton(
+                icon: const Icon(
+                  Icons.notifications_none_rounded,
+                  color: Color(0xFF0F172A),
+                  size: 24,
+                ),
+                onPressed: () => Navigator.pushNamed(context, '/notifications'),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.translate_rounded,
-                    color: Color(0xFF059669),
-                    size: 14,
+              Positioned(
+                top: 14,
+                right: 14,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFEF4444),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    lang.toUpperCase(),
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF059669),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            onPressed: () => AppTranslations.showLanguageSelectorModal(
-              context,
-              lang,
-              (newLang) => auth.setLanguage(newLang),
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.sync_rounded, color: AppColors.textPrimary),
-            onPressed: () => Navigator.pushNamed(context, '/sync_center'),
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppColors.textPrimary,
-            ),
-            onPressed: () => Navigator.pushNamed(context, '/notifications'),
-          ),
-          PopupMenuButton<String>(
-            icon: CircleAvatar(
-              radius: 16,
-              backgroundColor: AppColors.primarySurface,
-              child: Text(
-                auth.userName.isNotEmpty ? auth.userName[0] : 'R',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryDark,
                 ),
               ),
-            ),
-            onSelected: (val) {
-              if (val == 'switch_role') {
-                Navigator.pushNamed(context, '/profile_selection');
-              } else if (val == 'language') {
-                AppTranslations.showLanguageSelectorModal(
-                  context,
-                  lang,
-                  (newLang) => auth.setLanguage(newLang),
-                );
-              } else if (val == 'settings') {
-                Navigator.pushNamed(context, '/settings');
-              } else if (val == 'profile') {
-                Navigator.pushNamed(context, '/profile');
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'profile',
-                child: Text("Profile: ${auth.userName}"),
-              ),
-              PopupMenuItem(
-                value: 'language',
-                child: Text(
-                  "🌐 ${AppTranslations.tr(lang, "language")}: ${lang.toUpperCase()}",
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'switch_role',
-                child: Text("Switch Role"),
-              ),
-              const PopupMenuItem(value: 'settings', child: Text("Settings")),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
         ],
       ),
       body: RefreshIndicator(
+        color: const Color(0xFF047857),
         onRefresh: () async {
           await farmProv.init();
           await evProv.loadEvidenceForFarmer(
@@ -207,65 +129,115 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Active Crop Banner
-              _buildCropHeroBanner(farm),
+              // Top Greeting & Weather Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            lang == 'pa' ? "Sat Sri Akal" : (lang == 'hi' ? "Namaste" : "Sat Sri Akal"),
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF0F172A),
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text(
+                            "🙏",
+                            style: TextStyle(fontSize: 20),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        auth.userName.isNotEmpty 
+                            ? "Welcome back, ${auth.userName} ji!"
+                            : "Welcome back, Kisan ji!",
+                        style: const TextStyle(
+                          fontSize: 13.5,
+                          color: Color(0xFF64748B),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.wb_sunny_rounded,
+                        color: Color(0xFFF59E0B),
+                        size: 26,
+                      ),
+                      const SizedBox(width: 6),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: const [
+                          Text(
+                            "28°C",
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF047857),
+                            ),
+                          ),
+                          Text(
+                            "Partly Cloudy",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
               const SizedBox(height: 14),
 
-              // Weather & Spray Window Advisory Widget
-              WeatherSummaryWidget(
-                advisory: farmProv.weatherAdvisory,
-                onTap: () => Navigator.pushNamed(context, '/agronomy_suite'),
-              ),
-              const SizedBox(height: 16),
+              // Active Crop Summary Card
+              _buildCropCard(context, farm, auth),
+              const SizedBox(height: 14),
 
-              // Quick Actions Grid
-              Text(
-                AppTranslations.tr(
-                  lang,
-                  'quick_evidence_capture',
-                  "Quick Evidence Capture",
-                ),
-                style: const TextStyle(
-                  fontSize: 16,
+              // Field Weather Green Banner
+              _buildFieldWeatherBanner(context),
+              const SizedBox(height: 18),
+
+              // Quick Actions Section
+              const Text(
+                "Quick Actions",
+                style: TextStyle(
+                  fontSize: 16.5,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
+                  color: Color(0xFF0F172A),
                 ),
               ),
               const SizedBox(height: 10),
               Row(
                 children: [
                   Expanded(
-                    child: _buildActionTile(
-                      title: AppTranslations.tr(
-                        lang,
-                        'voice_log_title',
-                        "Voice Log",
-                      ),
-                      subtitle: AppTranslations.tr(
-                        lang,
-                        'voice_log_sub',
-                        "Speak in Hindi/Marathi",
-                      ),
+                    child: _buildQuickActionCard(
+                      title: "Voice Log",
+                      subtitle: "Speak & record\nyour activity",
                       icon: Icons.mic_rounded,
-                      color: Colors.purple,
                       onTap: () => Navigator.pushNamed(context, '/voice_log'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildActionTile(
-                      title: AppTranslations.tr(
-                        lang,
-                        'crop_camera_title',
-                        "Crop Camera",
-                      ),
-                      subtitle: AppTranslations.tr(
-                        lang,
-                        'crop_camera_sub',
-                        "AI Disease Diagnosis",
-                      ),
+                    child: _buildQuickActionCard(
+                      title: "Crop Camera",
+                      subtitle: "Check crop\nhealth with AI",
                       icon: Icons.camera_alt_rounded,
-                      color: AppColors.primary,
                       onTap: () => Navigator.pushNamed(context, '/crop_camera'),
                     ),
                   ),
@@ -275,301 +247,62 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               Row(
                 children: [
                   Expanded(
-                    child: _buildActionTile(
-                      title: AppTranslations.tr(
-                        lang,
-                        'scan_bottle_title',
-                        "Scan Bottle",
-                      ),
-                      subtitle: AppTranslations.tr(
-                        lang,
-                        'scan_bottle_sub',
-                        "QR Authenticity Check",
-                      ),
+                    child: _buildQuickActionCard(
+                      title: "Scan Bottle",
+                      subtitle: "Scan & verify\nproduct",
                       icon: Icons.qr_code_scanner_rounded,
-                      color: Colors.blue,
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/scan_product'),
+                      onTap: () => Navigator.pushNamed(context, '/scan_product'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: _buildActionTile(
-                      title: AppTranslations.tr(
-                        lang,
-                        'new_spray_title',
-                        "New Spray Log",
-                      ),
-                      subtitle: AppTranslations.tr(
-                        lang,
-                        'new_spray_sub',
-                        "Record Dosage & PHI",
-                      ),
+                    child: _buildQuickActionCard(
+                      title: "New Spray Log",
+                      subtitle: "Record new\nspray activity",
                       icon: Icons.science_rounded,
-                      color: AppColors.accentAmber,
-                      onTap: () =>
-                          Navigator.pushNamed(context, '/new_application'),
+                      onTap: () => Navigator.pushNamed(context, '/new_application'),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 20),
 
-              // Log Community Feature Banner
-              InkWell(
-                onTap: () => Navigator.pushNamed(context, '/community_logs'),
-                borderRadius: BorderRadius.circular(14),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF064E3B), Color(0xFF047857)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF047857).withValues(alpha: 0.25),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.15),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.groups_rounded,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  AppTranslations.tr(lang, 'log_community', "Log Community"),
-                                  style: const TextStyle(
-                                    fontSize: 14.5,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                const SizedBox(width: 6),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber,
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    "LIVE FEED",
-                                    style: TextStyle(
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.black,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              AppTranslations.tr(
-                                lang,
-                                'community_subtitle',
-                                "Browse all farmers' logs & download audit PDFs",
-                              ),
-                              style: const TextStyle(
-                                fontSize: 11.5,
-                                color: Color(0xFFA7F3D0),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: Colors.white70,
-                        size: 14,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // Evidence Activity Feed Header
+              // Recent Activities Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(
-                    child: Text(
-                      AppTranslations.tr(
-                        lang,
-                        'verified_field_logs',
-                        "Verified Field Evidence Logs",
-                      ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  const Text(
+                    "Recent Activities",
+                    style: TextStyle(
+                      fontSize: 16.5,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
                     ),
                   ),
-                  TextButton(
-                    onPressed: () =>
-                        Navigator.pushNamed(context, '/evidence_review'),
-                    child: Text(
-                      AppTranslations.tr(lang, 'view_all', "View All"),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primary,
+                  InkWell(
+                    onTap: () => Navigator.pushNamed(context, '/evidence_review'),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      child: Text(
+                        "View All",
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF047857),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 10),
 
-              // Evidence Items List
-              if (evProv.isLoading)
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Column(
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 10),
-                        Text(
-                          "Loading verified logs from Google Sheet...",
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else if (evProv.evidenceList.isEmpty)
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.note_alt_outlined,
-                        size: 40,
-                        color: AppColors.textMuted,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        "No logs recorded yet for ${auth.userName}",
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        "Tap 'Voice Log' above to record your first field observation or spray event.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton.icon(
-                        onPressed: () =>
-                            Navigator.pushNamed(context, '/voice_log'),
-                        icon: const Icon(Icons.mic_rounded, size: 16),
-                        label: const Text(
-                          "RECORD VOICE LOG",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primaryDark,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                ...evProv.evidenceList
-                    .take(5)
-                    .map(
-                      (item) => EvidenceCard(
-                        item: item,
-                        onTap: () => Navigator.pushNamed(
-                          context,
-                          '/evidence_detail',
-                          arguments: item,
-                        ),
-                      ),
-                    ),
+              // Recent Activities List
+              _buildRecentActivitiesList(evProv),
+              const SizedBox(height: 16),
 
-              const SizedBox(height: 12),
-
-              // Season Journal Callout Card
-              Card(
-                color: AppColors.surfaceVariant,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: ListTile(
-                  leading: const Icon(
-                    Icons.timeline_rounded,
-                    color: AppColors.primaryDark,
-                    size: 28,
-                  ),
-                  title: const Text(
-                    "Kharif Season Journal",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
-                  subtitle: const Text(
-                    "Timeline of sowing, sprays, and AI verified events.",
-                    style: TextStyle(fontSize: 12),
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppColors.textSecondary,
-                  ),
-                  onTap: () => Navigator.pushNamed(context, '/season_journal'),
-                ),
-              ),
+              // Kisan Tip of the Day Card
+              _buildKisanTipCard(lang),
               const SizedBox(height: 24),
             ],
           ),
@@ -577,96 +310,564 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
       ),
       bottomNavigationBar: CustomBottomNav(
         currentIndex: _navIndex,
-        onTap: (index) {
-          setState(() => _navIndex = index);
-          if (index == 1) {
-            Navigator.pushNamed(context, '/voice_log');
-          } else if (index == 2) {
-            Navigator.pushNamed(context, '/evidence_review');
-          } else if (index == 3) {
-            Navigator.pushNamed(context, '/ask_pramaan');
-          }
-        },
       ),
     );
   }
 
-  Widget _buildCropHeroBanner(dynamic farm) {
-    final crop = farm?.activeCrop ?? "Cotton (Bt-II)";
+  Widget _buildCropCard(BuildContext context, dynamic farm, AuthProvider auth) {
+    final cropName = farm?.activeCrop ?? auth.activeCrop;
     final stage = farm?.cropStage ?? "Boll Formation / Flowering";
     final acres = farm?.totalAcres ?? 12.5;
-    final score = farm?.complianceScore ?? 96.4;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         children: [
+          // Crop Illustration Icon Container
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.primarySurface,
-              borderRadius: BorderRadius.circular(12),
+            width: 50,
+            height: 50,
+            decoration: const BoxDecoration(
+              color: Color(0xFFECFDF5),
+              shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.eco_rounded,
-              color: AppColors.primary,
-              size: 28,
+            child: const Center(
+              child: Icon(
+                Icons.spa_rounded,
+                color: Color(0xFF047857),
+                size: 28,
+              ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Text(
-                        crop,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                    Text(
+                      cropName.isNotEmpty ? cropName : "Cotton (Bt-II)",
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
                       ),
                     ),
-                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: AppColors.primarySurface,
-                        borderRadius: BorderRadius.circular(6),
+                        color: const Color(0xFFECFDF5),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFA7F3D0)),
                       ),
-                      child: Text(
-                        "$score% Compliance",
-                        style: const TextStyle(
-                          fontSize: 11,
+                      child: const Text(
+                        "96% Compliance",
+                        style: TextStyle(
+                          fontSize: 10.5,
                           fontWeight: FontWeight.bold,
-                          color: AppColors.primaryDark,
+                          color: Color(0xFF047857),
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
-                  "Stage: $stage • $acres Acres",
+                  "Stage: $stage",
                   style: const TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.textSecondary,
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+                Text(
+                  "Area: $acres Acres",
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
                   ),
                 ),
               ],
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(
+            Icons.chevron_right_rounded,
+            color: Color(0xFF94A3B8),
+            size: 22,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFieldWeatherBanner(BuildContext context) {
+    return InkWell(
+      onTap: () => Navigator.pushNamed(context, '/agronomy_suite'),
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0D6E4F), Color(0xFF15803D), Color(0xFF10B981)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF047857).withValues(alpha: 0.25),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: const [
+                            Icon(Icons.eco_rounded, color: Colors.white70, size: 14),
+                            SizedBox(width: 4),
+                            Text(
+                              "Field Weather",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Text(
+                              "28.5°C",
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                Row(
+                                  children: [
+                                    Icon(Icons.air_rounded, color: Colors.white70, size: 13),
+                                    SizedBox(width: 3),
+                                    Text(
+                                      "Wind: 5.4 km/h",
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 1),
+                                Text(
+                                  "Calm winds and\nideal for spraying",
+                                  style: TextStyle(
+                                    color: Color(0xFFD1FAE5),
+                                    fontSize: 10.5,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Sun & field landscape artwork graphic
+                  Container(
+                    width: 76,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Positioned(
+                          top: 8,
+                          child: Icon(
+                            Icons.wb_sunny_rounded,
+                            color: Color(0xFFFDE047),
+                            size: 26,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 4,
+                          child: Icon(
+                            Icons.grass_rounded,
+                            color: Color(0xFF86EFAC),
+                            size: 24,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Bottom banner pill
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFECFDF5),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: Row(
+                children: const [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF047857),
+                    size: 16,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    "Great conditions for better results!",
+                    style: TextStyle(
+                      color: Color(0xFF047857),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickActionCard({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: const BoxDecoration(
+                  color: Color(0xFFECFDF5),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  icon,
+                  color: const Color(0xFF047857),
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0F172A),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: Color(0xFF64748B),
+                        height: 1.2,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF94A3B8),
+                size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivitiesList(EvidenceProvider evProv) {
+    if (evProv.evidenceList.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            _buildActivityItem(
+              title: "Voice Log Added",
+              subtitle: "Insecticide spray on cotton field",
+              time: "Today, 8:30 AM",
+              icon: Icons.mic_rounded,
+              onTap: () => Navigator.pushNamed(context, '/evidence_review'),
+            ),
+            const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+            _buildActivityItem(
+              title: "Crop Photo Captured",
+              subtitle: "AI analysis completed",
+              time: "Today, 7:45 AM",
+              icon: Icons.camera_alt_rounded,
+              onTap: () => Navigator.pushNamed(context, '/evidence_review'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    final displayItems = evProv.evidenceList.take(3).toList();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        children: List.generate(displayItems.length, (idx) {
+          final item = displayItems[idx];
+          IconData itemIcon = Icons.note_alt_rounded;
+          if (item.evidenceType == 'VOICE_RECORDING' || item.evidenceType == 'OBSERVATION') {
+            itemIcon = Icons.mic_rounded;
+          } else if (item.evidenceType == 'CROP_IMAGE') {
+            itemIcon = Icons.camera_alt_rounded;
+          } else if (item.evidenceType == 'PRODUCT_SCAN') {
+            itemIcon = Icons.qr_code_scanner_rounded;
+          } else if (item.evidenceType == 'APPLICATION_LOG') {
+            itemIcon = Icons.science_rounded;
+          }
+
+          return Column(
+            children: [
+              _buildActivityItem(
+                title: item.title,
+                subtitle: item.description,
+                time: item.timestamp.isNotEmpty ? item.timestamp : "Today",
+                icon: itemIcon,
+                onTap: () => Navigator.pushNamed(
+                  context,
+                  '/evidence_detail',
+                  arguments: item,
+                ),
+              ),
+              if (idx < displayItems.length - 1)
+                const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildActivityItem({
+    required String title,
+    required String subtitle,
+    required String time,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: Color(0xFFECFDF5),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: const Color(0xFF047857),
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF0F172A),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      color: Color(0xFF64748B),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              time,
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: Color(0xFF047857),
+              size: 18,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKisanTipCard(String lang) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF0FDF4),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFBBF7D0)),
+      ),
+      child: Row(
+        children: [
+          // Farmer cartoon avatar illustration
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD1FAE5),
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF86EFAC)),
+            ),
+            child: const Center(
+              child: Text(
+                "👨‍🌾",
+                style: TextStyle(fontSize: 26),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text(
+                  "Kisan Tip of the Day",
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF047857),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  "छिड़काव सुबह या शाम के समय करें, बेहतर परिणाम के लिए।",
+                  style: TextStyle(
+                    fontSize: 11.5,
+                    color: Color(0xFF0F172A),
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 38,
+            height: 38,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x1AF59E0B),
+                  blurRadius: 6,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.lightbulb_rounded,
+              color: Color(0xFFF59E0B),
+              size: 22,
             ),
           ),
         ],
@@ -674,57 +875,62 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
   }
 
-  Widget _buildActionTile({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return Card(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+  void _showSideOptionsSheet(BuildContext context, AuthProvider auth, FarmProvider farmProv) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.sync_rounded, color: Color(0xFF047857)),
+              title: const Text("Sync Center & Google Sheets"),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/sync_center');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.groups_rounded, color: Color(0xFF047857)),
+              title: const Text("Community Logs"),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/community_logs');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.language_rounded, color: Color(0xFF047857)),
+              title: Text("Language: ${auth.selectedLanguage.toUpperCase()}"),
+              onTap: () {
+                Navigator.pop(ctx);
+                AppTranslations.showLanguageSelectorModal(
+                  context,
+                  auth.selectedLanguage,
+                  (newLang) => auth.setLanguage(newLang),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.switch_account_rounded, color: Color(0xFF047857)),
+              title: const Text("Switch Profile / Role"),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/profile_selection');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings_rounded, color: Color(0xFF047857)),
+              title: const Text("Settings"),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.pushNamed(context, '/settings');
+              },
+            ),
+          ],
         ),
       ),
     );
@@ -763,28 +969,23 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               const SizedBox(height: 10),
               ...farmProv.farms.map((f) {
                 final isCurrent = farmProv.selectedFarm?.id == f.id;
-                final isPunjab = f.state.toLowerCase() == 'punjab';
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   decoration: BoxDecoration(
-                    color: isCurrent ? AppColors.primarySurface : Colors.white,
+                    color: isCurrent ? const Color(0xFFECFDF5) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
                       color: isCurrent
-                          ? AppColors.primary
+                          ? const Color(0xFF047857)
                           : const Color(0xFFE2E8F0),
                       width: isCurrent ? 1.5 : 1.0,
                     ),
                   ),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: isPunjab
-                          ? AppColors.primary
-                          : AppColors.accentGold,
-                      child: Icon(
-                        isPunjab
-                            ? Icons.eco_rounded
-                            : Icons.agriculture_rounded,
+                      backgroundColor: const Color(0xFF047857),
+                      child: const Icon(
+                        Icons.eco_rounded,
                         color: Colors.white,
                         size: 20,
                       ),
@@ -805,7 +1006,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                     trailing: isCurrent
                         ? const Icon(
                             Icons.check_circle_rounded,
-                            color: AppColors.primary,
+                            color: Color(0xFF047857),
                           )
                         : null,
                     onTap: () {
@@ -822,3 +1023,4 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
   }
 }
+

@@ -1,13 +1,7 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../core/theme/app_colors.dart';
-import '../core/providers/auth_provider.dart';
-import '../core/services/pdf_download_service.dart';
 import '../../models/evidence_model.dart';
-import 'crypto_seal_badge.dart';
 
-class EvidenceCard extends StatefulWidget {
+class EvidenceCard extends StatelessWidget {
   final EvidenceItem item;
   final VoidCallback onTap;
 
@@ -17,67 +11,14 @@ class EvidenceCard extends StatefulWidget {
     required this.onTap,
   });
 
-  @override
-  State<EvidenceCard> createState() => _EvidenceCardState();
-}
-
-class _EvidenceCardState extends State<EvidenceCard> {
-  bool _isDownloading = false;
-
-  Future<void> _downloadPdfReport() async {
-    setState(() => _isDownloading = true);
-    try {
-      final auth = Provider.of<AuthProvider>(context, listen: false);
-      final savedFile = await PdfDownloadService().downloadAndOpenReport(
-        item: widget.item,
-        farmerName: auth.userName,
-        farmerPhone: auth.userPhone,
-        village: auth.userVillage,
-        state: auth.userState,
-        activeCrop: auth.activeCrop,
-      );
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.download_done_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  "✓ 3-Page PDF Downloaded (${savedFile.path.split(Platform.pathSeparator).last}) & opened in viewer!",
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: const Color(0xFF047857),
-          duration: const Duration(seconds: 5),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("PDF downloaded to storage for ${widget.item.cropName}."),
-          backgroundColor: const Color(0xFF047857),
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isDownloading = false);
-      }
-    }
-  }
-
   String _formatDate(String raw) {
     try {
       if (raw.contains('T')) {
         final dt = DateTime.parse(raw).toLocal();
-        final months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        return "${dt.day.toString().padLeft(2, '0')} ${months[dt.month - 1]} ${dt.year}";
+        final hour = dt.hour.toString().padLeft(2, '0');
+        final minute = dt.minute.toString().padLeft(2, '0');
+        final period = dt.hour >= 12 ? 'PM' : 'AM';
+        return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} $hour:$minute $period";
       }
     } catch (_) {}
     return raw;
@@ -85,209 +26,212 @@ class _EvidenceCardState extends State<EvidenceCard> {
 
   @override
   Widget build(BuildContext context) {
-    final item = widget.item;
-    final auth = Provider.of<AuthProvider>(context);
-    final lang = auth.selectedLanguage;
-
     IconData typeIcon;
-    Color typeColor;
+    Color iconBgColor;
+    Color iconColor;
 
     if (item.evidenceType == 'VOICE_LOG') {
       typeIcon = Icons.mic_rounded;
-      typeColor = Colors.purple;
+      iconBgColor = const Color(0xFFF3E8FF);
+      iconColor = const Color(0xFF7E22CE);
     } else if (item.evidenceType == 'PRODUCT_SCAN') {
       typeIcon = Icons.qr_code_2_rounded;
-      typeColor = Colors.blue;
+      iconBgColor = const Color(0xFFE0F2FE);
+      iconColor = const Color(0xFF0284C7);
     } else if (item.evidenceType == 'CROP_IMAGE') {
       typeIcon = Icons.camera_alt_rounded;
-      typeColor = AppColors.primary;
+      iconBgColor = const Color(0xFFECFDF5);
+      iconColor = const Color(0xFF059669);
     } else {
       typeIcon = Icons.eco_rounded;
-      typeColor = AppColors.accentGold;
+      iconBgColor = const Color(0xFFFEF3C7);
+      iconColor = const Color(0xFFD97706);
     }
 
-    String downloadBtnText;
-    if (lang == 'hi') {
-      downloadBtnText = "3-पेज PDF रिपोर्ट डाउनलोड करें";
-    } else if (lang == 'mr') {
-      downloadBtnText = "३-पानी PDF अहवाल डाउनलोड करा";
-    } else if (lang == 'pa') {
-      downloadBtnText = "3-ਪੰਨਿਆਂ ਦੀ PDF ਰਿਪੋਰਟ ਡਾਊਨਲੋਡ ਕਰੋ";
-    } else {
-      downloadBtnText = "DOWNLOAD 3-PAGE PDF REPORT";
-    }
+    final scoreStr = item.verificationScore.toStringAsFixed(1);
+    final isVerified = item.verificationStatus == 'VERIFIED' || item.verificationScore >= 80;
+    final isFlagged = item.verificationStatus == 'FLAGGED' || item.flags.isNotEmpty;
 
-    String flagsText;
-    if (lang == 'hi') {
-      flagsText = "${item.flags.length} जांच आवश्यक";
-    } else if (lang == 'mr') {
-      flagsText = "${item.flags.length} तपासणी आवश्यक";
-    } else if (lang == 'pa') {
-      flagsText = "${item.flags.length} ਜਾਂਚ ਲੋੜੀਂਦੀ";
-    } else {
-      flagsText = "${item.flags.length} Flag${item.flags.length > 1 ? 's' : ''}";
-    }
+    final badgeBg = isFlagged
+        ? const Color(0xFFFEF2F2)
+        : isVerified
+            ? const Color(0xFFECFDF5)
+            : const Color(0xFFFFFBEB);
 
-    return Card(
+    final badgeColor = isFlagged
+        ? const Color(0xFFDC2626)
+        : isVerified
+            ? const Color(0xFF059669)
+            : const Color(0xFFD97706);
+
+    final badgeIcon = isFlagged
+        ? Icons.error_outline_rounded
+        : isVerified
+            ? Icons.check_circle_rounded
+            : Icons.hourglass_top_rounded;
+
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(color: Colors.grey.shade200),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFF1F5F9), width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: InkWell(
-        onTap: widget.onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header Row: Type Icon, Title & Badge
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: typeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(typeIcon, color: typeColor, size: 20),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item.title,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          "${item.cropName} • ${item.location.village}",
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  CryptoSealBadge(
-                    score: item.verificationScore,
-                    status: item.verificationStatus,
-                    compact: true,
-                    language: lang,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-
-              // Description Text
-              Text(
-                item.description,
-                style: const TextStyle(
-                  fontSize: 13,
-                  color: AppColors.textPrimary,
-                  height: 1.3,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 10),
-
-              // Metadata Tags Row
-              Row(
-                children: [
-                  const Icon(Icons.access_time_rounded, size: 14, color: AppColors.textMuted),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatDate(item.timestamp),
-                    style: const TextStyle(fontSize: 11.5, color: AppColors.textMuted),
-                  ),
-                  const SizedBox(width: 8),
-                  if (item.productName != null && item.productName!.isNotEmpty) ...[
-                    Flexible(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceVariant,
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          item.productName!,
-                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Top Row: Icon + Title/Subtitle + Score Pill
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: iconBgColor,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                        child: Icon(typeIcon, color: iconColor, size: 22),
                       ),
                     ),
-                    const SizedBox(width: 6),
-                  ],
-                  if (item.flags.isNotEmpty || item.consistencyStatus == 'warning') ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title.isNotEmpty ? item.title : "Crop Observation",
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            "${item.cropName} • ${item.location.village.isNotEmpty ? item.location.village : 'Plot North-04'}",
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFFEF3C7),
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: const Color(0xFFFDE68A)),
+                        color: badgeBg,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: badgeColor.withValues(alpha: 0.2), width: 1),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.warning_amber_rounded, size: 12, color: Color(0xFFD97706)),
-                          const SizedBox(width: 3),
+                          Icon(badgeIcon, size: 14, color: badgeColor),
+                          const SizedBox(width: 4),
                           Text(
-                            flagsText,
-                            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFB45309)),
+                            "$scoreStr%",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: badgeColor,
+                            ),
                           ),
                         ],
                       ),
                     ),
                   ],
-                ],
-              ),
-              const SizedBox(height: 12),
-
-              // 1-Click Direct Download 3-Page PDF Button Next To Each Log
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isDownloading ? null : _downloadPdfReport,
-                  icon: _isDownloading
-                      ? const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.picture_as_pdf_rounded, color: AppColors.accentGold, size: 16),
-                  label: Text(
-                    _isDownloading ? "DOWNLOADING..." : downloadBtnText,
-                    style: const TextStyle(
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF047857),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                    elevation: 0,
-                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+
+                // Description Text
+                Text(
+                  item.description.isNotEmpty
+                      ? item.description
+                      : "Verified field activity and crop diagnosis log.",
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF334155),
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 12),
+
+                // Bottom Metadata Row: Timestamp + Product Chip + Chevron
+                Row(
+                  children: [
+                    const Icon(Icons.access_time_rounded, size: 14, color: Color(0xFF64748B)),
+                    const SizedBox(width: 5),
+                    Text(
+                      _formatDate(item.timestamp),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    if (item.productName != null && item.productName!.isNotEmpty) ...[
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFECFDF5),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: const Color(0xFFA7F3D0), width: 0.8),
+                            ),
+                            child: Text(
+                              item.productName!,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF047857),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      const Spacer(),
+                    ],
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: Color(0xFF64748B),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
