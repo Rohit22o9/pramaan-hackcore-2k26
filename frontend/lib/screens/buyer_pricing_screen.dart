@@ -46,9 +46,19 @@ class _BuyerPricingScreenState extends State<BuyerPricingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          "Buyer Pricing & Lot Valuation",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Buyer Pricing & Lot Valuation",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (farm != null)
+              Text(
+                "${farm.activeCrop} • ${farm.name}",
+                style: const TextStyle(fontSize: 11, color: Colors.white70),
+              ),
+          ],
         ),
       ),
       body: _isLoading

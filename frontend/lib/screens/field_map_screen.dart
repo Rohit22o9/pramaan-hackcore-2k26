@@ -63,9 +63,9 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
                 color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Text(
-                "Farm: Sahyadri Bio-Cluster (12.5 Ac)",
-                style: TextStyle(
+              child: Text(
+                "Farm: ${farmProv.selectedFarm?.name ?? 'Sahyadri Bio-Cluster'} (${farmProv.selectedFarm?.totalAcres ?? 12.5} Ac)",
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
@@ -127,9 +127,9 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        "Plot North-04 (Sector C)",
-                        style: TextStyle(
+                      Text(
+                        _selectedPlot,
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
@@ -144,9 +144,9 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
                           color: AppColors.primarySurface,
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: const Text(
-                          "96.4% Verified",
-                          style: TextStyle(
+                        child: Text(
+                          "${evProv.evidenceList.isNotEmpty ? evProv.evidenceList.first.verificationScore.toStringAsFixed(1) : '98.6'}% Verified",
+                          style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.bold,
                             color: AppColors.primaryDark,
@@ -156,9 +156,9 @@ class _FieldMapScreenState extends State<FieldMapScreen> {
                     ],
                   ),
                   const SizedBox(height: 6),
-                  const Text(
-                    "Cotton (Bt-II) • 12.5 Acres • Sown 15 Jun 2026",
-                    style: TextStyle(
+                  Text(
+                    "${farmProv.selectedFarm?.activeCrop ?? 'Cotton (Bt-II)'} • ${farmProv.selectedFarm?.totalAcres ?? 12.5} Acres • Logs: ${evProv.evidenceList.length}",
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),

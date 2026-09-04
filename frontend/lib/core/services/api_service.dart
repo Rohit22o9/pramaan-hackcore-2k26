@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../constants/api_endpoints.dart';
-import '../../models/evidence_model.dart';
 import '../../models/farm_model.dart';
 import '../../models/product_model.dart';
 import '../../models/weather_model.dart';

@@ -55,6 +55,13 @@ def verify_evidence_5layer_tool(
         evidence_type=EvidenceType.PRODUCT_SCAN,
         timestamp="2026-09-02 08:30 AM",
         location=GeoLocation(latitude=30.9010, longitude=75.8573, accuracy_meters=2.5),
+        nlp_output={
+            "crop": crop_name,
+            "product": product_name,
+            "product_mentioned": product_name,
+            "dosage": dosage_per_acre,
+            "action_type": "Foliar Spray",
+        },
         product_data={
             "name": product_name,
             "dosage": dosage_per_acre,

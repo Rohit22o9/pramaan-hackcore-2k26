@@ -126,7 +126,29 @@ class _LearningLoopScreenState extends State<LearningLoopScreen> {
                     "Enter expert pathology diagnosis, dosage adjustment, or local pest variant notes...",
               ),
             ),
-            const SizedBox(height: 28),
+            if (_submitted) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFECFDF5),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFA7F3D0)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.check_circle_rounded, color: Color(0xFF047857), size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        "✓ Feedback successfully synchronized with Pramaan Learning Ensemble.",
+                        style: TextStyle(color: Color(0xFF047857), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             SizedBox(
               width: double.infinity,

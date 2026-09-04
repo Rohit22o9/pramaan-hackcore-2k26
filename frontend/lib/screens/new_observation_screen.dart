@@ -89,7 +89,7 @@ class _NewObservationScreenState extends State<NewObservationScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "${farm?.name ?? 'Plot North-04'} • GPS: 20.1985° N, 73.8322° E",
+                          "${farm?.name ?? 'Plot North-04'} • $_cropStage • GPS: 20.1985° N, 73.8322° E",
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

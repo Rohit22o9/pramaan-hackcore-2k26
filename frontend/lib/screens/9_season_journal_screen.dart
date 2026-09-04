@@ -71,9 +71,19 @@ class SeasonJournalScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
-          "Season Journal & Timeline",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Season Journal & Timeline",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            if (farm != null)
+              Text(
+                "${farm.activeCrop} • ${farm.village}",
+                style: const TextStyle(fontSize: 11, color: Colors.white70),
+              ),
+          ],
         ),
       ),
       body: ListView.builder(
