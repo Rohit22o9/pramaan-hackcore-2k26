@@ -51,8 +51,16 @@ logger = logging.getLogger(__name__)
 VOICE_MODEL = getattr(
     settings,
     "VOICE_MODEL",
-    "gemini-3.7-flash",
+    "gemini-3.6-flash",
 )
+
+CANDIDATE_VOICE_MODELS = [
+    VOICE_MODEL,
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.1-flash-lite",
+]
 
 
 # ============================================================
@@ -899,34 +907,39 @@ Return ONLY the structured schema.
 Do not return explanations outside the schema.
 """
 
-        response = self.client.models.generate_content(
-            model=VOICE_MODEL,
-            contents=prompt,
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json",
-                response_schema=VoiceExtractionResult,
-            ),
-        )
+        last_error = None
+        seen_models = set()
 
-        if not response.text:
-            raise ValueError(
-                "Gemini returned an empty response."
-            )
+        for model_name in CANDIDATE_VOICE_MODELS:
+            if not model_name or model_name in seen_models:
+                continue
+            seen_models.add(model_name)
 
-        try:
+            try:
+                response = self.client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=VoiceExtractionResult,
+                    ),
+                )
 
-            return VoiceExtractionResult.model_validate_json(
-                response.text
-            )
+                if not response.text:
+                    continue
 
-        except ValidationError as exc:
+                return VoiceExtractionResult.model_validate_json(
+                    response.text
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Voice extraction attempt with model %s failed: %s",
+                    model_name,
+                    exc,
+                )
+                last_error = exc
 
-            logger.error(
-                "Structured voice output validation failed: %s",
-                exc,
-            )
-
-            raise
+        raise last_error or ValueError("All candidate Gemini models failed for voice extraction.")
 
     # ========================================================
     # DETERMINISTIC FALLBACK
