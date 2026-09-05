@@ -821,25 +821,24 @@ Transcript:
 "गव्हावर मावा दिसल्याने फवारणी केली"
 
 Correct:
-{
+{{
     "value": "Wheat",
     "source_text": "गव्हावर",
     "confidence": 0.95
-}
-
+}}
 Incorrect:
-{
+{{
     "value": null,
     "source_text": null,
     "confidence": 0
-}
+}}
 
 Also incorrect:
-{
+{{
     "value": "Wheat",
     "source_text": null,
     "confidence": 0.95
-}
+}}
 
 The crop must be supported by the transcript itself.
 
@@ -1906,12 +1905,12 @@ Do not return explanations outside the schema.
     # ========================================================
     # SEMANTIC / STRUCTURAL VALIDATION
     # ========================================================
-def _has_valid_source_text(
-    self,
-    field: ExtractedField,
-    original_transcript: str,
-) -> bool:
-    """
+    def _has_valid_source_text(
+       self,
+       field: ExtractedField,
+       original_transcript: str,
+    ) -> bool:
+       """
     Validate that an extracted field has genuine evidence
     from the original transcript.
 
@@ -1919,27 +1918,26 @@ def _has_valid_source_text(
     an individual field.
     """
 
-    if field.value is None:
-        return True
+       if field.value is None:
+            return True
 
-    if not field.source_text:
+       if not field.source_text:
         return False
 
-    source = field.source_text.strip()
-    transcript = original_transcript.strip()
+       source = field.source_text.strip()
+       transcript = original_transcript.strip()
 
-    if not source:
-        return False
+       if not source:
+          return False
 
     # Source must actually occur in the original transcript.
-    if source not in transcript:
+       if source not in transcript:
         return False
 
     # A field should not use the entire transcript as its evidence.
-    if source == transcript:
+       if source == transcript:
         return False
-
-    return True
+       return True
     @staticmethod
     def _validate_extraction(
         extraction: VoiceExtractionResult,

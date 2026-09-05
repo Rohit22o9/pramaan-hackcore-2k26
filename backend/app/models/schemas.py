@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict,Literal, Any
 from enum import Enum
 from datetime import datetime
+
+
 
 class EvidenceType(str, Enum):
     VOICE_LOG = "VOICE_LOG"
@@ -133,23 +135,73 @@ class VisionAnalysisRequest(BaseModel):
     crop_type: Optional[str] = "Auto-Detect"
     plot_id: Optional[str] = "plot-01"
 
-class VisionAnalysisResponse(BaseModel):
-    crop_detected: str = "Unknown Crop"
-    scientific_name: Optional[str] = None
-    crop_stage: Optional[str] = "Mature Canopy"
-    disease_detected: str
-    health_status: Optional[str] = "Diseased" # "Diseased", "Pest Infested", "Nutrient Deficient", "Healthy Crop", "Stressed"
-    confidence: float
-    severity_level: str # Low, Medium, High, Critical
-    pest_count_estimate: int = 0
-    affected_percentage: float = 0.0
-    symptoms: List[str] = Field(default_factory=list)
-    recommended_active_ingredient: str
-    organic_alternative: str
-    urgency_days: int = 3
-    treatment_advice: Optional[str] = None
-    prevention_tips: Optional[List[str]] = Field(default_factory=list)
 
+
+
+class VisionAnalysisResponse(BaseModel):
+
+    crop_detected: str
+
+    scientific_name: str
+
+    crop_stage: str
+
+    disease_detected: str
+
+    health_status: Literal[
+        "Healthy Crop",
+        "Diseased",
+        "Pest Infested",
+        "Nutrient Deficient",
+        "Stressed",
+        "Uncertain",
+    ]
+
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
+
+    severity_level: Literal[
+        "Low",
+        "Medium",
+        "High",
+        "Critical",
+        "Unknown",
+    ]
+
+    pest_count_estimate: Optional[int] = None
+
+    affected_percentage: Optional[float] = Field(
+        default=None,
+        ge=0.0,
+        le=100.0,
+    )
+
+    symptoms: List[str] = []
+
+    visual_evidence: List[str] = []
+
+    analysis_notes: str = ""
+
+    recommended_active_ingredient: str
+
+    organic_alternative: str
+
+    urgency_days: Optional[int] = None
+
+    treatment_advice: str
+
+    prevention_tips: List[str] = []
+
+    analysis_source: Literal[
+        "gemini",
+        "heuristic",
+        "image_quality_gate",
+        "system",
+    ] = "system"
+
+    requires_confirmation: bool = True
 
 # Validation Agent Models
 class ValidationFlag(BaseModel):

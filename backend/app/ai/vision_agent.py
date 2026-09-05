@@ -1,12 +1,21 @@
-import json
-import logging
 import base64
 import io
-from typing import Dict, Any, Optional
+import json
+import logging
+from typing import Any, Dict, List, Optional, Tuple
+
 from backend.app.core.config import settings
-from backend.app.models.schemas import VisionAnalysisRequest, VisionAnalysisResponse
+from backend.app.models.schemas import (
+    VisionAnalysisRequest,
+    VisionAnalysisResponse,
+)
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# GEMINI MODEL FALLBACK ORDER
+# ============================================================
 
 GEMINI_MODELS = [
     "gemini-3.1-flash-lite",
@@ -19,403 +28,1682 @@ GEMINI_MODELS = [
 ]
 
 
-def detect_crop_visual_features(raw_bytes: bytes, hint_crop: str = "") -> str:
+# ============================================================
+# SUPPORTED CROPS
+# ============================================================
+
+SUPPORTED_CROPS = {
+    "cotton",
+    "wheat",
+    "tomato",
+    "chilli",
+    "paddy",
+    "rice",
+    "potato",
+    "mustard",
+    "sugarcane",
+    "maize",
+}
+
+
+# ============================================================
+# AGRONOMY KNOWLEDGE BASE
+#
+# IMPORTANT:
+# Gemini identifies the visual condition.
+# This knowledge base provides structured agronomic guidance.
+#
+# Do NOT allow the LLM to freely invent pesticide dosages.
+# ============================================================
+
+AGRONOMY_KB: Dict[str, Dict[str, Dict[str, Any]]] = {
+
+    "cotton": {
+        "cotton whitefly": {
+            "recommended_active_ingredient": (
+                "Use only locally approved whitefly management products "
+                "according to the current label and agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Neem-based botanical management and yellow sticky traps "
+                "may be considered as part of integrated pest management."
+            ),
+            "prevention_tips": [
+                "Monitor the underside of leaves regularly.",
+                "Remove alternate weed hosts around field borders.",
+                "Use integrated pest management rather than repeated insecticide applications."
+            ],
+        }
+    },
+
+    "wheat": {
+        "yellow rust": {
+            "recommended_active_ingredient": (
+                "Use a locally registered fungicide recommended for wheat "
+                "yellow rust according to the product label and local agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Use resistant varieties and integrated disease-management practices."
+            ),
+            "prevention_tips": [
+                "Monitor fields during cool and humid weather.",
+                "Prefer locally recommended rust-resistant varieties."
+            ],
+        }
+    },
+
+    "tomato": {
+        "early blight": {
+            "recommended_active_ingredient": (
+                "Use a locally registered fungicide recommended for tomato early blight "
+                "according to the current label and agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Use sanitation, removal of heavily infected leaves, crop rotation, "
+                "and approved biological disease-management products."
+            ),
+            "prevention_tips": [
+                "Avoid prolonged leaf wetness and unnecessary overhead irrigation.",
+                "Remove severely infected plant material from the field."
+            ],
+        }
+    },
+
+    "chilli": {
+        "leaf curl": {
+            "recommended_active_ingredient": (
+                "Management should target the vector and follow locally approved "
+                "integrated pest-management recommendations."
+            ),
+            "organic_alternative": (
+                "Neem-based botanical products and approved sticky traps can be "
+                "considered as part of integrated pest management."
+            ),
+            "prevention_tips": [
+                "Monitor young leaves and terminal shoots frequently.",
+                "Control vector populations using integrated pest-management practices."
+            ],
+        }
+    },
+
+    "paddy": {
+        "leaf blast": {
+            "recommended_active_ingredient": (
+                "Use a locally registered rice blast-management fungicide "
+                "according to the current label and local agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Use approved biological disease-management products and "
+                "integrated crop-management practices."
+            ),
+            "prevention_tips": [
+                "Avoid excessive nitrogen application.",
+                "Monitor fields during prolonged humid conditions."
+            ],
+        }
+    },
+
+    "rice": {
+        "leaf blast": {
+            "recommended_active_ingredient": (
+                "Use a locally registered rice blast-management fungicide "
+                "according to the current label and local agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Use approved biological disease-management products and "
+                "integrated crop-management practices."
+            ),
+            "prevention_tips": [
+                "Avoid excessive nitrogen application.",
+                "Monitor fields during prolonged humid conditions."
+            ],
+        }
+    },
+
+    "potato": {
+        "late blight": {
+            "recommended_active_ingredient": (
+                "Use a locally registered potato late-blight management fungicide "
+                "according to the current label and local agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Use approved copper-based or biological disease-management "
+                "options where appropriate and permitted."
+            ),
+            "prevention_tips": [
+                "Monitor crops closely during cool, wet and humid weather.",
+                "Remove severely infected plant material according to local guidance."
+            ],
+        }
+    },
+
+    "mustard": {
+        "aphid": {
+            "recommended_active_ingredient": (
+                "Use a locally registered mustard aphid-management product "
+                "according to the current label and local agricultural advisory."
+            ),
+            "organic_alternative": (
+                "Neem-based botanical management and conservation of natural "
+                "aphid predators can be used as part of integrated pest management."
+            ),
+            "prevention_tips": [
+                "Regularly inspect flowering and tender shoots.",
+                "Conserve beneficial insects such as ladybird beetles."
+            ],
+        }
+    },
+
+    "sugarcane": {
+        "red rot": {
+            "recommended_active_ingredient": (
+                "Management should follow local sugarcane disease-management "
+                "recommendations and use only registered products where applicable."
+            ),
+            "organic_alternative": (
+                "Use approved Trichoderma-based biological management and "
+                "healthy planting material."
+            ),
+            "prevention_tips": [
+                "Use healthy disease-free planting material.",
+                "Remove severely infected clumps according to local recommendations."
+            ],
+        }
+    },
+}
+
+
+# ============================================================
+# IMAGE QUALITY ANALYSIS
+# ============================================================
+
+def assess_image_quality(
+    raw_bytes: bytes,
+) -> Tuple[bool, Dict[str, Any]]:
     """
-    Intelligent visual feature extractor using color & morphology heuristics
-    to reliably identify crop type from image bytes when Gemini quota is exhausted.
+    Performs basic image-quality checks before sending an image to Gemini.
+
+    Checks:
+    - image readability
+    - minimum resolution
+    - brightness
+    - approximate blur
+
+    Returns:
+        (is_acceptable, quality_metadata)
     """
-    c_hint = (hint_crop or "").strip().lower()
-    if c_hint and c_hint not in ["auto-detect", "auto detect", "none", ""]:
-        return hint_crop
 
     try:
         from PIL import Image
         import numpy as np
 
-        img = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
-        img.thumbnail((300, 300))
-        
-        # Convert to HSV color space
-        hsv = np.array(img.convert("HSV"), dtype=np.float32)
-        h = hsv[:, :, 0] / 255.0 * 360.0  # Hue 0-360
-        s = hsv[:, :, 1] / 255.0          # Saturation 0-1
-        v = hsv[:, :, 2] / 255.0          # Value 0-1
+        image = Image.open(io.BytesIO(raw_bytes)).convert("RGB")
 
-        # 1. White fluffy cotton bolls (low saturation, high brightness)
-        white_mask = (s < 0.28) & (v > 0.68)
-        white_ratio = float(np.mean(white_mask))
+        width, height = image.size
 
-        # 2. Red fruit (Tomato / Ripe Chilli)
-        red_mask = ((h < 18) | (h > 342)) & (s > 0.38) & (v > 0.28)
-        red_ratio = float(np.mean(red_mask))
+        quality: Dict[str, Any] = {
+            "width": width,
+            "height": height,
+            "resolution_ok": True,
+            "brightness": None,
+            "blur_score": None,
+            "quality_status": "acceptable",
+        }
 
-        # 3. Bright yellow (Yellow rust pustules in wheat / Mustard flowers)
-        yellow_mask = (h >= 35) & (h <= 68) & (s > 0.35) & (v > 0.40)
-        yellow_ratio = float(np.mean(yellow_mask))
+        # ----------------------------------------------------
+        # Resolution check
+        # ----------------------------------------------------
 
-        # 4. Lush green foliage
-        green_mask = (h >= 70) & (h <= 160) & (s > 0.20) & (v > 0.20)
-        green_ratio = float(np.mean(green_mask))
+        if width < 224 or height < 224:
+            quality["resolution_ok"] = False
+            quality["quality_status"] = "poor"
 
-        logger.info(
-            f"Visual Heuristics -> White (Cotton): {white_ratio:.3f}, "
-            f"Red (Tomato): {red_ratio:.3f}, Yellow (Wheat/Mustard): {yellow_ratio:.3f}, Green: {green_ratio:.3f}"
+            return False, quality
+
+        # ----------------------------------------------------
+        # Convert image to grayscale
+        # ----------------------------------------------------
+
+        gray = np.array(image.convert("L"), dtype=np.uint8)
+
+        # ----------------------------------------------------
+        # Brightness
+        # ----------------------------------------------------
+
+        brightness = float(np.mean(gray) / 255.0)
+
+        quality["brightness"] = round(brightness, 3)
+
+        if brightness < 0.08:
+            quality["quality_status"] = "too_dark"
+            return False, quality
+
+        if brightness > 0.97:
+            quality["quality_status"] = "overexposed"
+            return False, quality
+
+        # ----------------------------------------------------
+        # Approximate blur detection
+        #
+        # Variance of Laplacian is a common basic blur heuristic.
+        # ----------------------------------------------------
+
+        try:
+            import cv2
+
+            blur_score = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+            quality["blur_score"] = round(blur_score, 2)
+
+            # Very conservative threshold.
+            # This is not a disease-quality score.
+            if blur_score < 20:
+                quality["quality_status"] = "possibly_blurry"
+
+                return False, quality
+
+        except ImportError:
+            # OpenCV isn't mandatory.
+            # We can continue without blur detection.
+            quality["blur_score"] = None
+
+        return True, quality
+
+    except Exception as exc:
+        logger.warning(
+            "Image quality assessment failed: %s",
+            exc,
         )
 
-        if white_ratio >= 0.05:
-            return "Cotton"
-        elif red_ratio >= 0.04:
-            return "Tomato"
-        elif yellow_ratio >= 0.12:
-            return "Wheat"
-        elif green_ratio >= 0.35:
-            # Canopy leaf inspection - Default to high-frequency Indian field crops
-            return "Cotton" if white_ratio > 0.02 else "Wheat"
-    except Exception as e:
-        logger.warning(f"Heuristic vision analysis error: {e}")
+        # Don't unnecessarily block the whole system
+        # if the optional quality module fails.
+        return True, {
+            "quality_status": "quality_check_unavailable"
+        }
 
-    return "Cotton" if "cotton" in c_hint else "Wheat"
 
+# ============================================================
+# IMAGE DECODING
+# ============================================================
+
+def decode_base64_image(
+    image_base64: str,
+) -> Tuple[bytes, str]:
+    """
+    Decode a Base64 image and determine its MIME type.
+    """
+
+    if not image_base64:
+        raise ValueError("Image data is empty.")
+
+    b64_str = image_base64.strip()
+
+    # Handle:
+    # data:image/jpeg;base64,...
+    if "," in b64_str:
+        b64_str = b64_str.split(",", 1)[1]
+
+    try:
+        raw_bytes = base64.b64decode(
+            b64_str,
+            validate=True,
+        )
+    except Exception as exc:
+        raise ValueError(
+            "Invalid Base64 image data."
+        ) from exc
+
+    if not raw_bytes:
+        raise ValueError("Decoded image is empty.")
+
+    mime = detect_mime_type(raw_bytes)
+
+    return raw_bytes, mime
+
+
+# ============================================================
+# MIME TYPE DETECTION
+# ============================================================
+
+def detect_mime_type(raw_bytes: bytes) -> str:
+    """
+    Detect common image types using file signatures.
+    """
+
+    if raw_bytes.startswith(b"\x89PNG"):
+        return "image/png"
+
+    if raw_bytes.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+
+    if (
+        raw_bytes.startswith(b"RIFF")
+        and len(raw_bytes) >= 12
+        and b"WEBP" in raw_bytes[:12]
+    ):
+        return "image/webp"
+
+    if raw_bytes.startswith(b"GIF87a") or raw_bytes.startswith(b"GIF89a"):
+        return "image/gif"
+
+    # Safe default
+    return "image/jpeg"
+
+
+# ============================================================
+# FALLBACK CROP DETECTION
+# ============================================================
+
+def detect_crop_visual_features(
+    raw_bytes: bytes,
+    hint_crop: str = "",
+) -> Tuple[str, float, List[str]]:
+    """
+    Basic HSV-based crop estimation.
+
+    IMPORTANT:
+    This is only a FALLBACK crop estimator.
+
+    It must NOT claim to have diagnosed a disease.
+    """
+
+    c_hint = (
+        (hint_crop or "")
+        .strip()
+        .lower()
+    )
+
+    # If farmer already supplied crop type,
+    # trust it as a hint rather than pretending to detect it.
+    if c_hint and c_hint not in {
+        "auto-detect",
+        "auto detect",
+        "none",
+    }:
+        return (
+            hint_crop,
+            0.55,
+            ["Crop type was supplied by the user."]
+        )
+
+    try:
+        from PIL import Image
+        import numpy as np
+
+        image = Image.open(
+            io.BytesIO(raw_bytes)
+        ).convert("RGB")
+
+        image.thumbnail((300, 300))
+
+        hsv = np.array(
+            image.convert("HSV"),
+            dtype=np.float32,
+        )
+
+        h = hsv[:, :, 0] / 255.0 * 360.0
+        s = hsv[:, :, 1] / 255.0
+        v = hsv[:, :, 2] / 255.0
+
+        # ----------------------------------------------------
+        # White / bright regions
+        # ----------------------------------------------------
+
+        white_mask = (
+            (s < 0.28)
+            & (v > 0.68)
+        )
+
+        white_ratio = float(
+            np.mean(white_mask)
+        )
+
+        # ----------------------------------------------------
+        # Red regions
+        # ----------------------------------------------------
+
+        red_mask = (
+            ((h < 18) | (h > 342))
+            & (s > 0.38)
+            & (v > 0.28)
+        )
+
+        red_ratio = float(
+            np.mean(red_mask)
+        )
+
+        # ----------------------------------------------------
+        # Yellow regions
+        # ----------------------------------------------------
+
+        yellow_mask = (
+            (h >= 35)
+            & (h <= 68)
+            & (s > 0.35)
+            & (v > 0.40)
+        )
+
+        yellow_ratio = float(
+            np.mean(yellow_mask)
+        )
+
+        # ----------------------------------------------------
+        # Green vegetation
+        # ----------------------------------------------------
+
+        green_mask = (
+            (h >= 70)
+            & (h <= 160)
+            & (s > 0.20)
+            & (v > 0.20)
+        )
+
+        green_ratio = float(
+            np.mean(green_mask)
+        )
+
+        logger.info(
+            "Fallback visual features: "
+            "white=%.3f red=%.3f yellow=%.3f green=%.3f",
+            white_ratio,
+            red_ratio,
+            yellow_ratio,
+            green_ratio,
+        )
+
+        # ----------------------------------------------------
+        # Conservative classification
+        # ----------------------------------------------------
+
+        if white_ratio >= 0.08:
+            return (
+                "Cotton",
+                0.48,
+                [
+                    "Large bright low-saturation regions detected.",
+                    "Visual pattern is compatible with cotton bolls.",
+                ],
+            )
+
+        if red_ratio >= 0.06:
+            return (
+                "Tomato",
+                0.48,
+                [
+                    "Red fruit-like regions detected.",
+                    "Visual pattern is compatible with tomato fruit.",
+                ],
+            )
+
+        if yellow_ratio >= 0.15:
+            return (
+                "Wheat",
+                0.42,
+                [
+                    "Significant yellow vegetation detected.",
+                    "Visual pattern may be compatible with wheat.",
+                ],
+            )
+
+        if green_ratio >= 0.45:
+            return (
+                "Unknown",
+                 0.20,
+        [
+            "Large green vegetation area detected.",
+            "The crop cannot be reliably identified using color alone.",
+        ],
+    )
+
+    except Exception as exc:
+        logger.warning(
+            "Fallback crop detection failed: %s",
+            exc,
+        )
+
+    return (
+        "Unknown",
+        0.10,
+        [
+            "The crop could not be reliably identified from available visual features."
+        ],
+    )
+
+
+# ============================================================
+# GEMINI PROMPT
+# ============================================================
+
+def build_vision_prompt(
+    hint_crop: str,
+) -> str:
+    """
+    Builds a conservative agricultural vision prompt.
+
+    Gemini identifies visual evidence.
+    It does NOT independently prescribe pesticide dosage.
+    """
+
+    if hint_crop and hint_crop.lower() not in {
+        "auto-detect",
+        "auto detect",
+        "none",
+    }:
+        crop_instruction = (
+            f"The farmer indicated that the crop may be '{hint_crop}'. "
+            "Treat this only as a hint and verify it visually."
+        )
+    else:
+        crop_instruction = (
+            "The crop type is unknown. Identify the most likely crop "
+            "only when sufficient visual evidence exists."
+        )
+
+    return f"""
+You are Pramaan Vision AI, an agricultural computer-vision assistant.
+
+Analyze the farmer's crop photograph carefully.
+
+{crop_instruction}
+
+IMPORTANT RULES:
+
+1. Do not invent symptoms that are not visually observable.
+2. Do not force a diagnosis when the image is unclear.
+3. If evidence is insufficient, use "Uncertain".
+4. Confidence must reflect actual visual evidence and may be anywhere
+   from 0.0 to 1.0.
+5. Do NOT provide pesticide dosage or chemical prescription.
+6. Do NOT invent pest counts.
+7. Do NOT invent an affected percentage unless it can reasonably be
+   estimated from visible affected plant area.
+8. Clearly distinguish observations from diagnosis.
+9. Prefer "Uncertain" over a confident-looking hallucination.
+10. Identify only what can reasonably be inferred from the photograph.
+
+Determine:
+
+- crop species
+- scientific name
+- growth stage
+- health status
+- possible disease, pest, deficiency or stress
+- observable symptoms
+- visual evidence supporting the diagnosis
+- severity
+- confidence
+- whether farmer confirmation is required
+
+Health status must be one of:
+
+"Healthy Crop"
+"Diseased"
+"Pest Infested"
+"Nutrient Deficient"
+"Stressed"
+"Uncertain"
+
+Severity must be one of:
+
+"Low"
+"Medium"
+"High"
+"Critical"
+"Unknown"
+
+Return ONLY valid JSON.
+
+Use exactly this structure:
+
+{{
+    "crop_detected": "string",
+    "scientific_name": "string",
+    "crop_stage": "string",
+    "disease_detected": "string",
+    "health_status": "Healthy Crop | Diseased | Pest Infested | Nutrient Deficient | Stressed | Uncertain",
+    "confidence": 0.0,
+    "severity_level": "Low | Medium | High | Critical | Unknown",
+    "pest_count_estimate": null,
+    "affected_percentage": null,
+    "symptoms": [
+        "observable symptom 1",
+        "observable symptom 2"
+    ],
+    "visual_evidence": [
+        "visual evidence 1",
+        "visual evidence 2"
+    ],
+    "analysis_notes": "short explanation of what was visually observed",
+    "requires_confirmation": false
+}}
+
+If disease identification is uncertain:
+
+"disease_detected": "Unable to determine reliably"
+
+and:
+
+"health_status": "Uncertain"
+
+and:
+
+"requires_confirmation": true
+"""
+
+
+# ============================================================
+# JSON EXTRACTION
+# ============================================================
+
+def extract_json_from_response(
+    text: str,
+) -> Dict[str, Any]:
+    """
+    Safely extract JSON from Gemini response.
+
+    Handles:
+    - plain JSON
+    - ```json ... ```
+    - accidental surrounding text
+    """
+
+    if not text:
+        raise ValueError(
+            "Gemini returned an empty response."
+        )
+
+    cleaned = text.strip()
+
+    # --------------------------------------------------------
+    # Markdown code block
+    # --------------------------------------------------------
+
+    if "```json" in cleaned:
+        cleaned = (
+            cleaned
+            .split("```json", 1)[1]
+            .split("```", 1)[0]
+            .strip()
+        )
+
+    elif "```" in cleaned:
+        cleaned = (
+            cleaned
+            .split("```", 1)[1]
+            .split("```", 1)[0]
+            .strip()
+        )
+
+    # --------------------------------------------------------
+    # Direct JSON
+    # --------------------------------------------------------
+
+    try:
+        parsed = json.loads(cleaned)
+
+        if not isinstance(parsed, dict):
+            raise ValueError(
+                "Gemini JSON response is not an object."
+            )
+
+        return parsed
+
+    except json.JSONDecodeError:
+        pass
+
+    # --------------------------------------------------------
+    # Attempt to find JSON object inside text
+    # --------------------------------------------------------
+
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError(
+            "Could not locate a JSON object in Gemini response."
+        )
+
+    json_candidate = cleaned[start:end + 1]
+
+    parsed = json.loads(json_candidate)
+
+    if not isinstance(parsed, dict):
+        raise ValueError(
+            "Extracted Gemini response is not a JSON object."
+        )
+
+    return parsed
+
+
+# ============================================================
+# NORMALIZE GEMINI OUTPUT
+# ============================================================
+
+def normalize_gemini_result(
+    data: Dict[str, Any],
+) -> Dict[str, Any]:
+    """
+    Normalize and validate Gemini's response before constructing
+    VisionAnalysisResponse.
+    """
+
+    health_status = str(
+        data.get(
+            "health_status",
+            "Uncertain",
+        )
+    ).strip()
+
+    allowed_health = {
+        "Healthy Crop",
+        "Diseased",
+        "Pest Infested",
+        "Nutrient Deficient",
+        "Stressed",
+        "Uncertain",
+    }
+
+    if health_status not in allowed_health:
+        health_status = "Uncertain"
+
+    severity = str(
+        data.get(
+            "severity_level",
+            "Unknown",
+        )
+    ).strip()
+
+    allowed_severity = {
+        "Low",
+        "Medium",
+        "High",
+        "Critical",
+        "Unknown",
+    }
+
+    if severity not in allowed_severity:
+        severity = "Unknown"
+
+    # --------------------------------------------------------
+    # Confidence
+    # --------------------------------------------------------
+
+    try:
+        confidence = float(
+            data.get(
+                "confidence",
+                0.0,
+            )
+        )
+    except (TypeError, ValueError):
+        confidence = 0.0
+
+    confidence = max(
+        0.0,
+        min(1.0, confidence),
+    )
+
+    # --------------------------------------------------------
+    # Symptoms
+    # --------------------------------------------------------
+
+    symptoms = data.get(
+        "symptoms",
+        [],
+    )
+
+    if not isinstance(symptoms, list):
+        symptoms = [str(symptoms)]
+
+    symptoms = [
+        str(item).strip()
+        for item in symptoms
+        if str(item).strip()
+    ][:4]
+
+    # --------------------------------------------------------
+    # Visual evidence
+    # --------------------------------------------------------
+
+    visual_evidence = data.get(
+        "visual_evidence",
+        [],
+    )
+
+    if not isinstance(visual_evidence, list):
+        visual_evidence = [str(visual_evidence)]
+
+    visual_evidence = [
+        str(item).strip()
+        for item in visual_evidence
+        if str(item).strip()
+    ][:5]
+
+    # --------------------------------------------------------
+    # Pest count
+    # --------------------------------------------------------
+
+    pest_count = data.get(
+        "pest_count_estimate"
+    )
+
+    if not isinstance(pest_count, int):
+        pest_count = None
+
+    if pest_count is not None:
+        pest_count = max(
+            0,
+            pest_count,
+        )
+
+    # --------------------------------------------------------
+    # Affected percentage
+    # --------------------------------------------------------
+
+    affected_percentage = data.get(
+        "affected_percentage"
+    )
+
+    try:
+        if affected_percentage is not None:
+            affected_percentage = float(
+                affected_percentage
+            )
+
+            affected_percentage = max(
+                0.0,
+                min(
+                    100.0,
+                    affected_percentage,
+                ),
+            )
+
+    except (TypeError, ValueError):
+        affected_percentage = None
+
+    # --------------------------------------------------------
+    # Force uncertainty if confidence is very low
+    # --------------------------------------------------------
+
+    requires_confirmation = bool(
+        data.get(
+            "requires_confirmation",
+            False,
+        )
+    )
+
+    if confidence < 0.60:
+        requires_confirmation = True
+
+    if health_status == "Uncertain":
+        requires_confirmation = True
+
+    # --------------------------------------------------------
+    # Disease
+    # --------------------------------------------------------
+
+    disease_detected = str(
+        data.get(
+            "disease_detected",
+            "Unable to determine reliably",
+        )
+    ).strip()
+
+    if not disease_detected:
+        disease_detected = (
+            "Unable to determine reliably"
+        )
+
+    # --------------------------------------------------------
+    # Crop
+    # --------------------------------------------------------
+
+    crop_detected = str(
+        data.get(
+            "crop_detected",
+            "Unknown",
+        )
+    ).strip()
+
+    if not crop_detected:
+        crop_detected = "Unknown"
+
+    # --------------------------------------------------------
+    # Scientific name
+    # --------------------------------------------------------
+
+    scientific_name = str(
+        data.get(
+            "scientific_name",
+            "Unknown",
+        )
+    ).strip()
+
+    # --------------------------------------------------------
+    # Crop stage
+    # --------------------------------------------------------
+
+    crop_stage = str(
+        data.get(
+            "crop_stage",
+            "Unknown",
+        )
+    ).strip()
+
+    # --------------------------------------------------------
+    # Analysis notes
+    # --------------------------------------------------------
+
+    analysis_notes = str(
+        data.get(
+            "analysis_notes",
+            "",
+        )
+    ).strip()
+
+    return {
+        "crop_detected": crop_detected,
+        "scientific_name": scientific_name,
+        "crop_stage": crop_stage,
+        "disease_detected": disease_detected,
+        "health_status": health_status,
+        "confidence": confidence,
+        "severity_level": severity,
+        "pest_count_estimate": pest_count,
+        "affected_percentage": affected_percentage,
+        "symptoms": symptoms,
+        "visual_evidence": visual_evidence,
+        "analysis_notes": analysis_notes,
+        "requires_confirmation": requires_confirmation,
+    }
+
+
+# ============================================================
+# AGRONOMY KNOWLEDGE BASE LOOKUP
+# ============================================================
+
+def get_agronomy_recommendation(
+    crop_name: str,
+    disease_name: str,
+) -> Dict[str, Any]:
+    """
+    Retrieve treatment/prevention guidance from the trusted
+    agronomy knowledge base.
+
+    Gemini does not generate these recommendations.
+    """
+
+    crop_key = crop_name.lower()
+
+    disease_key = disease_name.lower()
+
+    # --------------------------------------------------------
+    # Normalize crop
+    # --------------------------------------------------------
+
+    if "cotton" in crop_key or "kapas" in crop_key:
+        crop_key = "cotton"
+
+    elif "wheat" in crop_key or "gehu" in crop_key:
+        crop_key = "wheat"
+
+    elif "tomato" in crop_key or "tamatar" in crop_key:
+        crop_key = "tomato"
+
+    elif "chilli" in crop_key or "mirch" in crop_key:
+        crop_key = "chilli"
+
+    elif (
+        "paddy" in crop_key
+        or "rice" in crop_key
+        or "dhan" in crop_key
+    ):
+        crop_key = "paddy"
+
+    elif "potato" in crop_key or "aloo" in crop_key:
+        crop_key = "potato"
+
+    elif "mustard" in crop_key or "sarson" in crop_key:
+        crop_key = "mustard"
+
+    elif "sugarcane" in crop_key or "ganna" in crop_key:
+        crop_key = "sugarcane"
+
+    # --------------------------------------------------------
+    # Search disease profile
+    # --------------------------------------------------------
+
+    crop_profiles = AGRONOMY_KB.get(
+        crop_key,
+        {},
+    )
+
+    for disease_key_name, profile in crop_profiles.items():
+
+        if (
+            disease_key_name in disease_key
+            or disease_key in disease_key_name
+        ):
+            return profile
+
+    # --------------------------------------------------------
+    # No verified recommendation found
+    # --------------------------------------------------------
+
+    return {
+        "recommended_active_ingredient": (
+            "No verified treatment recommendation available "
+            "for this diagnosis. Consult a local agricultural "
+            "expert and follow the current product label."
+        ),
+        "organic_alternative": (
+            "No verified biological recommendation available "
+            "for this diagnosis."
+        ),
+        "prevention_tips": [
+    "Continue regular crop monitoring.",
+    "Inspect leaves, stems and fruits regularly.",
+    "Maintain appropriate irrigation and field hygiene."
+]
+    }
+
+
+# ============================================================
+# FALLBACK UNCERTAIN RESPONSE
+# ============================================================
+
+def build_uncertain_response(
+    reason: str,
+    analysis_source: str = "system",
+) -> VisionAnalysisResponse:
+
+    return VisionAnalysisResponse(
+        crop_detected="Unknown",
+        scientific_name="Unknown",
+        crop_stage="Unknown",
+        disease_detected="Unable to determine reliably",
+        health_status="Uncertain",
+        confidence=0.0,
+        severity_level="Unknown",
+        pest_count_estimate=None,
+        affected_percentage=None,
+        symptoms=[],
+        visual_evidence=[],
+        analysis_notes=reason,
+        recommended_active_ingredient=(
+            "No treatment recommendation should be made "
+            "until the crop condition is confirmed."
+        ),
+        organic_alternative=(
+            "No treatment recommendation should be made "
+            "until the crop condition is confirmed."
+        ),
+        urgency_days=None,
+        treatment_advice=(
+            "Please capture a clear close-up image of the affected "
+            "leaf, stem, fruit or pest in good daylight."
+        ),
+        prevention_tips=[
+            "Avoid applying chemicals based only on an uncertain image diagnosis.",
+            "Consult a local agricultural expert if symptoms persist."
+        ],
+        analysis_source=analysis_source,
+        requires_confirmation=True,
+    )
+
+
+# ============================================================
+# VISION AGENT
+# ============================================================
 
 class VisionAgent:
+
     def __init__(self):
-        self.api_key = settings.GEMINI_API_KEY
+        self.api_key = getattr(
+            settings,
+            "GEMINI_API_KEY",
+            None,
+        )
 
-    def analyze_crop_image(self, request: VisionAnalysisRequest) -> VisionAnalysisResponse:
-        hint_crop = (request.crop_type or "").strip()
-        is_auto_detect = hint_crop.lower() in ["auto-detect", "auto detect", "none", ""]
-        
-        if is_auto_detect:
-            hint_crop_prompt = "The crop type is unknown; carefully detect the exact plant/crop species (e.g. Cotton, Wheat, Tomato, Chilli, Paddy, Potato, Mustard, Sugarcane) from visual characteristics."
-        else:
-            hint_crop_prompt = f"The user indicated the crop is '{hint_crop}'. Carefully inspect the visual features to confirm the true crop and identify any disease or pest."
+    # ========================================================
+    # MAIN ANALYSIS FUNCTION
+    # ========================================================
 
-        raw_bytes: Optional[bytes] = None
-        mime = "image/jpeg"
+    def analyze_crop_image(
+        self,
+        request: VisionAnalysisRequest,
+    ) -> VisionAnalysisResponse:
 
-        if request.image_base64:
-            try:
-                b64_str = request.image_base64
-                if "," in b64_str:
-                    b64_str = b64_str.split(",")[1]
-                raw_bytes = base64.b64decode(b64_str)
+        hint_crop = (
+            request.crop_type or ""
+        ).strip()
 
-                if raw_bytes.startswith(b'\x89PNG'):
-                    mime = "image/png"
-                elif raw_bytes.startswith(b'RIFF') and b'WEBP' in raw_bytes[:12]:
-                    mime = "image/webp"
-            except Exception as e:
-                logger.warning(f"Error decoding base64 image: {e}")
+        is_auto_detect = (
+            hint_crop.lower()
+            in {
+                "auto-detect",
+                "auto detect",
+                "none",
+                "",
+            }
+        )
 
-        # 1. Primary: Gemini Multimodal Vision Analysis
+        # ----------------------------------------------------
+        # STEP 1 — Validate image presence
+        # ----------------------------------------------------
+
+        if not request.image_base64:
+
+            logger.warning(
+                "Vision request received without image."
+            )
+
+            return build_uncertain_response(
+                reason=(
+                    "No crop image was supplied."
+                )
+            )
+
+        # ----------------------------------------------------
+        # STEP 2 — Decode image
+        # ----------------------------------------------------
+
+        try:
+
+            raw_bytes, mime = decode_base64_image(
+                request.image_base64
+            )
+
+        except Exception as exc:
+
+            logger.warning(
+                "Image decoding failed: %s",
+                exc,
+            )
+
+            return build_uncertain_response(
+                reason=(
+                    "The supplied image could not be decoded."
+                )
+            )
+
+        # ----------------------------------------------------
+        # STEP 3 — Image quality gate
+        # ----------------------------------------------------
+
+        image_quality_ok, quality_metadata = (
+            assess_image_quality(
+                raw_bytes
+            )
+        )
+
+        logger.info(
+            "Vision image quality: %s",
+            quality_metadata,
+        )
+
+        if not image_quality_ok:
+
+            return build_uncertain_response(
+                reason=(
+                    "The image quality is insufficient for reliable "
+                    "crop or disease identification. "
+                    "Please capture a clearer close-up image in daylight."
+                ),
+                analysis_source="image_quality_gate",
+            )
+
+        # ----------------------------------------------------
+        # STEP 4 — Gemini Vision
+        # ----------------------------------------------------
+
         if raw_bytes and self.api_key:
-            try:
-                from google import genai
-                from google.genai import types
 
-                client = genai.Client(api_key=self.api_key)
-                prompt = f"""
-                You are Pramaan Vision AI, an elite agricultural pathologist in India.
-                Analyze this photograph captured by a farmer's mobile phone.
-                {hint_crop_prompt}
+            gemini_result = (
+                self._analyze_with_gemini(
+                    raw_bytes=raw_bytes,
+                    mime=mime,
+                    hint_crop=hint_crop,
+                )
+            )
 
-                Perform a rigorous visual agronomic inspection:
-                1. Identify the exact crop / plant species visible in the photo with bilingual formatting (e.g., "Cotton (कपास / Bt Cotton)", "Wheat (गेहूं / Kanak)", "Tomato (टमाटर)", "Chilli (हरी मिर्च)", "Paddy (धान / Basmati)", "Potato (आलू)", "Mustard (सरसों)", "Sugarcane (गन्ना)", "Maize (मक्का)").
-                2. Supply the botanical scientific name (e.g. Gossypium hirsutum, Triticum aestivum, Solanum lycopersicum).
-                3. Identify the crop growth stage (e.g. "Boll Maturation & Bursting (Picking Phase)", "Active Tillering", "Flowering / Fruit Setting", "Vegetative Growth", "Maturity / Ready for Harvest").
-                4. Determine the overall health status: "Healthy Crop", "Diseased", "Pest Infested", "Nutrient Deficient", or "Stressed".
-                5. Identify the specific disease, pest, nutrient deficiency, or "Healthy Canopy (Mature Boll Stage)" / "Healthy Crop".
-                6. List 2 to 4 observable physical symptoms visible on the leaf, stem, fruit, boll, or canopy.
-                7. Estimate severity level ("Low", "Medium", "High", "Critical"), confidence score (0.88 to 0.99), pest count estimate (if any visible pests), and affected percentage (0.0 to 100.0).
-                8. Prescribe the recommended chemical active ingredient with standard dilution/dosage (e.g. "Pyriproxyfen 10% + Clothianidin 10% SE @ 2 ml/L", "Propiconazole 25% EC @ 1 ml/L", or "None needed (Avoid foliar sprays during boll bursting to prevent lint staining)").
-                9. Prescribe an organic / biological alternative (e.g. "Bio-Neem Power 10,000 PPM @ 2.5 ml/L + 16 Yellow Sticky Traps/Acre", "Trichoderma viride 1.5% WP", "5% Neem Seed Kernel Extract (NSKE)").
-                10. Urgency in days to treat/harvest (1 to 4).
-                11. Actionable treatment advice and 2 bulleted prevention tips.
+            if gemini_result is not None:
 
-                Return ONLY a valid JSON object matching this structure:
-                {{
-                  "crop_detected": "string (e.g. Cotton (कपास / Bt Cotton))",
-                  "scientific_name": "string (e.g. Gossypium hirsutum)",
-                  "crop_stage": "string (e.g. Boll Maturation & Bursting)",
-                  "disease_detected": "string (e.g. Cotton Whitefly & Sucking Pest Complex (Bemisia tabaci))",
-                  "health_status": "Diseased" | "Pest Infested" | "Nutrient Deficient" | "Healthy Crop" | "Stressed",
-                  "confidence": float (between 0.88 and 0.99),
-                  "severity_level": "Low" | "Medium" | "High" | "Critical",
-                  "pest_count_estimate": int,
-                  "affected_percentage": float,
-                  "symptoms": ["symptom 1", "symptom 2", "symptom 3"],
-                  "recommended_active_ingredient": "string",
-                  "organic_alternative": "string",
-                  "urgency_days": int,
-                  "treatment_advice": "string",
-                  "prevention_tips": ["tip 1", "tip 2"]
-                }}
-                """
+                return self._build_final_response(
+                    gemini_result,
+                    analysis_source="gemini",
+                )
 
-                for model_name in GEMINI_MODELS:
-                    try:
-                        response = client.models.generate_content(
-                            model=model_name,
-                            contents=[
-                                types.Part.from_bytes(
-                                    data=raw_bytes,
-                                    mime_type=mime,
-                                ),
-                                prompt,
-                            ],
-                        )
-                        text_resp = response.text.strip()
-                        if "```json" in text_resp:
-                            text_resp = text_resp.split("```json")[1].split("```")[0].strip()
-                        elif "```" in text_resp:
-                            text_resp = text_resp.split("```")[1].split("```")[0].strip()
-                        data = json.loads(text_resp)
-                        logger.info(f"Gemini Vision Model {model_name} diagnosed: {data.get('crop_detected')}")
-                        return VisionAnalysisResponse(**data)
-                    except Exception as e:
-                        logger.warning(f"Gemini vision model {model_name} failed: {e}")
-                        continue
-            except Exception as e:
-                logger.warning(f"Gemini multimodal invocation error: {e}")
-
-        # 2. Intelligent Visual Feature Extraction when Gemini is rate-limited
-        detected_target = hint_crop
-        if is_auto_detect and raw_bytes:
-            detected_target = detect_crop_visual_features(raw_bytes, hint_crop)
-        elif is_auto_detect:
-            detected_target = "Cotton"
-
-        # 3. Dynamic Knowledge Base & Agronomic Pathology Engine
-        return self._get_pathology_profile(detected_target)
-
-    def _get_pathology_profile(self, crop_name: str) -> VisionAnalysisResponse:
-        c = crop_name.lower()
-        if "cotton" in c or "kapas" in c or "narma" in c or "ਕਪਾਹ" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Cotton (कपास / Bt Cotton)",
-                scientific_name="Gossypium hirsutum",
-                crop_stage="Boll Maturation & Bursting (Picking Phase)",
-                disease_detected="Cotton Whitefly & Sucking Pest Complex (Bemisia tabaci)",
-                health_status="Pest Infested",
-                confidence=0.95,
-                severity_level="Medium",
-                pest_count_estimate=16,
-                affected_percentage=22.0,
-                symptoms=[
-                    "Chlorotic yellow stippling on upper leaf canopy",
-                    "Sticky honeydew secretion with black sooty mold fungus",
-                    "Upward leaf curling and boll lint contamination risk"
-                ],
-                recommended_active_ingredient="Pyriproxyfen 10% + Clothianidin 10% SE @ 2 ml/L or Acetamiprid 20% SP @ 0.4 g/L",
-                organic_alternative="Bio-Neem Power 10,000 PPM @ 2.5 ml/L + 16 Yellow Sticky Traps/Acre",
-                urgency_days=2,
-                treatment_advice="Spray during calm morning hours using hollow cone nozzle pointing upward toward leaf undersides.",
-                prevention_tips=[
-                    "Eradicate alternate weed hosts (Kanghi buti, Peeli buti) on field borders",
-                    "Avoid tank-mixing synthetic pyrethroids to prevent pest resurgence"
-                ]
-            )
-        elif "wheat" in c or "kanak" in c or "gehu" in c or "गेहूं" in c or "ਕਣਕ" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Wheat (गेहूं / Kanak)",
-                scientific_name="Triticum aestivum",
-                crop_stage="Flag Leaf / Ear Head Emergence",
-                disease_detected="Stripe Rust / Yellow Rust (Puccinia striiformis)",
-                health_status="Diseased",
-                confidence=0.96,
-                severity_level="High",
-                pest_count_estimate=0,
-                affected_percentage=32.0,
-                symptoms=[
-                    "Bright yellow powdery pustules arranged in linear stripes on leaf blades",
-                    "Severe chlorosis along leaf veins and photosynthetic reduction",
-                    "Premature foliage drying and stunted grain filling"
-                ],
-                recommended_active_ingredient="Propiconazole 25% EC (Tilt) @ 1 ml/L (200 ml/Acre in 200L water)",
-                organic_alternative="Bio-sulfur dusting @ 10 kg/Acre + Trichoderma viride 1.5% WP",
-                urgency_days=1,
-                treatment_advice="Apply during calm morning window with Delta-T between 2 to 8°C using flat fan nozzle.",
-                prevention_tips=[
-                    "Cultivate PAU/ICAR-recommended resistant varieties (PBW 826, HD 3086)",
-                    "Monitor microclimate during morning dew periods"
-                ]
-            )
-        elif "tomato" in c or "tamatar" in c or "टमाटर" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Tomato (टमाटर)",
-                scientific_name="Solanum lycopersicum",
-                crop_stage="Flowering & Early Fruit Development",
-                disease_detected="Tomato Early Blight (Alternaria solani)",
-                health_status="Diseased",
-                confidence=0.96,
-                severity_level="High",
-                pest_count_estimate=0,
-                affected_percentage=28.5,
-                symptoms=[
-                    "Concentric bullseye dark brown rings on lower leaves",
-                    "Chlorotic yellow halos surrounding necrotic foliar spots",
-                    "Lower foliage drying and stem lesions"
-                ],
-                recommended_active_ingredient="Azoxystrobin 18.2% + Difenoconazole 11.4% SC @ 1 ml/L or Mancozeb 75% WP @ 2.5 g/L",
-                organic_alternative="Trichoderma harzianum foliar spray @ 5g/L + Copper Oxychloride 50% WP",
-                urgency_days=2,
-                treatment_advice="Remove infected bottom leaves and spray systemic fungicide covering both leaf surfaces.",
-                prevention_tips=[
-                    "Use drip irrigation to avoid wetting foliage",
-                    "Rotate crops with non-solanaceous plants"
-                ]
-            )
-        elif "chilli" in c or "mirch" in c or "मिर्च" in c or "ਮਿਰਚ" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Chilli (हरी मिर्च)",
-                scientific_name="Capsicum annuum",
-                crop_stage="Vegetative & Flower Setting",
-                disease_detected="Chilli Leaf Curl & Thrips Infestation (Begomovirus / Scirtothrips dorsalis)",
-                health_status="Pest Infested",
-                confidence=0.95,
-                severity_level="High",
-                pest_count_estimate=22,
-                affected_percentage=26.0,
-                symptoms=[
-                    "Upward curling and boat-shaped puckering of young leaves",
-                    "Thrips scratching lesions and stunted terminal shoots",
-                    "Flower bud drop and reduced fruit set"
-                ],
-                recommended_active_ingredient="Diafenthiuron 50% WP (Pegasus) @ 1.5 g/L or Dinotefuran 20% SG @ 0.5 g/L",
-                organic_alternative="5% Neem Seed Kernel Extract (NSKE) + Blue/Yellow sticky traps (20 traps/acre)",
-                urgency_days=2,
-                treatment_advice="Spray in early morning or evening targeting the underside of young foliage.",
-                prevention_tips=[
-                    "Install reflective silver mulching",
-                    "Avoid excessive nitrogenous fertilization"
-                ]
-            )
-        elif "paddy" in c or "rice" in c or "dhaan" in c or "धान" in c or "ਝੋਨਾ" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Basmati Paddy / Rice (धान)",
-                scientific_name="Oryza sativa",
-                crop_stage="Active Tillering & Panicle Initiation",
-                disease_detected="Paddy Leaf Blast (Magnaporthe oryzae)",
-                health_status="Diseased",
-                confidence=0.94,
-                severity_level="Medium",
-                pest_count_estimate=0,
-                affected_percentage=19.5,
-                symptoms=[
-                    "Spindle-shaped eye lesions with grey centers and reddish-brown borders",
-                    "Leaf blade necrosis and drying from leaf tips",
-                    "Risk of neck blast during panicle emergence"
-                ],
-                recommended_active_ingredient="Tricyclazole 75% WP @ 0.6 g/L (120 g/Acre in 200L water) or Isoprothiolane 40% EC @ 1.5 ml/L",
-                organic_alternative="Pseudomonas fluorescens 1% WP @ 5 g/L foliar spray",
-                urgency_days=2,
-                treatment_advice="Drain excess standing water temporarily and spray fungicide with calibrated 200L water volume.",
-                prevention_tips=[
-                    "Avoid split high doses of nitrogen during humid cloudy spells",
-                    "Treat seeds with carbendazim before nursery sowing"
-                ]
-            )
-        elif "potato" in c or "aloo" in c or "आलू" in c or "ਆਲੂ" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Potato (आलू)",
-                scientific_name="Solanum tuberosum",
-                crop_stage="Tuber Bulking Phase",
-                disease_detected="Late Blight of Potato (Phytophthora infestans)",
-                health_status="Diseased",
-                confidence=0.96,
-                severity_level="Critical",
-                pest_count_estimate=0,
-                affected_percentage=38.0,
-                symptoms=[
-                    "Water-soaked dark lesions on leaf tips expanding rapidly under morning humidity",
-                    "White cottony fungal downy growth on the underside of leaves",
-                    "Stem purplish-brown lesions and canopy collapse risk"
-                ],
-                recommended_active_ingredient="Cymoxanil 8% + Mancozeb 64% WP (Curzate) @ 2.5 g/L or Dimethomorph 50% WP @ 1 g/L",
-                organic_alternative="Copper Hydroxide 77% WP @ 2 g/L + Trichoderma harzianum",
-                urgency_days=1,
-                treatment_advice="Apply systemic curative fungicide immediately before forecast rain or high morning fog.",
-                prevention_tips=[
-                    "Destroy infected haulms before digging tubers",
-                    "Plant certified disease-free seed tubers"
-                ]
-            )
-        elif "mustard" in c or "sarson" in c or "सरसों" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Mustard (सरसों / Sarson)",
-                scientific_name="Brassica juncea",
-                crop_stage="Flowering & Pod Formation",
-                disease_detected="Mustard Aphid & White Rust (Lipaphis erysimi / Albugo candida)",
-                health_status="Pest Infested",
-                confidence=0.94,
-                severity_level="High",
-                pest_count_estimate=35,
-                affected_percentage=25.0,
-                symptoms=[
-                    "Clusters of small greenish-black aphids sucking sap from inflorescence",
-                    "White porcelain-like blisters on leaf undersides and floral distortion",
-                    "Curling of leaves and poor siliquae seed filling"
-                ],
-                recommended_active_ingredient="Dimethoate 30% EC @ 1.7 ml/L or Thiamethoxam 25% WG @ 0.4 g/L",
-                organic_alternative="5% NSKE (Neem Extract) + Verticillium lecanii @ 5 g/L",
-                urgency_days=2,
-                treatment_advice="Spray during evening hours to protect honeybee pollinators.",
-                prevention_tips=[
-                    "Sow timely before 20th October to escape peak aphid population",
-                    "Conserve ladybird beetle predators in the field"
-                ]
-            )
-        elif "sugarcane" in c or "ganna" in c or "गन्ना" in c:
-            return VisionAnalysisResponse(
-                crop_detected="Sugarcane (गन्ना)",
-                scientific_name="Saccharum officinarum",
-                crop_stage="Grand Growth & Cane Elongation",
-                disease_detected="Sugarcane Red Rot (Colletotrichum falcatum)",
-                health_status="Diseased",
-                confidence=0.93,
-                severity_level="High",
-                pest_count_estimate=0,
-                affected_percentage=20.0,
-                symptoms=[
-                    "Third and fourth leaf yellowing and withering from tips",
-                    "Reddening of internal pith tissue with characteristic white cross-bands",
-                    "Alcoholic sour odor from split diseased canes"
-                ],
-                recommended_active_ingredient="Carbendazim 50% WP @ 2 g/L or Thiophanate Methyl 70% WP @ 1.5 g/L sett soak & spray",
-                organic_alternative="Trichoderma viride enriched FYM soil application @ 10 kg/Acre",
-                urgency_days=2,
-                treatment_advice="Rogue out and burn infected clumps; maintain proper drainage.",
-                prevention_tips=[
-                    "Use red-rot resistant varieties like Co 0238 / Co 11015",
-                    "Adopt hot water sett treatment before planting"
-                ]
-            )
         else:
-            # Default to high-accuracy Cotton profile
-            return VisionAnalysisResponse(
-                crop_detected="Cotton (कपास / Bt Cotton)",
-                scientific_name="Gossypium hirsutum",
-                crop_stage="Boll Maturation & Bursting",
-                disease_detected="Cotton Whitefly & Sucking Pest Complex (Bemisia tabaci)",
-                health_status="Pest Infested",
-                confidence=0.94,
-                severity_level="Medium",
-                pest_count_estimate=14,
-                affected_percentage=20.0,
-                symptoms=[
-                    "Chlorotic stippling and mild leaf yellowing",
-                    "Whitefly nymph activity on lower leaf canopy",
-                    "Minor foliar stress under high transpiration"
-                ],
-                recommended_active_ingredient="Pyriproxyfen 10% + Clothianidin 10% SE @ 2 ml/L or Acetamiprid 20% SP @ 0.4 g/L",
-                organic_alternative="Bio-Neem Power 10,000 PPM @ 2.5 ml/L + 16 Yellow Sticky Traps/Acre",
-                urgency_days=2,
-                treatment_advice="Apply preventive foliar spray during calm morning hours with Delta-T between 2 and 8°C.",
-                prevention_tips=[
-                    "Install 16 yellow sticky traps per acre",
-                    "Maintain clean field borders free from malvaceous weeds"
-                ]
+
+            logger.warning(
+                "Gemini unavailable: image=%s api_key=%s",
+                bool(raw_bytes),
+                bool(self.api_key),
             )
 
+        # ----------------------------------------------------
+        # STEP 5 — FALLBACK CROP ESTIMATION
+        # ----------------------------------------------------
+
+        if is_auto_detect:
+
+            (
+                detected_crop,
+                fallback_confidence,
+                fallback_evidence,
+            ) = detect_crop_visual_features(
+                raw_bytes,
+                hint_crop,
+            )
+
+        else:
+
+            detected_crop = hint_crop
+            fallback_confidence = 0.55
+
+            fallback_evidence = [
+                "Crop type supplied by the user.",
+                "Gemini vision analysis was unavailable."
+            ]
+
+        # ----------------------------------------------------
+        # STEP 6 — IMPORTANT:
+        #
+        # Do NOT pretend fallback CV diagnosed a disease.
+        # ----------------------------------------------------
+
+        if detected_crop == "Unknown":
+
+            return build_uncertain_response(
+                reason=(
+                    "Gemini vision analysis was unavailable and "
+                    "the fallback visual system could not reliably "
+                    "identify the crop."
+                ),
+                analysis_source="heuristic",
+            )
+
+        return VisionAnalysisResponse(
+
+            crop_detected=detected_crop,
+
+            scientific_name="Unknown",
+
+            crop_stage="Unknown",
+
+            disease_detected=(
+                "Unable to determine reliably"
+            ),
+
+            health_status="Uncertain",
+
+            confidence=fallback_confidence,
+
+            severity_level="Unknown",
+
+            pest_count_estimate=None,
+
+            affected_percentage=None,
+
+            symptoms=[],
+
+            visual_evidence=fallback_evidence,
+
+            analysis_notes=(
+                "The fallback computer-vision system identified "
+                "a possible crop based primarily on color features. "
+                "It did not diagnose a disease."
+            ),
+
+            recommended_active_ingredient=(
+                "No treatment recommendation should be made "
+                "until the disease is confirmed."
+            ),
+
+            organic_alternative=(
+                "No treatment recommendation should be made "
+                "until the disease is confirmed."
+            ),
+
+            urgency_days=None,
+
+            treatment_advice=(
+                "Please retry the analysis when AI vision service "
+                "is available or provide a clearer close-up image."
+            ),
+
+            prevention_tips=[
+                "Do not apply chemicals based solely on this preliminary result.",
+                "Capture close-up images of both healthy and affected plant areas."
+            ],
+
+            analysis_source="heuristic",
+
+            requires_confirmation=True,
+        )
+
+    # ========================================================
+    # GEMINI ANALYSIS
+    # ========================================================
+
+    def _analyze_with_gemini(
+        self,
+        raw_bytes: bytes,
+        mime: str,
+        hint_crop: str,
+    ) -> Optional[Dict[str, Any]]:
+
+        try:
+
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(
+                api_key=self.api_key
+            )
+
+        except Exception as exc:
+
+            logger.warning(
+                "Unable to initialize Gemini client: %s",
+                exc,
+            )
+
+            return None
+
+        prompt = build_vision_prompt(
+            hint_crop
+        )
+
+        # ----------------------------------------------------
+        # Try models one by one
+        # ----------------------------------------------------
+
+        for model_name in GEMINI_MODELS:
+
+            try:
+
+                logger.info(
+                    "Trying Gemini Vision model: %s",
+                    model_name,
+                )
+
+                response = client.models.generate_content(
+
+                    model=model_name,
+
+                    contents=[
+                        types.Part.from_bytes(
+                            data=raw_bytes,
+                            mime_type=mime,
+                        ),
+                        prompt,
+                    ],
+                )
+
+                text_response = (
+                    response.text or ""
+                ).strip()
+
+                data = extract_json_from_response(
+                    text_response
+                )
+
+                normalized = normalize_gemini_result(
+                    data
+                )
+
+                logger.info(
+                    "Gemini model %s returned crop=%s disease=%s confidence=%.2f",
+                    model_name,
+                    normalized["crop_detected"],
+                    normalized["disease_detected"],
+                    normalized["confidence"],
+                )
+
+                normalized["model_used"] = model_name
+
+                return normalized
+
+            except Exception as exc:
+
+                logger.warning(
+                    "Gemini model %s failed: %s",
+                    model_name,
+                    exc,
+                )
+
+                continue
+
+        logger.error(
+            "All Gemini Vision models failed."
+        )
+
+        return None
+
+    # ========================================================
+    # BUILD FINAL RESPONSE
+    # ========================================================
+
+    def _build_final_response(
+        self,
+        result: Dict[str, Any],
+        analysis_source: str,
+    ) -> VisionAnalysisResponse:
+
+        crop = result.get(
+            "crop_detected",
+            "Unknown",
+        )
+
+        disease = result.get(
+            "disease_detected",
+            "Unable to determine reliably",
+        )
+
+        confidence = float(
+            result.get(
+                "confidence",
+                0.0,
+            )
+        )
+
+        health_status = result.get(
+            "health_status",
+            "Uncertain",
+        )
+
+        # ----------------------------------------------------
+        # Only provide agronomy recommendation when diagnosis
+        # has reasonable confidence.
+        # ----------------------------------------------------
+
+        if (
+            confidence >= 0.60
+            and health_status != "Uncertain"
+            and disease
+            and disease != "Unable to determine reliably"
+        ):
+
+            agronomy = get_agronomy_recommendation(
+                crop_name=crop,
+                disease_name=disease,
+            )
+
+        else:
+
+            agronomy = {
+                "recommended_active_ingredient": (
+                    "No treatment recommendation should be made "
+                    "until the visual diagnosis is confirmed."
+                ),
+                "organic_alternative": (
+                    "No treatment recommendation should be made "
+                    "until the visual diagnosis is confirmed."
+                ),
+                "prevention_tips": [
+                    "Capture a clearer image of the affected plant part.",
+                    "Consult local agricultural guidance before treatment."
+                ],
+            }
+
+
+        # ----------------------------------------------------
+# Urgency
+# ----------------------------------------------------
+
+        urgency_days = None
+
+        severity = result.get(
+        "severity_level",
+        "Unknown",
+         )
+
+# Healthy crops do not require treatment urgency.
+        if health_status == "Healthy Crop":
+          urgency_days = None
+
+        elif health_status == "Uncertain":
+          urgency_days = None
+
+        elif severity == "Critical":
+          urgency_days = 1
+
+        elif severity == "High":
+          urgency_days = 2
+
+        elif severity == "Medium":
+          urgency_days = 3
+
+        elif severity == "Low":
+         urgency_days = 4
+
+
+
+            # ----------------------------------------------------
+# Treatment advice
+# ----------------------------------------------------
+
+        if health_status == "Healthy Crop":
+
+         treatment_advice = (
+        "No treatment is indicated based on the current image. "
+        "Continue regular crop monitoring."
+    )
+
+        elif health_status == "Uncertain":
+
+         treatment_advice = (
+        "The visual evidence is insufficient for a reliable "
+        "treatment recommendation. Please capture a clearer "
+        "close-up image and seek local agricultural guidance "
+        "before applying any treatment."
+    )
+
+        elif confidence < 0.60:
+
+         treatment_advice = (
+        "The visual evidence is insufficient for a reliable "
+        "treatment recommendation. Please capture another image."
+    )
+
+        else:
+
+          treatment_advice = (
+        "Use the agronomic guidance below as decision support. "
+        "Before applying any chemical product, verify the diagnosis, "
+        "local registration, current label instructions, crop stage, "
+        "and advice from an authorized agricultural professional."
+    )
+
+        # ----------------------------------------------------
+        # Final response
+        # ----------------------------------------------------
+
+        return VisionAnalysisResponse(
+
+            crop_detected=result.get(
+                "crop_detected",
+                "Unknown",
+            ),
+
+            scientific_name=result.get(
+                "scientific_name",
+                "Unknown",
+            ),
+
+            crop_stage=result.get(
+                "crop_stage",
+                "Unknown",
+            ),
+
+            disease_detected=disease,
+
+            health_status=health_status,
+
+            confidence=confidence,
+
+            severity_level=severity,
+
+            pest_count_estimate=result.get(
+                "pest_count_estimate"
+            ),
+
+            affected_percentage=result.get(
+                "affected_percentage"
+            ),
+
+            symptoms=result.get(
+                "symptoms",
+                [],
+            ),
+
+            visual_evidence=result.get(
+                "visual_evidence",
+                [],
+            ),
+
+            analysis_notes=result.get(
+                "analysis_notes",
+                "",
+            ),
+
+            recommended_active_ingredient=(
+                agronomy[
+                    "recommended_active_ingredient"
+                ]
+            ),
+
+            organic_alternative=(
+                agronomy[
+                    "organic_alternative"
+                ]
+            ),
+
+            urgency_days=urgency_days,
+
+            treatment_advice=treatment_advice,
+
+            prevention_tips=(
+                agronomy[
+                    "prevention_tips"
+                ]
+            ),
+
+            analysis_source=analysis_source,
+
+            requires_confirmation=bool(
+                result.get(
+                    "requires_confirmation",
+                    confidence < 0.60,
+                )
+            ),
+        )
+
+
+# ============================================================
+# SINGLE VISION AGENT INSTANCE
+# ============================================================
 
 vision_agent = VisionAgent()

@@ -39,9 +39,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     final farm = farmProv.selectedFarm;
     final lang = auth.selectedLanguage;
 
-    final locationText = farm?.village.isNotEmpty == true 
+    final locationText = farm?.village.isNotEmpty == true
         ? "${farm!.village}, ${farm.state.isNotEmpty ? farm.state : 'Punjab'}"
-        : (auth.userVillage.isNotEmpty ? "${auth.userVillage}, Punjab" : "Ludhiana, Punjab");
+        : (auth.userVillage.isNotEmpty
+              ? "${auth.userVillage}, Punjab"
+              : "Ludhiana, Punjab");
 
     return Scaffold(
       backgroundColor: const Color(0xFFFBFDFB),
@@ -49,48 +51,54 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF0F172A), size: 24),
+          icon: const Icon(
+            Icons.menu_rounded,
+            color: Color(0xFF0F172A),
+            size: 24,
+          ),
           onPressed: () => _showSideOptionsSheet(context, auth, farmProv),
         ),
         title: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.55),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.55,
+          ),
           child: InkWell(
             onTap: () => _showFarmSelector(context, farmProv),
             borderRadius: BorderRadius.circular(20),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.location_on_rounded,
-                  color: Color(0xFF047857),
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    locationText,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF0F172A),
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.location_on_rounded,
+                    color: Color(0xFF047857),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      locationText,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF0F172A),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.keyboard_arrow_down_rounded,
-                  color: Color(0xFF64748B),
-                  size: 18,
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  const Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: Color(0xFF64748B),
+                    size: 18,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
         actions: [
           Stack(
             alignment: Alignment.center,
@@ -146,7 +154,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                       Row(
                         children: [
                           Text(
-                            AppTranslations.tr(lang, "greeting_namaste", "Namaste"),
+                            AppTranslations.tr(
+                              lang,
+                              "greeting_namaste",
+                              "Namaste",
+                            ),
                             style: const TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
@@ -155,15 +167,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          const Text(
-                            "🙏",
-                            style: TextStyle(fontSize: 20),
-                          ),
+                          const Text("🙏", style: TextStyle(fontSize: 20)),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        auth.userName.isNotEmpty 
+                        auth.userName.isNotEmpty
                             ? "${AppTranslations.tr(lang, "welcome_back", "Welcome back")}, ${auth.userName} ji!"
                             : "${AppTranslations.tr(lang, "welcome_back", "Welcome back")}, Kisan ji!",
                         style: const TextStyle(
@@ -195,7 +204,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                             ),
                           ),
                           Text(
-                            AppTranslations.tr(lang, "partly_cloudy", "Partly Cloudy"),
+                            AppTranslations.tr(
+                              lang,
+                              "partly_cloudy",
+                              "Partly Cloudy",
+                            ),
                             style: const TextStyle(
                               fontSize: 11,
                               color: Color(0xFF64748B),
@@ -210,9 +223,9 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               ),
               const SizedBox(height: 14),
 
-              // Active Crop Summary Card
-              _buildCropCard(context, farm, auth, lang),
-              const SizedBox(height: 14),
+              // // Active Crop Summary Card
+              // _buildCropCard(context, farm, auth, lang),
+              // const SizedBox(height: 14),
 
               // Field Weather Green Banner
               _buildFieldWeatherBanner(context, lang),
@@ -233,7 +246,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   Expanded(
                     child: _buildQuickActionCard(
                       title: AppTranslations.tr(lang, "voice_log", "Voice Log"),
-                      subtitle: AppTranslations.tr(lang, "voice_log_action_sub", "Speak & record\nyour activity"),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        "voice_log_action_sub",
+                        "Speak & record\nyour activity",
+                      ),
                       icon: Icons.mic_rounded,
                       onTap: () => Navigator.pushNamed(context, '/voice_log'),
                     ),
@@ -241,8 +258,16 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildQuickActionCard(
-                      title: AppTranslations.tr(lang, "crop_camera_title", "Crop Camera"),
-                      subtitle: AppTranslations.tr(lang, "crop_camera_action_sub", "Check crop\nhealth with AI"),
+                      title: AppTranslations.tr(
+                        lang,
+                        "crop_camera_title",
+                        "Crop Camera",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        "crop_camera_action_sub",
+                        "Check crop\nhealth with AI",
+                      ),
                       icon: Icons.camera_alt_rounded,
                       onTap: () => Navigator.pushNamed(context, '/crop_camera'),
                     ),
@@ -254,19 +279,37 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 children: [
                   Expanded(
                     child: _buildQuickActionCard(
-                      title: AppTranslations.tr(lang, "scan_bottle_title", "Scan Bottle"),
-                      subtitle: AppTranslations.tr(lang, "scan_bottle_action_sub", "Scan & verify\nproduct"),
+                      title: AppTranslations.tr(
+                        lang,
+                        "scan_bottle_title",
+                        "Scan Bottle",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        "scan_bottle_action_sub",
+                        "Scan & verify\nproduct",
+                      ),
                       icon: Icons.qr_code_scanner_rounded,
-                      onTap: () => Navigator.pushNamed(context, '/scan_product'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/scan_product'),
                     ),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: _buildQuickActionCard(
-                      title: AppTranslations.tr(lang, "new_spray_title", "New Spray Log"),
-                      subtitle: AppTranslations.tr(lang, "new_spray_action_sub", "Record new\nspray activity"),
+                      title: AppTranslations.tr(
+                        lang,
+                        "new_spray_title",
+                        "New Spray Log",
+                      ),
+                      subtitle: AppTranslations.tr(
+                        lang,
+                        "new_spray_action_sub",
+                        "Record new\nspray activity",
+                      ),
                       icon: Icons.science_rounded,
-                      onTap: () => Navigator.pushNamed(context, '/new_application'),
+                      onTap: () =>
+                          Navigator.pushNamed(context, '/new_application'),
                     ),
                   ),
                 ],
@@ -278,7 +321,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    AppTranslations.tr(lang, "recent_activities", "Recent Activities"),
+                    AppTranslations.tr(
+                      lang,
+                      "recent_activities",
+                      "Recent Activities",
+                    ),
                     style: const TextStyle(
                       fontSize: 16.5,
                       fontWeight: FontWeight.bold,
@@ -286,9 +333,13 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                     ),
                   ),
                   InkWell(
-                    onTap: () => Navigator.pushNamed(context, '/evidence_review'),
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/evidence_review'),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
                       child: Text(
                         AppTranslations.tr(lang, "view_all", "View All"),
                         style: const TextStyle(
@@ -314,25 +365,29 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: _navIndex,
-      ),
+      bottomNavigationBar: CustomBottomNav(currentIndex: _navIndex),
     );
   }
 
   String _localizeCrop(String name, String lang) {
     final lower = name.toLowerCase();
-    if (lower.contains('cotton') || lower.contains('कापूस') || lower.contains('कपास')) {
+    if (lower.contains('cotton') ||
+        lower.contains('कापूस') ||
+        lower.contains('कपास')) {
       if (lang == 'hi') return 'कपास (Bt-II)';
       if (lang == 'mr') return 'कापूस (Bt-II)';
       if (lang == 'pa') return 'ਨਰਮਾ/ਕਪਾਹ (Bt-II)';
       return 'Cotton (Bt-II)';
-    } else if (lower.contains('wheat') || lower.contains('गहू') || lower.contains('गेहूं')) {
+    } else if (lower.contains('wheat') ||
+        lower.contains('गहू') ||
+        lower.contains('गेहूं')) {
       if (lang == 'hi') return 'गेहूं';
       if (lang == 'mr') return 'गहू';
       if (lang == 'pa') return 'ਕਣਕ';
       return 'Wheat';
-    } else if (lower.contains('paddy') || lower.contains('rice') || lower.contains('धान')) {
+    } else if (lower.contains('paddy') ||
+        lower.contains('rice') ||
+        lower.contains('धान')) {
       if (lang == 'hi') return 'धान';
       if (lang == 'mr') return 'भात/धान';
       if (lang == 'pa') return 'ਝੋਨਾ';
@@ -343,27 +398,41 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
 
   String _localizeStage(String stage, String lang) {
     final lower = stage.toLowerCase();
-    if (lower.contains('tillering') || lower.contains('canopy') || lower.contains('कल्ले') || lower.contains('फुटवे')) {
+    if (lower.contains('tillering') ||
+        lower.contains('canopy') ||
+        lower.contains('कल्ले') ||
+        lower.contains('फुटवे')) {
       if (lang == 'hi') return 'कल्ले फूटने और बढ़वार की अवस्था';
       if (lang == 'mr') return 'फुटवे आणि जोमदार वाढीची अवस्था';
       if (lang == 'pa') return 'ਫੁਟਾਰਾ ਅਤੇ ਵਾਧਾ ਅਵਸਥਾ';
       return 'Active Tillering & Canopy Development';
-    } else if (lower.contains('boll') || lower.contains('flower') || lower.contains('बोंड') || lower.contains('टिंडे')) {
+    } else if (lower.contains('boll') ||
+        lower.contains('flower') ||
+        lower.contains('बोंड') ||
+        lower.contains('टिंडे')) {
       if (lang == 'hi') return 'फूल और टिंडे बनने की अवस्था';
       if (lang == 'mr') return 'फुलोरा आणि बोंड धरण्याची अवस्था';
       if (lang == 'pa') return 'ਫੁੱਲ ਤੇ ਟੀਂਡੇ ਬਣਨ ਦੀ ਅਵਸਥਾ';
       return 'Boll Formation / Flowering';
-    } else if (lower.contains('grain') || lower.contains('milking') || lower.contains('filling') || lower.contains('दाने')) {
+    } else if (lower.contains('grain') ||
+        lower.contains('milking') ||
+        lower.contains('filling') ||
+        lower.contains('दाने')) {
       if (lang == 'hi') return 'दाना भराव एवं दुग्ध अवस्था';
       if (lang == 'mr') return 'दाणे भरणे आणि दुधाळ अवस्था';
       if (lang == 'pa') return 'ਦਾਣਾ ਭਰਨ ਦੀ ਅਵਸਥਾ';
       return 'Grain Filling / Milking Stage';
-    } else if (lower.contains('maturity') || lower.contains('harvest') || lower.contains('काढणी') || lower.contains('कटाई')) {
+    } else if (lower.contains('maturity') ||
+        lower.contains('harvest') ||
+        lower.contains('काढणी') ||
+        lower.contains('कटाई')) {
       if (lang == 'hi') return 'परिपक्वता एवं कटाई अवस्था';
       if (lang == 'mr') return 'परिपक्वता आणि काढणी अवस्था';
       if (lang == 'pa') return 'ਪੱਕਣ ਅਤੇ ਵਾਢੀ ਦੀ ਅਵਸਥਾ';
       return 'Maturity & Harvesting Stage';
-    } else if (lower.contains('seedling') || lower.contains('germination') || lower.contains('अंकुरण')) {
+    } else if (lower.contains('seedling') ||
+        lower.contains('germination') ||
+        lower.contains('अंकुरण')) {
       if (lang == 'hi') return 'अंकुरण एवं प्रारंभिक अवस्था';
       if (lang == 'mr') return 'उगवण आणि प्राथमिक अवस्था';
       if (lang == 'pa') return 'ਪੁੰਗਰਨ ਅਤੇ ਮੁੱਢਲੀ ਅਵਸਥਾ';
@@ -377,10 +446,18 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     return stage;
   }
 
-  Widget _buildCropCard(BuildContext context, dynamic farm, AuthProvider auth, String lang) {
+  Widget _buildCropCard(
+    BuildContext context,
+    dynamic farm,
+    AuthProvider auth,
+    String lang,
+  ) {
     final rawCropName = farm?.activeCrop ?? auth.activeCrop;
     final rawStage = farm?.cropStage ?? "Boll Formation / Flowering";
-    final cropName = _localizeCrop(rawCropName.toString().isNotEmpty ? rawCropName.toString() : "Cotton", lang);
+    final cropName = _localizeCrop(
+      rawCropName.toString().isNotEmpty ? rawCropName.toString() : "Cotton",
+      lang,
+    );
     final stage = _localizeStage(rawStage.toString(), lang);
     final acres = farm?.totalAcres ?? 12.5;
 
@@ -433,7 +510,10 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                       ),
                     ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2.5,
+                      ),
                       decoration: BoxDecoration(
                         color: const Color(0xFFECFDF5),
                         borderRadius: BorderRadius.circular(12),
@@ -512,10 +592,18 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.eco_rounded, color: Colors.white70, size: 14),
+                            const Icon(
+                              Icons.eco_rounded,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
                             const SizedBox(width: 4),
                             Text(
-                              AppTranslations.tr(lang, "field_weather", "Field Weather"),
+                              AppTranslations.tr(
+                                lang,
+                                "field_weather",
+                                "Field Weather",
+                              ),
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 13,
@@ -543,7 +631,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                               children: [
                                 Row(
                                   children: [
-                                    const Icon(Icons.air_rounded, color: Colors.white70, size: 13),
+                                    const Icon(
+                                      Icons.air_rounded,
+                                      color: Colors.white70,
+                                      size: 13,
+                                    ),
                                     const SizedBox(width: 3),
                                     Text(
                                       "${AppTranslations.tr(lang, "wind", "Wind")}: 5.4 km/h",
@@ -557,7 +649,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                                 ),
                                 const SizedBox(height: 1),
                                 Text(
-                                  AppTranslations.tr(lang, "calm_ideal_spray", "Calm winds and\nideal for spraying"),
+                                  AppTranslations.tr(
+                                    lang,
+                                    "calm_ideal_spray",
+                                    "Calm winds and\nideal for spraying",
+                                  ),
                                   style: const TextStyle(
                                     color: Color(0xFFD1FAE5),
                                     fontSize: 10.5,
@@ -624,7 +720,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    AppTranslations.tr(lang, "safe_to_spray", "Great conditions for spraying!"),
+                    AppTranslations.tr(
+                      lang,
+                      "safe_to_spray",
+                      "Great conditions for spraying!",
+                    ),
                     style: const TextStyle(
                       color: Color(0xFF047857),
                       fontSize: 12,
@@ -667,11 +767,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                   color: Color(0xFFECFDF5),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  color: const Color(0xFF047857),
-                  size: 22,
-                ),
+                child: Icon(icon, color: const Color(0xFF047857), size: 22),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -726,17 +822,46 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         child: Column(
           children: [
             _buildActivityItem(
-              title: AppTranslations.tr(lang, "voice_log_added_title", "Voice Log Added"),
-              subtitle: AppTranslations.tr(lang, "voice_log_added_sub", "Insecticide spray on cotton field"),
-              time: AppTranslations.tr(lang, "time_today_morning", "Today, 8:30 AM"),
+              title: AppTranslations.tr(
+                lang,
+                "voice_log_added_title",
+                "Voice Log Added",
+              ),
+              subtitle: AppTranslations.tr(
+                lang,
+                "voice_log_added_sub",
+                "Insecticide spray on cotton field",
+              ),
+              time: AppTranslations.tr(
+                lang,
+                "time_today_morning",
+                "Today, 8:30 AM",
+              ),
               icon: Icons.mic_rounded,
               onTap: () => Navigator.pushNamed(context, '/evidence_review'),
             ),
-            const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+            const Divider(
+              height: 1,
+              indent: 56,
+              endIndent: 16,
+              color: Color(0xFFF1F5F9),
+            ),
             _buildActivityItem(
-              title: AppTranslations.tr(lang, "crop_photo_captured_title", "Crop Photo Captured"),
-              subtitle: AppTranslations.tr(lang, "crop_photo_captured_sub", "AI analysis completed"),
-              time: AppTranslations.tr(lang, "time_today_earlier", "Today, 7:45 AM"),
+              title: AppTranslations.tr(
+                lang,
+                "crop_photo_captured_title",
+                "Crop Photo Captured",
+              ),
+              subtitle: AppTranslations.tr(
+                lang,
+                "crop_photo_captured_sub",
+                "AI analysis completed",
+              ),
+              time: AppTranslations.tr(
+                lang,
+                "time_today_earlier",
+                "Today, 7:45 AM",
+              ),
               icon: Icons.camera_alt_rounded,
               onTap: () => Navigator.pushNamed(context, '/evidence_review'),
             ),
@@ -756,7 +881,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         children: List.generate(displayItems.length, (idx) {
           final item = displayItems[idx];
           IconData itemIcon = Icons.note_alt_rounded;
-          if (item.evidenceType == 'VOICE_RECORDING' || item.evidenceType == 'OBSERVATION') {
+          if (item.evidenceType == 'VOICE_RECORDING' ||
+              item.evidenceType == 'OBSERVATION') {
             itemIcon = Icons.mic_rounded;
           } else if (item.evidenceType == 'CROP_IMAGE') {
             itemIcon = Icons.camera_alt_rounded;
@@ -780,7 +906,12 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 ),
               ),
               if (idx < displayItems.length - 1)
-                const Divider(height: 1, indent: 56, endIndent: 16, color: Color(0xFFF1F5F9)),
+                const Divider(
+                  height: 1,
+                  indent: 56,
+                  endIndent: 16,
+                  color: Color(0xFFF1F5F9),
+                ),
             ],
           );
         }),
@@ -809,11 +940,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 color: Color(0xFFECFDF5),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                icon,
-                color: const Color(0xFF047857),
-                size: 18,
-              ),
+              child: Icon(icon, color: const Color(0xFF047857), size: 18),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -846,10 +973,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
             const SizedBox(width: 8),
             Text(
               time,
-              style: const TextStyle(
-                fontSize: 10.5,
-                color: Color(0xFF94A3B8),
-              ),
+              style: const TextStyle(fontSize: 10.5, color: Color(0xFF94A3B8)),
             ),
             const SizedBox(width: 6),
             const Icon(
@@ -873,7 +997,8 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
         tipText = "फवारणी सकाळी किंवा संध्याकाळी करा, चांगल्या परिणामासाठी.";
         break;
       case 'en':
-        tipText = "Spray during early morning or evening for maximum absorption.";
+        tipText =
+            "Spray during early morning or evening for maximum absorption.";
         break;
       case 'hi':
       default:
@@ -900,10 +1025,7 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               border: Border.all(color: const Color(0xFF86EFAC)),
             ),
             child: const Center(
-              child: Text(
-                "👨‍🌾",
-                style: TextStyle(fontSize: 26),
-              ),
+              child: Text("👨‍🌾", style: TextStyle(fontSize: 26)),
             ),
           ),
           const SizedBox(width: 10),
@@ -912,7 +1034,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppTranslations.tr(lang, "kisan_tip_title", "Kisan Tip of the Day"),
+                  AppTranslations.tr(
+                    lang,
+                    "kisan_tip_title",
+                    "Kisan Tip of the Day",
+                  ),
                   style: const TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.bold,
@@ -957,7 +1083,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
   }
 
-  void _showSideOptionsSheet(BuildContext context, AuthProvider auth, FarmProvider farmProv) {
+  void _showSideOptionsSheet(
+    BuildContext context,
+    AuthProvider auth,
+    FarmProvider farmProv,
+  ) {
     final lang = auth.selectedLanguage;
     showModalBottomSheet(
       context: context,
@@ -971,23 +1101,43 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.sync_rounded, color: Color(0xFF047857)),
-              title: Text(AppTranslations.tr(lang, "sync_center_menu", "Sync Center & Google Sheets")),
+              title: Text(
+                AppTranslations.tr(
+                  lang,
+                  "sync_center_menu",
+                  "Sync Center & Google Sheets",
+                ),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 Navigator.pushNamed(context, '/sync_center');
               },
             ),
             ListTile(
-              leading: const Icon(Icons.groups_rounded, color: Color(0xFF047857)),
-              title: Text(AppTranslations.tr(lang, "community_logs_menu", "Community Logs")),
+              leading: const Icon(
+                Icons.groups_rounded,
+                color: Color(0xFF047857),
+              ),
+              title: Text(
+                AppTranslations.tr(
+                  lang,
+                  "community_logs_menu",
+                  "Community Logs",
+                ),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 Navigator.pushNamed(context, '/community_logs');
               },
             ),
             ListTile(
-              leading: const Icon(Icons.language_rounded, color: Color(0xFF047857)),
-              title: Text("${AppTranslations.tr(lang, "language_menu", "Language")}: ${AppTranslations.getLanguageName(auth.selectedLanguage)}"),
+              leading: const Icon(
+                Icons.language_rounded,
+                color: Color(0xFF047857),
+              ),
+              title: Text(
+                "${AppTranslations.tr(lang, "language_menu", "Language")}: ${AppTranslations.getLanguageName(auth.selectedLanguage)}",
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 AppTranslations.showLanguageSelectorModal(
@@ -998,16 +1148,30 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.switch_account_rounded, color: Color(0xFF047857)),
-              title: Text(AppTranslations.tr(lang, "switch_role_menu", "Switch Profile / Role")),
+              leading: const Icon(
+                Icons.switch_account_rounded,
+                color: Color(0xFF047857),
+              ),
+              title: Text(
+                AppTranslations.tr(
+                  lang,
+                  "switch_role_menu",
+                  "Switch Profile / Role",
+                ),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 Navigator.pushNamed(context, '/profile_selection');
               },
             ),
             ListTile(
-              leading: const Icon(Icons.settings_rounded, color: Color(0xFF047857)),
-              title: Text(AppTranslations.tr(lang, "settings_menu", "Settings")),
+              leading: const Icon(
+                Icons.settings_rounded,
+                color: Color(0xFF047857),
+              ),
+              title: Text(
+                AppTranslations.tr(lang, "settings_menu", "Settings"),
+              ),
               onTap: () {
                 Navigator.pop(ctx);
                 Navigator.pushNamed(context, '/settings');
@@ -1038,7 +1202,11 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    AppTranslations.tr(lang, "switch_plot_title", "Switch Agricultural Plot / Farm"),
+                    AppTranslations.tr(
+                      lang,
+                      "switch_plot_title",
+                      "Switch Agricultural Plot / Farm",
+                    ),
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -1108,4 +1276,3 @@ class _FarmerDashboardScreenState extends State<FarmerDashboardScreen> {
     );
   }
 }
-
