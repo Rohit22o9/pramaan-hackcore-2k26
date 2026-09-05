@@ -1,13 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/auth_provider.dart';
+import '../core/localization/app_translations.dart';
 
 class ProfileSelectionScreen extends StatelessWidget {
   const ProfileSelectionScreen({super.key});
 
+  String _getLanguageDisplayName(String code) {
+    switch (code) {
+      case 'hi':
+        return 'हिन्दी';
+      case 'mr':
+        return 'मराठी';
+      case 'pa':
+        return 'ਪੰਜਾਬੀ';
+      case 'en':
+      default:
+        return 'English';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -16,26 +32,75 @@ class ProfileSelectionScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top App Bar / Back Navigation
+            // Top App Bar / Back Navigation & Language Switcher
             Padding(
-              padding: const EdgeInsets.only(left: 8, top: 8),
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A), size: 24),
-                onPressed: () {
-                  if (Navigator.canPop(context)) {
-                    Navigator.pop(context);
-                  }
-                },
+              padding: const EdgeInsets.only(left: 8, right: 16, top: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF0F172A), size: 24),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                    },
+                  ),
+                  // Language Selector Pill
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () => AppTranslations.showLanguageSelectorModal(
+                        context,
+                        auth.selectedLanguage,
+                        (newLang) => auth.setLanguage(newLang),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0FDF4),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: const Color(0xFF86EFAC), width: 1.2),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF166534).withValues(alpha: 0.08),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.language_rounded, size: 17, color: Color(0xFF166534)),
+                            const SizedBox(width: 6),
+                            Text(
+                              _getLanguageDisplayName(auth.selectedLanguage),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF166534),
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF166534)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 12),
 
             // Title
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
               child: Text(
-                "Choose Your Role",
-                style: TextStyle(
+                AppTranslations.tr(lang, "choose_role_title", "Choose Your Role"),
+                style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF0F172A),
@@ -52,7 +117,7 @@ class ProfileSelectionScreen extends StatelessWidget {
                 children: [
                   // Role 1: Farmer / Grower
                   _buildRoleCard(
-                    title: "Farmer / Grower",
+                    title: AppTranslations.tr(lang, "role_farmer", "Farmer / Grower"),
                     icon: Icons.agriculture_rounded,
                     isSelected: auth.currentRole == UserRoleType.farmer,
                     hasHighlightBorder: true,
@@ -65,7 +130,7 @@ class ProfileSelectionScreen extends StatelessWidget {
 
                   // Role 2: Field Agent / Agronomist
                   _buildRoleCard(
-                    title: "Field Agent / Agronomist",
+                    title: AppTranslations.tr(lang, "role_field_agent", "Field Agent / Agronomist"),
                     icon: Icons.person_rounded,
                     isSelected: auth.currentRole == UserRoleType.fieldAgent,
                     hasHighlightBorder: false,
@@ -78,7 +143,7 @@ class ProfileSelectionScreen extends StatelessWidget {
 
                   // Role 3: Buyer / Agri-Input Partner
                   _buildRoleCard(
-                    title: "Buyer / Agri-Input Partner",
+                    title: AppTranslations.tr(lang, "role_buyer", "Buyer / Agri-Input Partner"),
                     icon: Icons.storefront_rounded,
                     isSelected: auth.currentRole == UserRoleType.buyer,
                     hasHighlightBorder: false,
@@ -94,7 +159,7 @@ class ProfileSelectionScreen extends StatelessWidget {
             const Spacer(),
 
             // Bottom Illustrated Rolling Green Hills & Leaves with "Better Farming Together"
-            _buildBottomHillsIllustration(),
+            _buildBottomHillsIllustration(lang),
           ],
         ),
       ),
@@ -173,7 +238,7 @@ class ProfileSelectionScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBottomHillsIllustration() {
+  Widget _buildBottomHillsIllustration(String lang) {
     return SizedBox(
       height: 140,
       width: double.infinity,
@@ -232,10 +297,10 @@ class ProfileSelectionScreen extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  "Better Farming\nTogether",
+                Text(
+                  AppTranslations.tr(lang, "better_farming_together", "Better Farming\nTogether"),
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF065F46),

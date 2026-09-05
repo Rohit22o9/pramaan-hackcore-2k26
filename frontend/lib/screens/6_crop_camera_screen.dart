@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
@@ -19,42 +20,74 @@ class CropCameraScreen extends StatefulWidget {
 }
 
 class _CropCameraScreenState extends State<CropCameraScreen> {
+  static const MethodChannel _speechChannel = MethodChannel(
+    'com.pramaan.app/speech',
+  );
+
   final ApiService _api = ApiService();
   final ImagePicker _picker = ImagePicker();
 
   XFile? _capturedFile;
   Uint8List? _capturedImageBytes;
   bool _isAnalyzing = false;
+  bool _isSpeaking = false;
   String _selectedCrop = "Auto-Detect";
   int _presetIndex = 0;
   Map<String, dynamic>? _diagnosisResult;
 
   final List<Map<String, String>> _presetSamples = [
     {
-      "title": "Wheat Foliage (Stripe Rust)",
+      "title": "Wheat Foliage (Stripe Rust / Yellow Rust)",
       "url":
-          "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=800&auto=format&fit=crop&q=80",
-      "crop": "Wheat",
+          "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=80",
+      "crop": "Wheat (गेहूं)",
     },
     {
-      "title": "Cotton (Whitefly)",
+      "title": "Cotton Field (Whitefly / Boll Stage)",
       "url":
           "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?w=800&auto=format&fit=crop&q=80",
-      "crop": "Cotton",
+      "crop": "Cotton (कपास)",
     },
     {
       "title": "Tomato Early Blight Lesions",
       "url":
-          "https://images.unsplash.com/photo-1592417817098-8f3d6eb22509?w=800&auto=format&fit=crop&q=80",
-      "crop": "Tomato",
+          "https://images.unsplash.com/photo-1592841200221-a6898f307baa?w=800&auto=format&fit=crop&q=80",
+      "crop": "Tomato (टमाटर)",
     },
     {
       "title": "Chilli Leaf Curl & Thrips Infestation",
       "url":
-          "https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&auto=format&fit=crop&q=80",
-      "crop": "Chilli",
+          "https://images.unsplash.com/photo-1588252303782-cb80119abd6d?w=800&auto=format&fit=crop&q=80",
+      "crop": "Chilli (हरी मिर्च)",
     },
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _speechChannel.setMethodCallHandler(_handleNativeSpeechCallback);
+  }
+
+  @override
+  void dispose() {
+    if (_isSpeaking) {
+      try {
+        _speechChannel.invokeMethod('stopSpeaking');
+      } catch (_) {}
+    }
+    _speechChannel.setMethodCallHandler(null);
+    super.dispose();
+  }
+
+  Future<dynamic> _handleNativeSpeechCallback(MethodCall call) async {
+    if (!mounted) return null;
+    if (call.method == 'onTtsStart') {
+      setState(() => _isSpeaking = true);
+    } else if (call.method == 'onTtsDone') {
+      setState(() => _isSpeaking = false);
+    }
+    return null;
+  }
 
   Future<void> _takePhoto(ImageSource source) async {
     try {
@@ -98,9 +131,18 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
     }
 
     try {
-      final cropHint = _selectedCrop.contains("Auto-Detect")
-          ? "Auto-Detect"
-          : _selectedCrop;
+      String cropHint;
+      if (_selectedCrop.contains("Auto-Detect")) {
+        if (_capturedFile == null) {
+          // User is inspecting a preset sample
+          cropHint = _presetSamples[_presetIndex]['crop']!;
+        } else {
+          cropHint = "Auto-Detect";
+        }
+      } else {
+        cropHint = _selectedCrop;
+      }
+
       final result = await _api.analyzeVision(base64Str, cropHint);
       if (mounted) {
         setState(() {
@@ -158,6 +200,73 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
     }
   }
 
+  Future<void> _toggleSpeakDiagnosis(String lang, [void Function(void Function())? setModalState]) async {
+    if (_isSpeaking) {
+      try {
+        await _speechChannel.invokeMethod('stopSpeaking');
+      } catch (_) {}
+      setState(() => _isSpeaking = false);
+      if (setModalState != null) {
+        setModalState(() {});
+      }
+      return;
+    }
+
+    if (_diagnosisResult == null) return;
+    final res = _diagnosisResult!;
+    final crop = res['crop_detected'] ?? _selectedCrop;
+    final disease = res['disease_detected'] ?? 'Crop Foliar Scan';
+    final spray = _cleanMedicineSummary(res['recommended_active_ingredient']);
+    final desi = res['organic_alternative'] ?? '';
+
+    String speech = '';
+    switch (lang) {
+      case 'mr':
+        speech = 'पीक तपासणी निष्कर्ष: पिकाचे नाव $crop. रोग किंवा कीड $disease. शिफारस केलेले औषध $spray.';
+        if (desi.isNotEmpty) speech += ' देशी उपाय $desi.';
+        break;
+      case 'pa':
+        speech = 'ਫਸਲ ਜਾਂਚ ਰਿਪੋਰਟ: ਫਸਲ $crop. ਰੋਗ ਜਾਂ ਕੀੜਾ $disease. ਸਿਫਾਰਸ਼ ਕੀਤੀ ਸਪਰੇਅ $spray.';
+        if (desi.isNotEmpty) speech += ' ਦੇਸੀ ਇਲਾਜ $desi.';
+        break;
+      case 'en':
+        speech = 'Crop Diagnosis: Crop $crop. Detected issue $disease. Recommended spray $spray.';
+        if (desi.isNotEmpty) speech += ' Organic alternative $desi.';
+        break;
+      case 'hi':
+      default:
+        speech = 'फसल निदान रिपोर्ट: फसल $crop. रोग या कीट $disease. अनुशंसित स्प्रे $spray.';
+        if (desi.isNotEmpty) speech += ' देसी उपचार $desi.';
+        break;
+    }
+
+    try {
+      setState(() => _isSpeaking = true);
+      if (setModalState != null) {
+        setModalState(() {});
+      }
+
+      final locale = lang == 'mr'
+          ? 'mr-IN'
+          : (lang == 'pa'
+              ? 'pa-IN'
+              : (lang == 'en' ? 'en-IN' : 'hi-IN'));
+
+      await _speechChannel.invokeMethod('speak', {
+        'text': speech,
+        'language': locale,
+      });
+    } catch (e) {
+      debugPrint('[CropCamera TTS] speak error: $e');
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+        if (setModalState != null) {
+          setModalState(() {});
+        }
+      }
+    }
+  }
+
   void _showDiagnosisResultModal() {
     if (_diagnosisResult == null) return;
     final lang = Provider.of<AuthProvider>(context, listen: false).selectedLanguage;
@@ -166,17 +275,18 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               // Header
               Row(
                 children: [
@@ -237,7 +347,87 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                   ),
                 ],
               ),
-              const Divider(height: 20),
+              const SizedBox(height: 8),
+
+              // Audio Readout Banner
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _isSpeaking ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: _isSpeaking ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isSpeaking ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+                      color: _isSpeaking ? const Color(0xFF15803D) : const Color(0xFF047857),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _isSpeaking
+                            ? (lang == 'hi'
+                                ? 'आवाज चल रही है...'
+                                : (lang == 'mr'
+                                    ? 'आवाज सुरू आहे...'
+                                    : (lang == 'pa'
+                                        ? 'ਆਵਾਜ਼ ਚੱਲ ਰਹੀ ਹੈ...'
+                                        : 'Speaking aloud...')))
+                            : (lang == 'hi'
+                                ? 'यह रिपोर्ट अपनी भाषा में सुनें'
+                                : (lang == 'mr'
+                                    ? 'हा अहवाल आपल्या भाषेत ऐका'
+                                    : (lang == 'pa'
+                                        ? 'ਇਹ ਰਿਪੋਰਟ ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਸੁਣੋ'
+                                        : 'Listen to diagnosis in voice'))),
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: _isSpeaking ? const Color(0xFF15803D) : const Color(0xFF334155),
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => _toggleSpeakDiagnosis(lang, setModalState),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _isSpeaking ? const Color(0xFFDC2626) : const Color(0xFF047857),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isSpeaking ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                              color: Colors.white,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isSpeaking
+                                  ? (lang == 'hi' ? 'रोकें' : (lang == 'mr' ? 'थांबवा' : (lang == 'pa' ? 'ਰੋਕੋ' : 'Stop')))
+                                  : (lang == 'hi' ? 'सुनें' : (lang == 'mr' ? 'ऐका' : (lang == 'pa' ? 'ਸੁਣੋ' : 'Listen'))),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(height: 16),
 
               // Recommended Spray Box
               Container(
@@ -252,12 +442,12 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      children: const [
-                        Icon(Icons.medication_liquid_rounded, color: Color(0xFFB45309), size: 18),
-                        SizedBox(width: 6),
+                      children: [
+                        const Icon(Icons.medication_liquid_rounded, color: Color(0xFFB45309), size: 18),
+                        const SizedBox(width: 6),
                         Text(
-                          "Recommended Spray:",
-                          style: TextStyle(
+                          AppTranslations.tr(lang, "recommended_spray", "Recommended Spray:"),
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             color: Color(0xFFB45309),
@@ -277,7 +467,7 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                     if (_diagnosisResult!['organic_alternative'] != null) ...[
                       const SizedBox(height: 4),
                       Text(
-                        "🌿 Desi/Organic: ${_diagnosisResult!['organic_alternative']}",
+                        "${AppTranslations.tr(lang, "desi_organic", "🌿 Desi/Organic:")} ${_diagnosisResult!['organic_alternative']}",
                         style: const TextStyle(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
@@ -327,9 +517,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                     _saveEvidence();
                   },
                   icon: const Icon(Icons.bookmark_add_rounded, size: 20),
-                  label: const Text(
-                    "SAVE SPRAY RECORD IN JOURNAL",
-                    style: TextStyle(
+                  label: Text(
+                    AppTranslations.tr(lang, "save_spray_record", "SAVE SPRAY RECORD IN JOURNAL"),
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
                     ),
@@ -348,8 +538,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -373,9 +564,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 22),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Crop Doctor AI",
-          style: TextStyle(
+        title: Text(
+          AppTranslations.tr(lang, "crop_doctor_title", "Crop Doctor AI"),
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 17.5,
             color: Color(0xFF0F172A),
@@ -435,9 +626,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
             // Target Crop Horizontal Selector
             Row(
               children: [
-                const Text(
-                  "Target Crop:",
-                  style: TextStyle(
+                Text(
+                  AppTranslations.tr(lang, "target_crop", "Target Crop:"),
+                  style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF64748B),
@@ -593,18 +784,18 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                             color: Colors.black.withValues(alpha: 0.7),
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: const Row(
+                          child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.camera_alt_rounded,
                                 color: Colors.white,
                                 size: 14,
                               ),
-                              SizedBox(width: 6),
+                              const SizedBox(width: 6),
                               Text(
-                                "Align crop leaf or plant inside frame",
-                                style: TextStyle(
+                                AppTranslations.tr(lang, "align_camera", "Align crop leaf or plant inside frame"),
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 11.5,
                                   fontWeight: FontWeight.w500,
@@ -663,9 +854,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Text(
-                      "Try Sample >",
-                      style: TextStyle(
+                    Text(
+                      "${AppTranslations.tr(lang, "try_sample", "Try Sample")} >",
+                      style: const TextStyle(
                         fontSize: 11.5,
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF047857),
@@ -687,9 +878,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                     child: ElevatedButton.icon(
                       onPressed: () => _takePhoto(ImageSource.camera),
                       icon: const Icon(Icons.camera_alt_rounded, size: 18),
-                      label: const Text(
-                        "Take Photo",
-                        style: TextStyle(
+                      label: Text(
+                        AppTranslations.tr(lang, "take_photo", "Take Photo"),
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
@@ -713,9 +904,9 @@ class _CropCameraScreenState extends State<CropCameraScreen> {
                     child: OutlinedButton.icon(
                       onPressed: () => _takePhoto(ImageSource.gallery),
                       icon: const Icon(Icons.image_rounded, size: 18, color: Color(0xFF047857)),
-                      label: const Text(
-                        "Gallery",
-                        style: TextStyle(
+                      label: Text(
+                        AppTranslations.tr(lang, "gallery", "Gallery"),
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12.5,
                           color: Color(0xFF047857),

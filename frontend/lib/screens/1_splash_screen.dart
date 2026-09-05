@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import '../core/theme/app_colors.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -41,9 +40,9 @@ class _SplashScreenState extends State<SplashScreen> {
           final position = _videoController!.value.position;
           final duration = _videoController!.value.duration;
 
-          // When video finishes playing, navigate to Choose Your Role
+          // When video finishes playing, navigate directly to Farmer Login
           if (duration > Duration.zero && position >= duration) {
-            _navigateToRoleSelection();
+            _navigateToFarmerLogin();
           }
         }
       });
@@ -52,17 +51,17 @@ class _SplashScreenState extends State<SplashScreen> {
       // Fallback timer if video playback is not supported
       Future.delayed(const Duration(milliseconds: 2500), () {
         if (mounted && !_hasNavigated) {
-          _navigateToRoleSelection();
+          _navigateToFarmerLogin();
         }
       });
     }
   }
 
-  void _navigateToRoleSelection() {
+  void _navigateToFarmerLogin() {
     if (_hasNavigated) return;
     _hasNavigated = true;
     _videoController?.pause();
-    Navigator.pushReplacementNamed(context, '/profile_selection');
+    Navigator.pushReplacementNamed(context, '/farmer_auth');
   }
 
   @override
@@ -91,89 +90,42 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             )
           else
-            // Elegant loading fallback
-            Container(
-              color: AppColors.primaryDark,
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(22),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryAccent.withValues(alpha: 0.3),
-                            blurRadius: 28,
-                            spreadRadius: 6,
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        Icons.eco_rounded,
-                        size: 58,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      "PRAMAAN",
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 3,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      "AgTech Evidence Verification",
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.primaryAccent,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            const ColoredBox(color: Colors.black),
 
-          // 2. Skip Button in Top Right
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: TextButton(
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.4),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                  ),
-                  onPressed: _navigateToRoleSelection,
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        "SKIP",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1,
+          // 2. Skip Button in Top Right (visible when video is playing)
+          if (_isVideoInitialized)
+            SafeArea(
+              child: Align(
+                alignment: Alignment.topRight,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.black.withValues(alpha: 0.4),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    onPressed: _navigateToFarmerLogin,
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "SKIP",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 1,
+                          ),
                         ),
-                      ),
-                      SizedBox(width: 4),
-                      Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 12),
-                    ],
+                        SizedBox(width: 4),
+                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white70, size: 12),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

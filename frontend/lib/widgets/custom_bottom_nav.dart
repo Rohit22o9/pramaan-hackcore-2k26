@@ -34,7 +34,7 @@ class CustomBottomNav extends StatelessWidget {
         Navigator.pushNamed(context, '/voice_log');
         break;
       case 2:
-        Navigator.pushNamed(context, '/season_journal');
+        Navigator.pushNamed(context, '/community_logs');
         break;
       case 3:
         Navigator.pushNamed(context, '/ask_pramaan');
@@ -43,6 +43,9 @@ class CustomBottomNav extends StatelessWidget {
   }
 
   void _showQuickAddSheet(BuildContext context) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final lang = auth.selectedLanguage;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -59,9 +62,9 @@ class CustomBottomNav extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Quick Record Field Evidence",
-                  style: TextStyle(
+                Text(
+                  AppTranslations.tr(lang, "quick_record_title", "Quick Record Field Evidence"),
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
@@ -83,8 +86,8 @@ class CustomBottomNav extends StatelessWidget {
                 ),
                 child: const Icon(Icons.mic_rounded, color: Color(0xFF047857)),
               ),
-              title: const Text("Voice Log", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              subtitle: const Text("Speak & record your field activity in your language", style: TextStyle(fontSize: 12)),
+              title: Text(AppTranslations.tr(lang, "voice_log", "Voice Log"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text(AppTranslations.tr(lang, "voice_log_sheet_sub", "Speak & record your field activity in your language"), style: const TextStyle(fontSize: 12)),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.pop(ctx);
@@ -100,8 +103,8 @@ class CustomBottomNav extends StatelessWidget {
                 ),
                 child: const Icon(Icons.camera_alt_rounded, color: Color(0xFF047857)),
               ),
-              title: const Text("Crop Camera", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              subtitle: const Text("Diagnose leaf disease & get instant prescriptions", style: TextStyle(fontSize: 12)),
+              title: Text(AppTranslations.tr(lang, "crop_camera_title", "Crop Camera"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text(AppTranslations.tr(lang, "crop_cam_sheet_sub", "Diagnose leaf disease & get instant prescriptions"), style: const TextStyle(fontSize: 12)),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.pop(ctx);
@@ -117,8 +120,8 @@ class CustomBottomNav extends StatelessWidget {
                 ),
                 child: const Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF047857)),
               ),
-              title: const Text("Scan Bottle / Seed QR", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              subtitle: const Text("Verify pesticide authenticity and batch QR", style: TextStyle(fontSize: 12)),
+              title: Text(AppTranslations.tr(lang, "scan_bottle_title", "Scan Bottle"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text(AppTranslations.tr(lang, "scan_sheet_sub", "Verify pesticide authenticity and batch QR"), style: const TextStyle(fontSize: 12)),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.pop(ctx);
@@ -134,8 +137,8 @@ class CustomBottomNav extends StatelessWidget {
                 ),
                 child: const Icon(Icons.science_rounded, color: Color(0xFF047857)),
               ),
-              title: const Text("New Spray Log", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              subtitle: const Text("Record dosage, water volume and safe PHI", style: TextStyle(fontSize: 12)),
+              title: Text(AppTranslations.tr(lang, "new_spray_title", "New Spray Log"), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              subtitle: Text(AppTranslations.tr(lang, "spray_sheet_sub", "Record dosage, water volume and safe PHI"), style: const TextStyle(fontSize: 12)),
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () {
                 Navigator.pop(ctx);
@@ -177,7 +180,7 @@ class CustomBottomNav extends StatelessWidget {
               _buildNavItem(context, 0, Icons.home_rounded, AppTranslations.tr(lang, "home", "Home")),
               _buildNavItem(context, 1, Icons.mic_rounded, AppTranslations.tr(lang, "voice_log", "Voice Log")),
               _buildCenterActionButton(context),
-              _buildNavItem(context, 2, Icons.menu_book_rounded, AppTranslations.tr(lang, "journal", "Journal")),
+              _buildNavItem(context, 2, Icons.groups_rounded, AppTranslations.tr(lang, "community", "Community")),
               _buildNavItem(context, 3, Icons.chat_bubble_outline_rounded, AppTranslations.tr(lang, "ask_ai", "Ask AI")),
             ],
           ),

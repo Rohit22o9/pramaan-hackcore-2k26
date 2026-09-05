@@ -9,6 +9,8 @@ import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -16,18 +18,59 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.util.ArrayList
+import java.util.Locale
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterActivity(), TextToSpeech.OnInitListener {
     private val CHANNEL = "com.pramaan.app/speech"
     private val RECORD_AUDIO_PERMISSION_CODE = 2001
     private var methodChannel: MethodChannel? = null
     private var speechRecognizer: SpeechRecognizer? = null
+    private var tts: TextToSpeech? = null
+    private var ttsReady = false
     private var pendingResult: MethodChannel.Result? = null
     private var requestedLanguage: String = "hi-IN"
     private val mainHandler = Handler(Looper.getMainLooper())
 
     companion object {
         private const val TAG = "PramaanSpeech"
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        try {
+            tts = TextToSpeech(this, this)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error initializing TTS: ${e.message}")
+        }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            ttsReady = true
+            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    mainHandler.post {
+                        methodChannel?.invokeMethod("onTtsStart", null)
+                    }
+                }
+
+                override fun onDone(utteranceId: String?) {
+                    mainHandler.post {
+                        methodChannel?.invokeMethod("onTtsDone", null)
+                    }
+                }
+
+                @Deprecated("Deprecated in Java")
+                override fun onError(utteranceId: String?) {
+                    mainHandler.post {
+                        methodChannel?.invokeMethod("onTtsDone", null)
+                    }
+                }
+            })
+            Log.d(TAG, "TextToSpeech initialized successfully")
+        } else {
+            Log.e(TAG, "TextToSpeech init failed: $status")
+        }
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -41,7 +84,6 @@ class MainActivity : FlutterActivity() {
                     requestedLanguage = lang
                     pendingResult = result
 
-                    // Check RECORD_AUDIO permission
                     if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), RECORD_AUDIO_PERMISSION_CODE)
                         return@setMethodCallHandler
@@ -63,7 +105,61 @@ class MainActivity : FlutterActivity() {
                     val available = SpeechRecognizer.isRecognitionAvailable(this)
                     result.success(available)
                 }
+                "speak" -> {
+                    val text = call.argument<String>("text") ?: ""
+                    val langCode = call.argument<String>("language") ?: "hi-IN"
+                    speakText(text, langCode, result)
+                }
+                "stopSpeaking" -> {
+                    mainHandler.post {
+                        try {
+                            tts?.stop()
+                            methodChannel?.invokeMethod("onTtsDone", null)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error stopping TTS: ${e.message}")
+                        }
+                    }
+                    result.success(true)
+                }
                 else -> result.notImplemented()
+            }
+        }
+    }
+
+    private fun speakText(text: String, langCode: String, result: MethodChannel.Result) {
+        if (!ttsReady || tts == null) {
+            result.error("TTS_NOT_READY", "TextToSpeech engine not initialized yet", null)
+            return
+        }
+
+        mainHandler.post {
+            try {
+                val locale = when {
+                    langCode.startsWith("hi") -> Locale("hi", "IN")
+                    langCode.startsWith("mr") -> Locale("mr", "IN")
+                    langCode.startsWith("pa") -> Locale("pa", "IN")
+                    langCode.startsWith("gu") -> Locale("gu", "IN")
+                    langCode.startsWith("te") -> Locale("te", "IN")
+                    langCode.startsWith("ta") -> Locale("ta", "IN")
+                    langCode.startsWith("kn") -> Locale("kn", "IN")
+                    else -> Locale("en", "IN")
+                }
+
+                val langResult = tts?.setLanguage(locale)
+                if (langResult == TextToSpeech.LANG_MISSING_DATA || langResult == TextToSpeech.LANG_NOT_SUPPORTED) {
+                    Log.w(TAG, "Language $langCode not directly supported, falling back to Hindi/Default")
+                    tts?.setLanguage(Locale("hi", "IN"))
+                }
+
+                tts?.setPitch(1.0f)
+                tts?.setSpeechRate(0.92f) // Clear, natural pace for farmers
+
+                val utteranceId = "pramaan_voice_${System.currentTimeMillis()}"
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+                result.success(true)
+            } catch (e: Exception) {
+                Log.e(TAG, "TTS speak error: ${e.message}")
+                result.error("TTS_ERROR", e.message, null)
             }
         }
     }
@@ -183,5 +279,8 @@ class MainActivity : FlutterActivity() {
         super.onDestroy()
         speechRecognizer?.destroy()
         speechRecognizer = null
+        tts?.stop()
+        tts?.shutdown()
+        tts = null
     }
 }

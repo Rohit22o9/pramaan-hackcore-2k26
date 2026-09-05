@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/providers/auth_provider.dart';
 import '../core/providers/farm_provider.dart';
+import '../core/localization/app_translations.dart';
 
 class SeasonJournalScreen extends StatelessWidget {
   const SeasonJournalScreen({super.key});
@@ -9,62 +11,64 @@ class SeasonJournalScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final farmProv = Provider.of<FarmProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
     final farm = farmProv.selectedFarm;
+    final lang = auth.selectedLanguage;
 
     final milestones = [
       {
         "date": "15 Jun 2026",
-        "stage": "Land Prep & Sowing",
-        "title": "Certified Bt-II Seed Sowing & Trichoderma Soil Treatment",
+        "stage": lang == 'hi' ? "बुवाई अवस्था" : (lang == 'mr' ? "पेरणी अवस्था" : "Land Prep & Sowing"),
+        "title": AppTranslations.tr(lang, "sowing_milestone_title", "Certified Bt-II Seed Sowing & Trichoderma Soil Treatment"),
         "type": "SOWING",
-        "status": "COMPLETED",
-        "notes":
-            "Treated seeds with Trichoderma Viride bio-fungicide before precision sowing.",
+        "status": AppTranslations.tr(lang, "completed_status", "COMPLETED"),
+        "isDone": true,
+        "notes": AppTranslations.tr(lang, "sowing_milestone_notes", "Treated seeds with Trichoderma Viride bio-fungicide before precision sowing."),
       },
       {
         "date": "05 Jul 2026",
-        "stage": "Seedling Emergence",
-        "title": "Basal Organic Manure + Micro-Nutrient Application",
+        "stage": lang == 'hi' ? "अंकुरण अवस्था" : (lang == 'mr' ? "रोपे उगवण" : "Seedling Emergence"),
+        "title": AppTranslations.tr(lang, "fert_milestone_title", "Basal Organic Manure + Micro-Nutrient Application"),
         "type": "FERTILIZER",
-        "status": "COMPLETED",
-        "notes":
-            "Applied 5 tons well-decomposed FYM and zinc sulphate foliar booster.",
+        "status": AppTranslations.tr(lang, "completed_status", "COMPLETED"),
+        "isDone": true,
+        "notes": AppTranslations.tr(lang, "fert_milestone_notes", "Applied 5 tons well-decomposed FYM and zinc sulphate foliar booster."),
       },
       {
         "date": "25 Aug 2026",
-        "stage": "Vegetative & Squaring",
-        "title": "Whitefly Detection & AI Diagnosis",
+        "stage": lang == 'hi' ? "वानस्पतिक अवस्था" : (lang == 'mr' ? "शाकीय वाढ" : "Vegetative & Squaring"),
+        "title": AppTranslations.tr(lang, "obs_milestone_title", "Whitefly Detection & AI Diagnosis"),
         "type": "OBSERVATION",
-        "status": "COMPLETED",
-        "notes":
-            "Pramaan Vision AI detected early whitefly; recommended botanical insecticide.",
+        "status": AppTranslations.tr(lang, "completed_status", "COMPLETED"),
+        "isDone": true,
+        "notes": AppTranslations.tr(lang, "obs_milestone_notes", "Pramaan Vision AI detected early whitefly; recommended botanical insecticide."),
       },
       {
         "date": "28 Aug 2026",
-        "stage": "Vegetative & Squaring",
-        "title": "Bio-Neem Spray Applied (Batch Verified)",
+        "stage": lang == 'hi' ? "वानस्पतिक अवस्था" : (lang == 'mr' ? "शाकीय वाढ" : "Vegetative & Squaring"),
+        "title": AppTranslations.tr(lang, "app_milestone_title", "Bio-Neem Spray Applied (Batch Verified)"),
         "type": "APPLICATION",
-        "status": "COMPLETED",
-        "notes":
-            "QR scanned bottle BNP-2026-MAY-0441; 400ml/Acre applied during calm weather.",
+        "status": AppTranslations.tr(lang, "completed_status", "COMPLETED"),
+        "isDone": true,
+        "notes": AppTranslations.tr(lang, "app_milestone_notes", "QR scanned bottle BNP-2026-MAY-0441; 400ml/Acre applied during calm weather."),
       },
       {
         "date": "29 Aug 2026",
-        "stage": "Flowering & Boll Formation",
-        "title": "Efficacy Check: 86.4% Pest Reduction Verified",
+        "stage": lang == 'hi' ? "फूल अवस्था" : (lang == 'mr' ? "फुलोरा अवस्था" : "Flowering & Boll Formation"),
+        "title": AppTranslations.tr(lang, "eff_milestone_title", "Efficacy Check: 86.4% Pest Reduction Verified"),
         "type": "EFFICACY_REVIEW",
-        "status": "COMPLETED",
-        "notes":
-            "NDVI vitality proxy restored to 0.79. Safe for upcoming flowering phase.",
+        "status": AppTranslations.tr(lang, "completed_status", "COMPLETED"),
+        "isDone": true,
+        "notes": AppTranslations.tr(lang, "eff_milestone_notes", "NDVI vitality proxy restored to 0.79. Safe for upcoming flowering phase."),
       },
       {
         "date": "15 Oct 2026",
-        "stage": "Boll Bursting & Harvest",
-        "title": "Target Harvest & Export Quality Batch Seal",
+        "stage": lang == 'hi' ? "कटाई अवस्था" : (lang == 'mr' ? "काढणी अवस्था" : "Boll Bursting & Harvest"),
+        "title": AppTranslations.tr(lang, "harv_milestone_title", "Target Harvest & Export Quality Batch Seal"),
         "type": "HARVEST_ESTIMATE",
-        "status": "UPCOMING",
-        "notes":
-            "Anticipated yield: 18.5 Quintals/Acre with Grade-A Purity Premium.",
+        "status": AppTranslations.tr(lang, "upcoming_status", "UPCOMING"),
+        "isDone": false,
+        "notes": AppTranslations.tr(lang, "harv_milestone_notes", "Anticipated yield: 18.5 Quintals/Acre with Grade-A Purity Premium."),
       },
     ];
 
@@ -74,9 +78,9 @@ class SeasonJournalScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Season Journal & Timeline",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            Text(
+              AppTranslations.tr(lang, "season_journal_timeline", "Season Journal & Timeline"),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             if (farm != null)
               Text(
@@ -91,7 +95,7 @@ class SeasonJournalScreen extends StatelessWidget {
         itemCount: milestones.length,
         itemBuilder: (context, index) {
           final m = milestones[index];
-          final isCompleted = m['status'] == 'COMPLETED';
+          final isCompleted = m['isDone'] == true;
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +145,7 @@ class SeasonJournalScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              m['date']!,
+                              m['date'] as String,
                               style: const TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.bold,
@@ -160,7 +164,7 @@ class SeasonJournalScreen extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                m['status']!,
+                                m['status'] as String,
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.bold,
@@ -174,7 +178,7 @@ class SeasonJournalScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          m['title']!,
+                          m['title'] as String,
                           style: const TextStyle(
                             fontSize: 13.5,
                             fontWeight: FontWeight.bold,
@@ -183,7 +187,7 @@ class SeasonJournalScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          "Stage: ${m['stage']}",
+                          "${AppTranslations.tr(lang, "stage_label", "Stage:")} ${m['stage']}",
                           style: const TextStyle(
                             fontSize: 11.5,
                             color: AppColors.accentAmber,
@@ -192,7 +196,7 @@ class SeasonJournalScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          m['notes']!,
+                          m['notes'] as String,
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.textSecondary,

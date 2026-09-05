@@ -19,10 +19,10 @@ class EvidenceReviewScreen extends StatelessWidget {
     final lang = auth.selectedLanguage;
 
     final filterOptions = [
-      {'code': 'ALL', 'label': 'ALL'},
-      {'code': 'VERIFIED', 'label': 'VERIFIED'},
-      {'code': 'PENDING', 'label': 'PENDING'},
-      {'code': 'FLAGGED', 'label': 'FLAGGED'},
+      {'code': 'ALL', 'label': AppTranslations.tr(lang, 'filter_all', 'ALL')},
+      {'code': 'VERIFIED', 'label': AppTranslations.tr(lang, 'filter_verified', 'VERIFIED')},
+      {'code': 'PENDING', 'label': AppTranslations.tr(lang, 'filter_pending', 'PENDING')},
+      {'code': 'FLAGGED', 'label': AppTranslations.tr(lang, 'filter_flagged', 'NEEDS REVIEW')},
     ];
 
     return Scaffold(
@@ -67,7 +67,7 @@ class EvidenceReviewScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: const CustomBottomNav(currentIndex: 2),
+      bottomNavigationBar: const CustomBottomNav(currentIndex: -1),
       body: Column(
         children: [
           // Filter Tabs
@@ -134,7 +134,7 @@ class EvidenceReviewScreen extends StatelessWidget {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      "${syncProv.pendingCount} offline logs pending cloud sync",
+                      AppTranslations.tr(lang, "offline_logs_pending", "{count} offline logs pending cloud sync").replaceAll("{count}", syncProv.pendingCount.toString()),
                       style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF92400E)),
                     ),
                   ),
@@ -148,7 +148,7 @@ class EvidenceReviewScreen extends StatelessWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   backgroundColor: const Color(0xFF065F46),
-                                  content: Text("✓ Successfully synced $count offline logs!"),
+                                  content: Text("✓ $count"),
                                 ),
                               );
                             }
@@ -165,9 +165,9 @@ class EvidenceReviewScreen extends StatelessWidget {
                               height: 12,
                               child: CircularProgressIndicator(strokeWidth: 1.5, color: Colors.white),
                             )
-                          : const Text(
-                              "Sync Now",
-                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
+                          : Text(
+                              AppTranslations.tr(lang, "sync_now", "Sync Now"),
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white),
                             ),
                     ),
                   ),
@@ -199,10 +199,10 @@ class EvidenceReviewScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      "Track the verification status of your spray and farm activities.",
-                      style: TextStyle(
+                      AppTranslations.tr(lang, "track_verification_status", "Track the verification status of your spray and farm activities."),
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF065F46),
@@ -267,7 +267,7 @@ class EvidenceReviewScreen extends StatelessWidget {
                                   const Icon(Icons.folder_open_rounded, size: 48, color: AppColors.textMuted),
                                   const SizedBox(height: 12),
                                   Text(
-                                    "No ${evProv.selectedFilter} evidence items found.",
+                                    AppTranslations.tr(lang, "no_evidence_found", "No {filter} evidence items found.").replaceAll("{filter}", evProv.selectedFilter),
                                     style: const TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w500),
                                   ),
                                 ],

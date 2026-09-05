@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/farm_provider.dart';
 import '../core/providers/evidence_provider.dart';
+import '../core/providers/auth_provider.dart';
+import '../core/localization/app_translations.dart';
 import '../widgets/custom_bottom_nav.dart';
 import '../../models/product_model.dart';
 
@@ -56,6 +58,9 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
   }
 
   void _showVerifiedProductModal(ProductInput prod) {
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final lang = auth.selectedLanguage;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -85,10 +90,10 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Expanded(
+                Expanded(
                   child: Text(
-                    "GENUINE BATCH VERIFIED",
-                    style: TextStyle(
+                    AppTranslations.tr(lang, "genuine_verified", "GENUINE BATCH VERIFIED"),
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF047857),
@@ -115,16 +120,16 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
               ],
             ),
             const Divider(height: 20),
-            _buildDetailRow("Product Name", prod.name),
-            _buildDetailRow("Manufacturer", prod.manufacturer),
-            _buildDetailRow("Active Ingredient", prod.activeIngredient),
-            _buildDetailRow("Batch Number", prod.verifiedBatchNo),
-            _buildDetailRow("Recommended Dose", prod.recommendedDose),
+            _buildDetailRow(AppTranslations.tr(lang, "product_name_lbl", "Product Name"), prod.name),
+            _buildDetailRow(AppTranslations.tr(lang, "manufacturer_lbl", "Manufacturer"), prod.manufacturer),
+            _buildDetailRow(AppTranslations.tr(lang, "active_ing_lbl", "Active Ingredient"), prod.activeIngredient),
+            _buildDetailRow(AppTranslations.tr(lang, "batch_no_lbl", "Batch Number"), prod.verifiedBatchNo),
+            _buildDetailRow(AppTranslations.tr(lang, "recommended_dose_lbl", "Recommended Dose"), prod.recommendedDose),
             _buildDetailRow(
-              "Safe Pre-Harvest Interval (PHI)",
+              AppTranslations.tr(lang, "phi_lbl", "Safe Pre-Harvest Interval (PHI)"),
               "${prod.preHarvestIntervalDays} Days",
             ),
-            _buildDetailRow("Expiry Date", prod.expiryDate),
+            _buildDetailRow(AppTranslations.tr(lang, "expiry_date_lbl", "Expiry Date"), prod.expiryDate),
             const SizedBox(height: 20),
             SizedBox(
               width: double.infinity,
@@ -135,9 +140,9 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
                   _saveProductEvidence(prod);
                 },
                 icon: const Icon(Icons.add_task_rounded, size: 20),
-                label: const Text(
-                  "LINK PRODUCT TO FIELD EVIDENCE",
-                  style: TextStyle(
+                label: Text(
+                  AppTranslations.tr(lang, "link_product_btn", "LINK PRODUCT TO FIELD EVIDENCE"),
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 13,
                   ),
@@ -224,6 +229,9 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
       genuineVerified: true,
     );
 
+    final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -233,9 +241,9 @@ class _ScanProductScreenState extends State<ScanProductScreen> {
           icon: const Icon(Icons.arrow_back_rounded, color: Color(0xFF0F172A), size: 22),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          "Scan Input Bottle / Seed QR",
-          style: TextStyle(
+        title: Text(
+          AppTranslations.tr(lang, "scan_bottle_title", "Scan Input Bottle / Seed QR"),
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16.5,
             color: Color(0xFF0F172A),

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../core/theme/app_colors.dart';
+import '../core/providers/auth_provider.dart';
 import '../core/providers/chat_provider.dart';
 import '../core/providers/farm_provider.dart';
+import '../core/localization/app_translations.dart';
 
 class AskPramaanScreen extends StatefulWidget {
   const AskPramaanScreen({super.key});
@@ -72,15 +74,18 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
   }
 
   @override
+  @override
   Widget build(BuildContext context) {
     final chat = Provider.of<ChatProvider>(context);
+    final auth = Provider.of<AuthProvider>(context);
+    final lang = auth.selectedLanguage;
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Row(
+        title: Row(
           children: [
-            CircleAvatar(
+            const CircleAvatar(
               radius: 14,
               backgroundColor: AppColors.primaryDark,
               child: Icon(
@@ -89,10 +94,10 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                 size: 16,
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Text(
-              "Ask Pramaan AI",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              AppTranslations.tr(lang, "ask_pramaan_title", "Ask Pramaan AI"),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ],
         ),
@@ -238,10 +243,10 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      "🎙️ Listening... Speak your farming question naturally",
-                      style: TextStyle(
+                      AppTranslations.tr(lang, "listening_in_app", "🎙️ Listening... Speak your farming question naturally"),
+                      style: const TextStyle(
                         fontSize: 12.5,
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -259,9 +264,9 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text(
-                        "Stop",
-                        style: TextStyle(
+                      child: Text(
+                        AppTranslations.tr(lang, "stop_btn", "Stop"),
+                        style: const TextStyle(
                           fontSize: 11,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -274,12 +279,12 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
             ),
 
           if (chat.isTyping)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  SizedBox(
+                  const SizedBox(
                     width: 14,
                     height: 14,
                     child: CircularProgressIndicator(
@@ -287,10 +292,10 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                       color: AppColors.primary,
                     ),
                   ),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    "Gemini AI is analyzing agronomic protocols...",
-                    style: TextStyle(
+                    AppTranslations.tr(lang, "analyzing_gemini", "Gemini AI is analyzing agronomic protocols..."),
+                    style: const TextStyle(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
@@ -311,8 +316,8 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                       controller: _textController,
                       decoration: InputDecoration(
                         hintText: _isListening
-                            ? "Listening to your voice..."
-                            : "Type or speak your farming question...",
+                            ? AppTranslations.tr(lang, "listening_hint", "Listening to your voice...")
+                            : AppTranslations.tr(lang, "ask_ai_input_hint", "Type or speak your farming question..."),
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 16,
                           vertical: 12,
@@ -335,8 +340,8 @@ class _AskPramaanScreenState extends State<AskPramaanScreen> {
                       _isListening ? Icons.mic_rounded : Icons.mic_none_rounded,
                     ),
                     tooltip: _isListening
-                        ? "Stop Listening"
-                        : "Speak In-App (No Popup)",
+                        ? AppTranslations.tr(lang, "stop_listening_tooltip", "Stop Listening")
+                        : AppTranslations.tr(lang, "speak_in_app_tooltip", "Speak In-App"),
                     onPressed: _toggleMic,
                   ),
                   const SizedBox(width: 4),

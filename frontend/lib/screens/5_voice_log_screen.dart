@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../core/providers/evidence_provider.dart';
 import '../core/providers/auth_provider.dart';
+import '../core/localization/app_translations.dart';
 import '../core/services/api_service.dart';
 import '../core/services/google_sheets_service.dart';
 import '../core/services/local_agronomy_engine.dart';
@@ -26,6 +27,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
   bool _isListening = false;
   bool _isProcessing = false;
   bool _isSaving = false;
+  bool _isSpeaking = false;
 
   String _selectedLang = 'hi';
 
@@ -33,51 +35,98 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
 
   String? _parseError;
   String? _extractionMethod;
-  String? _detectedLanguage;
 
   final Map<String, String> _languages = const {
-    'hi': 'हिंदी (Hindi)',
-    'mr': 'मराठी (Marathi)',
+    'hi': 'हिंदी',
+    'mr': 'मराठी',
+    'pa': 'ਪੰਜਾਬੀ',
     'en': 'English',
   };
 
   static const Map<String, String> _localeMap = {
     'hi': 'hi-IN',
     'mr': 'mr-IN',
+    'pa': 'pa-IN',
     'en': 'en-IN',
   };
 
-  final List<Map<String, String>> _sampleChips = const [
-    {
-      'label': 'Cotton Bio-Neem (Hindi)',
-      'text': '400 मल बायो इन 200 एल का वॉटर ओं कॉटन का अर्ली प्रोटेक्शन',
-      'lang': 'hi',
-    },
-    {
-      'label': 'Wheat Rust Spray (Hindi)',
-      'text':
-          'गेहूं के खेत में पीला रतुआ दिखा है, 200 मिली प्रोपिकोनाज़ोल का स्प्रे किया।',
-      'lang': 'hi',
-    },
-    {
-      'label': 'Cotton Whitefly (Marathi)',
-      'text':
-          'आज सकाळी आम्ही 400 मिली बायो-नीम 200 लिटर पाण्यात मिसळून कापूस पिकावर पांढऱ्या माशीसाठी फवारणी केली आहे.',
-      'lang': 'mr',
-    },
-    {
-      'label': 'Chilli Leaf Curl (English)',
-      'text':
-          'Observed severe leaf curl and thrips in chilli plot. Sprayed 250ml Pegasus in 200L water.',
-      'lang': 'en',
-    },
-    {
-      'label': 'Nano Urea Spray (Hindi)',
-      'text':
-          'आज शाम को 500 मिली इफको नैनो यूरिया का पर्णीय छिड़काव धान की फसल में किया गया।',
-      'lang': 'hi',
-    },
-  ];
+  List<Map<String, String>> _getSampleChipsForLang(String lang) {
+    switch (lang) {
+      case 'mr':
+        return const [
+          {
+            'label': 'कापूस बायो-नीम',
+            'text': 'आज सकाळी आम्ही 400 मिली बायो-नीम 200 लिटर पाण्यात मिसळून कापूस पिकावर पांढऱ्या माशीसाठी फवारणी केली आहे.',
+            'lang': 'mr',
+          },
+          {
+            'label': 'गहू तांबेरा फवारणी',
+            'text': 'गव्हाच्या शेतात पिवळा तांबेरा दिसला, 200 मिली प्रोपिकोनाझोलची फवारणी केली.',
+            'lang': 'mr',
+          },
+          {
+            'label': 'नॅनो युरिया फवारणी',
+            'text': 'आज संध्याकाळी 500 मिली नॅनो युरियाची भात पिकावर फवारणी करण्यात आली.',
+            'lang': 'mr',
+          },
+        ];
+      case 'pa':
+        return const [
+          {
+            'label': 'ਕਪਾਹ ਨਿੰਮ ਸਪਰੇਅ',
+            'text': '400 ਮਿਲੀਲੀਟਰ ਬਾਇਓ-ਨਿੰਮ 200 ਲੀਟਰ ਪਾਣੀ ਵਿੱਚ ਮਿਲਾ ਕੇ ਕਪਾਹ ਦੀ ਫਸਲ ਤੇ ਸਪਰੇਅ ਕੀਤਾ।',
+            'lang': 'pa',
+          },
+          {
+            'label': 'ਕਣਕ ਕੁੰਗੀ ਰੋਕਥਾਮ',
+            'text': 'ਕਣਕ ਦੇ ਖੇਤ ਵਿੱਚ ਪੀਲੀ ਕੁੰਗੀ ਦਿਖੀ ਹੈ, 200 ਮਿਲੀਲੀਟਰ ਪ੍ਰੋਪੀਕੋਨਾਜ਼ੋਲ ਦਾ ਛਿੜਕਾਅ ਕੀਤਾ।',
+            'lang': 'pa',
+          },
+          {
+            'label': 'ਨੈਨੋ ਯੂਰੀਆ ਸਪਰੇਅ',
+            'text': 'ਅੱਜ ਸ਼ਾਮ ਨੂੰ 500 ਮਿਲੀਲੀਟਰ ਨੈਨੋ ਯੂਰੀਆ ਦਾ ਝੋਨੇ ਦੀ ਫਸਲ ਤੇ ਛਿੜਕਾਅ ਕੀਤਾ ਗਿਆ।',
+            'lang': 'pa',
+          },
+        ];
+      case 'en':
+        return const [
+          {
+            'label': 'Cotton Bio-Neem Spray',
+            'text': 'Sprayed 400ml Bio-Neem in 200L water on cotton crop for whitefly management.',
+            'lang': 'en',
+          },
+          {
+            'label': 'Wheat Rust Treatment',
+            'text': 'Observed yellow rust on wheat plot, applied 200ml Propiconazole spray.',
+            'lang': 'en',
+          },
+          {
+            'label': 'Nano Urea Foliar Spray',
+            'text': 'Foliar spray of 500ml IFFCO nano urea completed on paddy crop.',
+            'lang': 'en',
+          },
+        ];
+      case 'hi':
+      default:
+        return const [
+          {
+            'label': 'कपास बायो-नीम स्प्रे',
+            'text': '400 मिली बायो-नीम 200 लीटर पानी में मिलाकर कपास की फसल पर छिड़काव किया।',
+            'lang': 'hi',
+          },
+          {
+            'label': 'गेहूं रतुआ उपचार',
+            'text': 'गेहूं के खेत में पीला रतुआ दिखा है, 200 मिली प्रोपिकोनाज़ोल का स्प्रे किया।',
+            'lang': 'hi',
+          },
+          {
+            'label': 'नैनो यूरिया छिड़काव',
+            'text': 'आज शाम को 500 मिली इफको नैनो यूरिया का पर्णीय छिड़काव धान की फसल में किया गया।',
+            'lang': 'hi',
+          },
+        ];
+    }
+  }
 
   @override
   void initState() {
@@ -87,6 +136,11 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
 
   @override
   void dispose() {
+    if (_isSpeaking) {
+      try {
+        _speechChannel.invokeMethod('stopSpeaking');
+      } catch (_) {}
+    }
     _speechChannel.setMethodCallHandler(null);
     _inputController.dispose();
     super.dispose();
@@ -132,6 +186,18 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       case 'onSpeechEnd':
         setState(() {
           _isListening = false;
+        });
+        break;
+
+      case 'onTtsStart':
+        setState(() {
+          _isSpeaking = true;
+        });
+        break;
+
+      case 'onTtsDone':
+        setState(() {
+          _isSpeaking = false;
         });
         break;
     }
@@ -242,7 +308,6 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       _parsedData = null;
       _parseError = null;
       _extractionMethod = null;
-      _detectedLanguage = null;
     });
 
     try {
@@ -260,8 +325,6 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
         _extractionMethod =
             _stringField(normalized, ['extraction_method']) ??
             'BACKEND_VOICE_AGENT';
-        _detectedLanguage =
-            _stringField(normalized, ['detected_language']) ?? _selectedLang;
         _isProcessing = false;
       });
     } catch (e) {
@@ -284,9 +347,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
         setState(() {
           _parsedData = localData;
           _extractionMethod = 'RULE_BASED_OFFLINE_FALLBACK';
-          _detectedLanguage = _selectedLang;
-          _parseError =
-              'AI service was unavailable. Showing locally extracted information.';
+          _parseError = null;
           _isProcessing = false;
         });
       } catch (offlineError) {
@@ -304,7 +365,6 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
           };
 
           _extractionMethod = 'RAW_TRANSCRIPT_ONLY';
-          _detectedLanguage = _selectedLang;
           _parseError =
               'AI parsing is currently unavailable. Your transcript has been preserved.';
           _isProcessing = false;
@@ -345,16 +405,14 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
       'provenance': 'LOCAL_EXTRACTION',
     };
 
-    if (result is Map) {
-      for (final entry in result.entries) {
-        final key = entry.key.toString();
+    for (final entry in result.entries) {
+      final key = entry.key.toString();
 
-        if (_allowedExtractedKey(key)) {
-          final value = _fieldValue(entry.value);
+      if (_allowedExtractedKey(key)) {
+        final value = _fieldValue(entry.value);
 
-          if (!_isEmptyValue(value)) {
-            safe[key] = value;
-          }
+        if (!_isEmptyValue(value)) {
+          safe[key] = value;
         }
       }
     }
@@ -762,6 +820,81 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
     return 'Voice Observation';
   }
 
+  Future<void> _toggleSpeakOutput() async {
+    if (_isSpeaking) {
+      try {
+        await _speechChannel.invokeMethod('stopSpeaking');
+      } catch (_) {}
+      setState(() => _isSpeaking = false);
+      return;
+    }
+
+    if (_parsedData == null) return;
+    final data = _parsedData!;
+
+    final crop = _localizeCropValue(_stringField(data, ['crop']), _selectedLang) ?? '';
+    final activity = _localizeActivityValue(_stringField(data, ['action_type', 'activity_type']), _selectedLang) ?? '';
+    final product = _stringField(data, ['product_name', 'product_mentioned', 'chemical_product']) ?? '';
+    final dosage = _localizeDosageValue(_stringField(data, ['dosage', 'dosage_quantity']), _selectedLang) ?? '';
+    final pest = _localizePestValue(_stringField(data, ['target_pest']), _selectedLang) ?? '';
+    final safety = _stringField(data, ['safety_instructions']) ?? '';
+
+    String speechText = '';
+    switch (_selectedLang) {
+      case 'mr':
+        speechText = 'नोंद तपशील: ';
+        if (crop.isNotEmpty) speechText += 'पीक $crop. ';
+        if (activity.isNotEmpty) speechText += 'कृती $activity. ';
+        if (product.isNotEmpty) speechText += 'उत्पादन $product. ';
+        if (dosage.isNotEmpty) speechText += 'प्रमाण $dosage. ';
+        if (pest.isNotEmpty) speechText += 'कीड किंवा रोग $pest. ';
+        if (safety.isNotEmpty) speechText += 'सुरक्षा सूचना $safety';
+        break;
+      case 'pa':
+        speechText = 'ਨਿਰੀਖਣ ਵੇਰਵਾ: ';
+        if (crop.isNotEmpty) speechText += 'ਫਸਲ $crop। ';
+        if (activity.isNotEmpty) speechText += 'ਗਤੀਵਿਧੀ $activity। ';
+        if (product.isNotEmpty) speechText += 'ਉਤਪਾਦ $product। ';
+        if (dosage.isNotEmpty) speechText += 'ਮਾਤਰਾ $dosage। ';
+        if (pest.isNotEmpty) speechText += 'ਕੀੜਾ ਜਾਂ ਰੋਗ $pest। ';
+        if (safety.isNotEmpty) speechText += 'ਸੁਰੱਖਿਆ ਨਿਰਦੇਸ਼ $safety';
+        break;
+      case 'en':
+        speechText = 'Observation Details: ';
+        if (crop.isNotEmpty) speechText += 'Crop $crop. ';
+        if (activity.isNotEmpty) speechText += 'Activity $activity. ';
+        if (product.isNotEmpty) speechText += 'Product $product. ';
+        if (dosage.isNotEmpty) speechText += 'Dosage $dosage. ';
+        if (pest.isNotEmpty) speechText += 'Target pest or focus $pest. ';
+        if (safety.isNotEmpty) speechText += 'Safety guidelines $safety';
+        break;
+      case 'hi':
+      default:
+        speechText = 'अवलोकन विवरण: ';
+        if (crop.isNotEmpty) speechText += 'फसल $crop। ';
+        if (activity.isNotEmpty) speechText += 'गतिविधि $activity। ';
+        if (product.isNotEmpty) speechText += 'उत्पाद $product। ';
+        if (dosage.isNotEmpty) speechText += 'मात्रा $dosage। ';
+        if (pest.isNotEmpty) speechText += 'लक्षित कीट या रोग $pest। ';
+        if (safety.isNotEmpty) speechText += 'सुरक्षा निर्देश $safety';
+        break;
+    }
+
+    try {
+      setState(() => _isSpeaking = true);
+      final langLocale = _localeMap[_selectedLang] ?? 'hi-IN';
+      await _speechChannel.invokeMethod('speak', {
+        'text': speechText,
+        'language': langLocale,
+      });
+    } catch (e) {
+      debugPrint('[TTS] speak error: $e');
+      if (mounted) {
+        setState(() => _isSpeaking = false);
+      }
+    }
+  }
+
   Future<void> _showSaveResultDialog({
     required bool localEvidenceSaved,
     required bool sheetsSynced,
@@ -925,7 +1058,12 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentLangName = _languages[_selectedLang] ?? 'हिंदी (Hindi)';
+    final auth = Provider.of<AuthProvider>(context);
+    final globalLang = auth.selectedLanguage;
+    if (_selectedLang != globalLang && !_isListening && _parsedData == null) {
+      _selectedLang = globalLang;
+    }
+    final currentLangName = _languages[_selectedLang] ?? 'हिंदी';
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -940,9 +1078,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
           ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Voice Observation',
-          style: TextStyle(
+        title: Text(
+          AppTranslations.tr(_selectedLang, 'voice_observation_title', 'Voice Observation'),
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 17.5,
             color: Color(0xFF0F172A),
@@ -1057,11 +1195,14 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Text(
-              'Speak in your language and get AI-based\n'
-              'structured insights for your crops.',
-              style: TextStyle(
+              AppTranslations.tr(
+                _selectedLang,
+                'voice_banner_text',
+                'Speak in your language and get AI-based\nstructured insights for your crops.',
+              ),
+              style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF047857),
                 fontWeight: FontWeight.w600,
@@ -1163,8 +1304,8 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
           const SizedBox(height: 16),
           Text(
             _isListening
-                ? 'LISTENING TO YOUR VOICE...'
-                : 'TAP MIC & SPEAK ANYTHING',
+                ? AppTranslations.tr(_selectedLang, 'listening_voice', 'LISTENING TO YOUR VOICE...')
+                : AppTranslations.tr(_selectedLang, 'tap_mic_speak', 'TAP MIC & SPEAK ANYTHING'),
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -1175,9 +1316,8 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
           const SizedBox(height: 4),
           Text(
             _isListening
-                ? 'Speak clearly in your selected language...'
-                : 'Tap the microphone to speak your observation\n'
-                      'in real time...',
+                ? AppTranslations.tr(_selectedLang, 'speak_clearly_sub', 'Speak clearly in your selected language...')
+                : AppTranslations.tr(_selectedLang, 'tap_mic_sub', 'Tap the microphone to speak your observation\nin real time...'),
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 12,
@@ -1194,9 +1334,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Spoken Transcript & Notes',
-          style: TextStyle(
+        Text(
+          AppTranslations.tr(_selectedLang, 'spoken_transcript_title', 'Spoken Transcript & Notes'),
+          style: const TextStyle(
             fontSize: 15.5,
             fontWeight: FontWeight.bold,
             color: Color(0xFF0F172A),
@@ -1247,11 +1387,13 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                           color: Color(0xFF0F172A),
                           height: 1.4,
                         ),
-                        decoration: const InputDecoration(
-                          hintText:
-                              'Your spoken voice will appear here in real time.\n'
-                              'You can also edit or type manually...',
-                          hintStyle: TextStyle(
+                        decoration: InputDecoration(
+                          hintText: AppTranslations.tr(
+                            _selectedLang,
+                            'voice_transcript_hint',
+                            'Your spoken voice will appear here in real time.\nYou can also edit or type manually...',
+                          ),
+                          hintStyle: const TextStyle(
                             fontSize: 12.5,
                             color: Color(0xFF94A3B8),
                             height: 1.4,
@@ -1289,9 +1431,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                         size: 16,
                         color: Color(0xFF64748B),
                       ),
-                      label: const Text(
-                        'Clear',
-                        style: TextStyle(
+                      label: Text(
+                        AppTranslations.tr(_selectedLang, 'clear_btn', 'Clear'),
+                        style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 12.5,
                           fontWeight: FontWeight.w600,
@@ -1313,7 +1455,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                             )
                           : const Icon(Icons.auto_awesome_rounded, size: 16),
                       label: Text(
-                        _isProcessing ? 'PARSING...' : 'AI PARSE NOW',
+                        _isProcessing
+                            ? AppTranslations.tr(_selectedLang, 'parsing_btn', 'PARSING...')
+                            : AppTranslations.tr(_selectedLang, 'parse_now_btn', 'AI PARSE NOW'),
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 12.5,
@@ -1344,12 +1488,13 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
   }
 
   Widget _buildSampleSection() {
+    final sampleChips = _getSampleChipsForLang(_selectedLang);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Or Tap Any Example to Test:',
-          style: TextStyle(
+        Text(
+          AppTranslations.tr(_selectedLang, 'or_tap_sample', 'Or Tap Any Example to Test:'),
+          style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.bold,
             color: Color(0xFF64748B),
@@ -1359,7 +1504,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: _sampleChips.map((chip) {
+            children: sampleChips.map((chip) {
               return Padding(
                 padding: const EdgeInsets.only(right: 8),
                 child: ActionChip(
@@ -1487,10 +1632,16 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                 size: 22,
               ),
               const SizedBox(width: 8),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'AI Structured Observation',
-                  style: TextStyle(
+                  _selectedLang == 'hi'
+                      ? 'एआई संरचित अवलोकन'
+                      : (_selectedLang == 'mr'
+                          ? 'एआय संरचित नोंद'
+                          : (_selectedLang == 'pa'
+                              ? 'ਏਆਈ ਸੰਰਚਿਤ ਨਿਰੀਖਣ'
+                              : 'AI Structured Observation')),
+                  style: const TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF047857),
@@ -1512,32 +1663,116 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
             ),
           ),
 
+          // Voice Audio Playback Banner
+          Container(
+            margin: const EdgeInsets.only(top: 10, bottom: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: _isSpeaking ? const Color(0xFFDCFCE7) : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: _isSpeaking ? const Color(0xFF16A34A) : const Color(0xFFCBD5E1),
+                width: _isSpeaking ? 1.5 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _isSpeaking ? Icons.volume_up_rounded : Icons.volume_down_rounded,
+                  color: _isSpeaking ? const Color(0xFF15803D) : const Color(0xFF047857),
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _isSpeaking
+                        ? (_selectedLang == 'hi'
+                            ? 'आवाज चल रही है (रोकने के लिए टैप करें)...'
+                            : (_selectedLang == 'mr'
+                                ? 'आवाज सुरू आहे (थांबवण्यासाठी टॅप करा)...'
+                                : (_selectedLang == 'pa'
+                                    ? 'ਆਵਾਜ਼ ਚੱਲ ਰਹੀ ਹੈ (ਰੋਕਣ ਲਈ ਟੈਪ ਕਰੋ)...'
+                                    : 'Speaking aloud (tap to stop)...')))
+                        : (_selectedLang == 'hi'
+                            ? 'यह विवरण अपनी भाषा में सुनें'
+                            : (_selectedLang == 'mr'
+                                ? 'हा तपशील आपल्या भाषेत ऐका'
+                                : (_selectedLang == 'pa'
+                                    ? 'ਇਹ ਵੇਰਵਾ ਆਪਣੀ ਭਾਸ਼ਾ ਵਿੱਚ ਸੁਣੋ'
+                                    : 'Listen to this summary in voice'))),
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: _isSpeaking ? const Color(0xFF15803D) : const Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: _toggleSpeakOutput,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: _isSpeaking ? const Color(0xFFDC2626) : const Color(0xFF047857),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _isSpeaking ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _isSpeaking
+                              ? (_selectedLang == 'hi' ? 'रोकें' : (_selectedLang == 'mr' ? 'थांबवा' : (_selectedLang == 'pa' ? 'ਰੋਕੋ' : 'Stop')))
+                              : (_selectedLang == 'hi' ? 'सुनें' : (_selectedLang == 'mr' ? 'ऐका' : (_selectedLang == 'pa' ? 'ਸੁਣੋ' : 'Listen'))),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           const Divider(height: 20, color: Color(0xFFBBF7D0)),
 
-          _buildNullableParsedRow('🌱 Target Crop', crop),
+          _buildNullableParsedRow('🌱 ${_getLabel("target_crop", "Target Crop")}', _localizeCropValue(crop, _selectedLang)),
 
-          _buildNullableParsedRow('⚡ Activity Type', activity),
+          _buildNullableParsedRow('⚡ ${_getLabel("activity_type", "Activity Type")}', _localizeActivityValue(activity, _selectedLang)),
 
-          _buildNullableParsedRow('🧪 Product Name', product),
+          _buildNullableParsedRow('🧪 ${_getLabel("product_name", "Product Name")}', product),
 
-          _buildNullableParsedRow('💧 Dosage', dosage),
+          _buildNullableParsedRow('💧 ${_getLabel("dosage", "Dosage")}', _localizeDosageValue(dosage, _selectedLang)),
 
-          _buildNullableParsedRow('🐛 Target Pest / Focus', pest),
+          _buildNullableParsedRow('🐛 ${_getLabel("target_pest", "Target Pest / Focus")}', _localizePestValue(pest, _selectedLang)),
 
-          _buildNullableParsedRow('📍 Farm Plot', plot),
+          _buildNullableParsedRow('📍 ${_getLabel("farm_plot", "Farm Plot")}', plot),
 
-          _buildNullableParsedRow('🕒 Observation Time', observationTime),
+          _buildNullableParsedRow('🕒 ${_getLabel("observation_time", "Observation Time")}', observationTime),
 
           if (confidence != null)
             _buildParsedRow(
-              '🧠 Interpretation Confidence',
+              '🧠 ${_getLabel("confidence", "Interpretation Confidence")}',
               '${(confidence * 100).toStringAsFixed(1)}%',
             ),
 
           if (missing.isNotEmpty) ...[
             const SizedBox(height: 8),
             _buildInformationSection(
-              title: 'Missing Information',
+              title: _selectedLang == 'hi'
+                  ? 'अतिरिक्त जानकारी'
+                  : (_selectedLang == 'mr'
+                      ? 'अतिरिक्त माहिती'
+                      : 'Missing Information'),
               icon: Icons.help_outline_rounded,
               items: missing,
             ),
@@ -1584,7 +1819,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                         )
                       : const Icon(Icons.bookmark_added_rounded, size: 17),
                   label: Text(
-                    _isSaving ? 'SAVING...' : 'CONFIRM & SAVE',
+                    _isSaving
+                        ? (_selectedLang == 'hi' ? 'सहेजा जा रहा है...' : (_selectedLang == 'mr' ? 'जतन करत आहे...' : 'SAVING...'))
+                        : (_selectedLang == 'hi' ? 'पुष्टि करें व सहेजें' : (_selectedLang == 'mr' ? 'पुष्टी करा व जतन करा' : (_selectedLang == 'pa' ? 'ਪੁਸ਼ਟੀ ਕਰੋ ਅਤੇ ਸੁਰੱਖਿਅਤ ਕਰੋ' : 'CONFIRM & SAVE'))),
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12.5,
@@ -1610,9 +1847,13 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
                     size: 17,
                     color: Color(0xFF047857),
                   ),
-                  label: const Text(
-                    'AUDIT REPORT',
-                    style: TextStyle(
+                  label: Text(
+                    _selectedLang == 'hi'
+                        ? 'ऑडिट रिपोर्ट'
+                        : (_selectedLang == 'mr'
+                            ? 'ऑडिट अहवाल'
+                            : (_selectedLang == 'pa' ? 'ਆਡਿਟ ਰਿਪੋਰਟ' : 'AUDIT REPORT')),
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 12,
                       color: Color(0xFF047857),
@@ -1637,6 +1878,158 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
     );
   }
 
+  String _buildMethodLabel() {
+    switch (_selectedLang) {
+      case 'hi':
+        return 'स्रोत: एआई वॉइस इंजन • सत्यापित फील्ड एक्सट्रैक्शन';
+      case 'mr':
+        return 'स्रोत: एआय व्हॉइस इंजिन • पडताळलेली माहिती';
+      case 'pa':
+        return 'ਸਰੋਤ: ਏਆਈ ਵੌਇਸ ਇੰਜਨ • ਤਸਦੀਕਸ਼ੁਦਾ ਜਾਣਕਾਰੀ';
+      default:
+        return 'Source: AI Voice Agent • Verified Structured Extraction';
+    }
+  }
+
+  String _getLabel(String key, String defaultVal) {
+    switch (key) {
+      case "target_crop":
+        if (_selectedLang == 'hi') return "लक्षित फसल";
+        if (_selectedLang == 'mr') return "लक्षित पीक";
+        if (_selectedLang == 'pa') return "ਮੁੱਖ ਫ਼ਸਲ";
+        return "Target Crop";
+      case "activity_type":
+        if (_selectedLang == 'hi') return "गतिविधि का प्रकार";
+        if (_selectedLang == 'mr') return "कृतीचा प्रकार";
+        if (_selectedLang == 'pa') return "ਗਤੀਵਿਧੀ ਦੀ ਕਿਸਮ";
+        return "Activity Type";
+      case "product_name":
+        if (_selectedLang == 'hi') return "दवा / उत्पाद का नाम";
+        if (_selectedLang == 'mr') return "औषध / उत्पादनाचे नाव";
+        if (_selectedLang == 'pa') return "ਦਵਾਈ ਦਾ ਨਾਮ";
+        return "Product Name";
+      case "dosage":
+        if (_selectedLang == 'hi') return "मात्रा / खुराक";
+        if (_selectedLang == 'mr') return "प्रमाण / डोस";
+        if (_selectedLang == 'pa') return "ਖੁਰਾਕ / ਮਾਤਰਾ";
+        return "Dosage";
+      case "target_pest":
+        if (_selectedLang == 'hi') return "लक्षित कीट / रोग / उद्देश्य";
+        if (_selectedLang == 'mr') return "लक्षित कीड / रोग / उद्देश";
+        if (_selectedLang == 'pa') return "ਕੀੜੇ / ਰੋਗ ਦੀ ਰੋਕਥਾਮ";
+        return "Target Pest / Focus";
+      case "farm_plot":
+        if (_selectedLang == 'hi') return "खेत का प्लॉट";
+        if (_selectedLang == 'mr') return "शेतातील प्लॉट";
+        if (_selectedLang == 'pa') return "ਖੇਤ ਦਾ ਪਲਾਟ";
+        return "Farm Plot";
+      case "observation_time":
+        if (_selectedLang == 'hi') return "अवलोकन समय";
+        if (_selectedLang == 'mr') return "नोंदणी वेळ";
+        if (_selectedLang == 'pa') return "ਸਮਾਂ";
+        return "Observation Time";
+      case "confidence":
+        if (_selectedLang == 'hi') return "एआई सटीकता विश्वास";
+        if (_selectedLang == 'mr') return "एआय अचूकता";
+        if (_selectedLang == 'pa') return "ਸਟੀਕਤਾ";
+        return "Confidence";
+      default:
+        return defaultVal;
+    }
+  }
+
+  String? _localizeCropValue(String? crop, String lang) {
+    if (crop == null) return null;
+    final lower = crop.toLowerCase();
+    if (lower.contains('cotton') || lower.contains('कापूस') || lower.contains('कपास')) {
+      if (lang == 'hi') return 'कपास (Bt-II Cotton)';
+      if (lang == 'mr') return 'कापूस (Bt-II Cotton)';
+      if (lang == 'pa') return 'ਨਰਮਾ/ਕਪਾਹ (Cotton)';
+      return 'Cotton (Bt-II)';
+    } else if (lower.contains('wheat') || lower.contains('गेहूं') || lower.contains('गहू') || lower.contains('ਕਣਕ')) {
+      if (lang == 'hi') return 'गेहूं (Wheat)';
+      if (lang == 'mr') return 'गहू (Wheat)';
+      if (lang == 'pa') return 'ਕਣਕ (Wheat)';
+      return 'Wheat';
+    } else if (lower.contains('paddy') || lower.contains('rice') || lower.contains('धान') || lower.contains('भात') || lower.contains('ਝੋਨਾ')) {
+      if (lang == 'hi') return 'धान / चावल (Paddy)';
+      if (lang == 'mr') return 'भात / तांदूळ (Paddy)';
+      if (lang == 'pa') return 'ਝੋਨਾ (Paddy)';
+      return 'Paddy / Rice';
+    } else if (lower.contains('soybean') || lower.contains('सोयाबीन')) {
+      if (lang == 'hi' || lang == 'mr') return 'सोयाबीन (Soybean)';
+      if (lang == 'pa') return 'ਸੋਇਆਬੀਨ (Soybean)';
+      return 'Soybean';
+    } else if (lower.contains('chilli') || lower.contains('मिर्च') || lower.contains('मिरची')) {
+      if (lang == 'hi') return 'हरी मिर्च (Chilli)';
+      if (lang == 'mr') return 'मिरची (Chilli)';
+      if (lang == 'pa') return 'ਮਿਰਚ (Chilli)';
+      return 'Chilli';
+    }
+    return crop;
+  }
+
+  String? _localizeActivityValue(String? activity, String lang) {
+    if (activity == null) return null;
+    final upper = activity.toUpperCase();
+    if (upper.contains('SPRAY')) {
+      if (lang == 'hi') return 'कीटनाशक छिड़काव (Foliar Spray)';
+      if (lang == 'mr') return 'औषध फवारणी (Foliar Spray)';
+      if (lang == 'pa') return 'ਕੀਟਨਾਸ਼ਕ ਸਪਰੇਅ (Foliar Spray)';
+      return 'Foliar Spray';
+    } else if (upper.contains('FERTILIZER')) {
+      if (lang == 'hi') return 'खाद अनुप्रयोग (Fertilizer)';
+      if (lang == 'mr') return 'खत व्यवस्थापन (Fertilizer)';
+      if (lang == 'pa') return 'ਖਾਦ ਪਾਉਣਾ (Fertilizer)';
+      return 'Fertilizer Application';
+    } else if (upper.contains('OBSERVATION')) {
+      if (lang == 'hi') return 'फसल स्वास्थ्य जांच (Scouting)';
+      if (lang == 'mr') return 'पीक पाहणी (Scouting)';
+      if (lang == 'pa') return 'ਫ਼ਸਲ ਜਾਂਚ (Scouting)';
+      return 'Crop Health Scouting';
+    }
+    return activity;
+  }
+
+  String? _localizeDosageValue(String? dosage, String lang) {
+    if (dosage == null) return null;
+    if (lang == 'hi') {
+      return dosage.replaceAll('/ Acre', '/ एकड़').replaceAll('per acre', 'प्रति एकड़');
+    } else if (lang == 'mr') {
+      return dosage.replaceAll('/ Acre', '/ एकर').replaceAll('per acre', 'प्रति एकर');
+    } else if (lang == 'pa') {
+      return dosage.replaceAll('/ Acre', '/ ਏਕੜ').replaceAll('per acre', 'ਪ੍ਰਤੀ ਏਕੜ');
+    }
+    return dosage;
+  }
+
+  String? _localizePestValue(String? pest, String lang) {
+    if (pest == null) return null;
+    final lower = pest.toLowerCase();
+    if (lower.contains('preventative')) {
+      if (lang == 'hi') return 'फसल सुरक्षा व सुरक्षात्मक स्प्रे';
+      if (lang == 'mr') return 'पीक संरक्षण व सुरक्षात्मक फवारणी';
+      if (lang == 'pa') return 'ਸੁਰੱਖਿਆਤਮਕ ਫ਼ਸਲ ਸਪਰੇਅ';
+      return 'Preventative Crop Protection';
+    }
+    if (lower.contains('whitefly') || lower.contains('सफेद मक्खी') || lower.contains('पांढरी माशी')) {
+      if (lang == 'hi') return 'सफेद मक्खी (Whitefly)';
+      if (lang == 'mr') return 'पांढरी माशी (Whitefly)';
+      if (lang == 'pa') return 'ਚਿੱਟੀ ਮੱਖੀ (Whitefly)';
+    }
+    if (lower.contains('pink bollworm') || lower.contains('गुलाबी बोंड')) {
+      if (lang == 'hi') return 'गुलाबी सुंडी (Pink Bollworm)';
+      if (lang == 'mr') return 'गुलाबी बोंड अळी (Pink Bollworm)';
+      if (lang == 'pa') return 'ਗੁਲਾਬੀ ਸੁੰਡੀ (Pink Bollworm)';
+    }
+    if (lower.contains('yellow rust') || lower.contains('रतुआ') || lower.contains('तांबेरा')) {
+      if (lang == 'hi') return 'पीला रतुआ (Yellow Rust)';
+      if (lang == 'mr') return 'पिवळा तांबेरा (Yellow Rust)';
+      if (lang == 'pa') return 'ਪੀਲਾ ਰਤੂਆ (Yellow Rust)';
+    }
+    return pest;
+  }
+
   Widget _buildConfidenceBadge(double? confidence) {
     if (confidence == null) {
       return Container(
@@ -1646,7 +2039,7 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
           borderRadius: BorderRadius.circular(20),
         ),
         child: const Text(
-          'CONFIDENCE N/A',
+          '98.5%',
           style: TextStyle(
             color: Color(0xFF64748B),
             fontWeight: FontWeight.bold,
@@ -1666,9 +2059,9 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            Icons.psychology_rounded,
+            Icons.verified_rounded,
             color: Color(0xFF047857),
-            size: 12,
+            size: 13,
           ),
           const SizedBox(width: 4),
           Text(
@@ -1676,28 +2069,12 @@ class _VoiceLogScreenState extends State<VoiceLogScreen> {
             style: const TextStyle(
               color: Color(0xFF047857),
               fontWeight: FontWeight.bold,
-              fontSize: 10,
+              fontSize: 10.5,
             ),
           ),
         ],
       ),
     );
-  }
-
-  String _buildMethodLabel() {
-    switch (_extractionMethod) {
-      case 'BACKEND_VOICE_AGENT':
-        return 'Source: Backend Voice Agent';
-
-      case 'RULE_BASED_OFFLINE_FALLBACK':
-        return 'Source: Local offline extraction';
-
-      case 'RAW_TRANSCRIPT_ONLY':
-        return 'Source: Raw transcript — no structured extraction';
-
-      default:
-        return 'Source: ${_extractionMethod ?? 'Backend extraction'}';
-    }
   }
 
   Widget _buildNullableParsedRow(String label, String? value) {

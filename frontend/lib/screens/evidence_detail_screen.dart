@@ -5,6 +5,7 @@ import '../core/providers/evidence_provider.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/services/api_service.dart';
 import '../core/services/pdf_download_service.dart';
+import '../core/localization/app_translations.dart';
 import '../../models/evidence_model.dart';
 import '../widgets/crypto_seal_badge.dart';
 
@@ -289,9 +290,11 @@ class _EvidenceDetailScreenState extends State<EvidenceDetailScreen> {
           );
         });
 
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        final lang = auth.selectedLanguage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("✓ पडताळणी पूर्ण झाली (${_item!.consistencyStatus.toUpperCase()})"),
+            content: Text(AppTranslations.tr(lang, "verification_complete_snack", "✓ Verification completed successfully")),
             backgroundColor: _item!.consistencyStatus == 'consistent' ? const Color(0xFF047857) : const Color(0xFFD97706),
           ),
         );
@@ -307,9 +310,10 @@ class _EvidenceDetailScreenState extends State<EvidenceDetailScreen> {
     if (_item == null) return;
     setState(() => _isDownloadingPdf = true);
     final auth = Provider.of<AuthProvider>(context, listen: false);
+    final lang = auth.selectedLanguage;
 
     try {
-      final savedFile = await PdfDownloadService().downloadAndOpenReport(
+      await PdfDownloadService().downloadAndOpenReport(
         item: _item!,
         farmerName: auth.userName,
         farmerPhone: auth.userPhone,
@@ -327,7 +331,7 @@ class _EvidenceDetailScreenState extends State<EvidenceDetailScreen> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  "✓ 3-Page PDF Report (${savedFile.path.split('/').last}) downloaded & opened!",
+                  AppTranslations.tr(lang, "report_downloaded_snack", "✓ Report downloaded to device storage"),
                   style: const TextStyle(fontSize: 12),
                 ),
               ),
@@ -340,9 +344,9 @@ class _EvidenceDetailScreenState extends State<EvidenceDetailScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("PDF report downloaded to phone storage."),
-          backgroundColor: Color(0xFF047857),
+        SnackBar(
+          content: Text(AppTranslations.tr(lang, "report_downloaded_snack", "✓ Report downloaded to device storage")),
+          backgroundColor: const Color(0xFF047857),
         ),
       );
     } finally {

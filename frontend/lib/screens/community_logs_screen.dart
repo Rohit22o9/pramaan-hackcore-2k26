@@ -305,22 +305,22 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                     ),
                     child: Column(
                       children: [
-                        _buildDetailRow("🌾 Target Crop", crop),
+                        _buildDetailRow(AppTranslations.tr(lang, "target_crop_lbl", "🌾 Target Crop"), crop),
                         const Divider(height: 16),
-                        _buildDetailRow("🧪 Input Applied", productName),
+                        _buildDetailRow(AppTranslations.tr(lang, "input_applied_lbl", "🧪 Input Applied"), productName),
                         const Divider(height: 16),
-                        _buildDetailRow("⚖️ Verified Dosage", dosage),
+                        _buildDetailRow(AppTranslations.tr(lang, "verified_dosage_lbl", "⚖️ Verified Dosage"), dosage),
                         const Divider(height: 16),
-                        _buildDetailRow("🎯 Action Type", log['action_type']?.toString() ?? "SPRAY"),
+                        _buildDetailRow(AppTranslations.tr(lang, "action_type_lbl", "🎯 Action Type"), log['action_type']?.toString() ?? "SPRAY"),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
 
                   // Voice Transcript Box
-                  const Text(
-                    "🎙️ Recorded Voice Transcript",
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+                  Text(
+                    AppTranslations.tr(lang, "recorded_voice_transcript_lbl", "🎙️ Recorded Voice Transcript"),
+                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
                   ),
                   const SizedBox(height: 6),
                   Container(
@@ -348,9 +348,9 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          "🔒 SHA-256 Hash Anchor:",
-                          style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+                        Text(
+                          AppTranslations.tr(lang, "sha256_hash_anchor_lbl", "🔒 SHA-256 Hash Anchor:"),
+                          style: const TextStyle(fontSize: 10.5, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -504,7 +504,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Google Sheet Records (${logs.length})",
+                    "${AppTranslations.tr(lang, "google_sheet_records", "Google Sheet Records")} (${logs.length})",
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
@@ -521,9 +521,9 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                           _searchController.clear();
                         });
                       },
-                      child: const Text(
-                        "Reset Filters",
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
+                      child: Text(
+                        AppTranslations.tr(lang, "reset_filters", "Reset Filters"),
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.primary),
                       ),
                     ),
                 ],
@@ -533,15 +533,15 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
             // Logs Feed List
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          CircularProgressIndicator(color: AppColors.primary),
-                          SizedBox(height: 12),
+                          const CircularProgressIndicator(color: AppColors.primary),
+                          const SizedBox(height: 12),
                           Text(
-                            "Loading records from Google Sheet...",
-                            style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
+                            AppTranslations.tr(lang, "loading_sheet_records", "Loading records from Google Sheet..."),
+                            style: const TextStyle(fontSize: 13, color: AppColors.textSecondary),
                           ),
                         ],
                       ),
@@ -560,19 +560,8 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: CustomBottomNav(
-        currentIndex: 99,
-        onTap: (index) {
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/farmer_dashboard');
-          } else if (index == 1) {
-            Navigator.pushNamed(context, '/voice_log');
-          } else if (index == 2) {
-            Navigator.pushNamed(context, '/evidence_review');
-          } else if (index == 3) {
-            Navigator.pushNamed(context, '/ask_pramaan');
-          }
-        },
+      bottomNavigationBar: const CustomBottomNav(
+        currentIndex: 2,
       ),
     );
   }
@@ -972,15 +961,15 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
               child: const Icon(Icons.description_outlined, size: 36, color: AppColors.textMuted),
             ),
             const SizedBox(height: 12),
-            const Text(
-              "No logs found in Google Sheet for selected filters.",
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            Text(
+              AppTranslations.tr(lang, "no_logs_found_title", "No logs found for selected filters."),
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
-            const Text(
-              "Try selecting 'All Crops' or 'All Regions' or recorded new voice logs.",
-              style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+            Text(
+              AppTranslations.tr(lang, "no_logs_found_sub", "Try selecting 'All Crops' or recorded new voice logs."),
+              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 14),
@@ -998,7 +987,7 @@ class _CommunityLogsScreenState extends State<CommunityLogsScreen> {
                   _searchQuery = "";
                 });
               },
-              child: const Text("Reset Filters"),
+              child: Text(AppTranslations.tr(lang, "reset_filters", "Reset Filters")),
             ),
           ],
         ),

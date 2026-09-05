@@ -43,9 +43,9 @@ class AgronomySuiteScreen extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Farmer Weather Advisory",
-              style: TextStyle(
+            Text(
+              AppTranslations.tr(lang, "weather_guide", "Farmer Weather Advisory"),
+              style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 17,
                 color: Color(0xFF0F172A),
@@ -54,10 +54,10 @@ class AgronomySuiteScreen extends StatelessWidget {
             ),
             const SizedBox(height: 1),
             Text(
-              "Weather insights for better farming",
-              style: TextStyle(
+              AppTranslations.tr(lang, "live_weather", "Weather insights for better farming"),
+              style: const TextStyle(
                 fontSize: 11.5,
-                color: const Color(0xFF64748B),
+                color: Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -143,17 +143,17 @@ class AgronomySuiteScreen extends StatelessWidget {
                     onTap: () => _showDistrictPicker(context, farmProv, districts, selectedDistrict?.name),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: const [
+                      children: [
                         Text(
-                          "Change District",
-                          style: TextStyle(
+                          AppTranslations.tr(lang, "select_district", "Change District"),
+                          style: const TextStyle(
                             fontSize: 12.5,
                             fontWeight: FontWeight.w600,
                             color: Color(0xFF475569),
                           ),
                         ),
-                        SizedBox(width: 2),
-                        Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 18),
+                        const SizedBox(width: 2),
+                        const Icon(Icons.chevron_right_rounded, color: Color(0xFF64748B), size: 18),
                       ],
                     ),
                   ),
@@ -162,7 +162,7 @@ class AgronomySuiteScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Caution Banner: "Spray with Caution"
+            // Caution Banner
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
@@ -198,22 +198,22 @@ class AgronomySuiteScreen extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
                   // Advice text
-                  const Expanded(
+                  Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Spray with Caution",
-                          style: TextStyle(
+                          AppTranslations.tr(lang, "spray_caution", "Spray with Caution"),
+                          style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: Color(0xFF92400E),
                           ),
                         ),
-                        SizedBox(height: 3),
+                        const SizedBox(height: 3),
                         Text(
-                          "It is hot. Spray in early morning or evening for better results.",
-                          style: TextStyle(
+                          AppTranslations.tr(lang, "spray_caution_sub", "It is hot. Spray in early morning or evening for better results."),
+                          style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: Color(0xFF78350F),
@@ -233,21 +233,12 @@ class AgronomySuiteScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.check_circle_rounded, color: Color(0xFF047857), size: 18),
                 const SizedBox(width: 6),
-                const Text(
-                  "Current Weather",
-                  style: TextStyle(
+                Text(
+                  AppTranslations.tr(lang, "live_weather", "Current Weather"),
+                  style: const TextStyle(
                     fontSize: 15.5,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
-                  ),
-                ),
-                const Spacer(),
-                const Text(
-                  "Updated: 3:40 PM",
-                  style: TextStyle(
-                    fontSize: 11.5,
-                    color: Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -262,7 +253,7 @@ class AgronomySuiteScreen extends StatelessWidget {
                     icon: Icons.thermostat_rounded,
                     iconBg: const Color(0xFFECFDF5),
                     iconColor: const Color(0xFF047857),
-                    label: "Temperature",
+                    label: AppTranslations.tr(lang, "temp", "Temperature"),
                     value: "$tempVal°C",
                   ),
                 ),
@@ -272,7 +263,7 @@ class AgronomySuiteScreen extends StatelessWidget {
                     icon: Icons.water_drop_rounded,
                     iconBg: const Color(0xFFEFF6FF),
                     iconColor: const Color(0xFF2563EB),
-                    label: "Humidity",
+                    label: AppTranslations.tr(lang, "heat_sun", "Humidity"),
                     value: humidityVal,
                   ),
                 ),
@@ -286,7 +277,7 @@ class AgronomySuiteScreen extends StatelessWidget {
                     icon: Icons.air_rounded,
                     iconBg: const Color(0xFFECFDF5),
                     iconColor: const Color(0xFF047857),
-                    label: "Wind Speed",
+                    label: AppTranslations.tr(lang, "wind_speed", "Wind Speed"),
                     value: windVal,
                   ),
                 ),
@@ -296,7 +287,7 @@ class AgronomySuiteScreen extends StatelessWidget {
                     icon: Icons.cloudy_snowing,
                     iconBg: const Color(0xFFF1F5F9),
                     iconColor: const Color(0xFF475569),
-                    label: "Rain Chance",
+                    label: AppTranslations.tr(lang, "rain_chance", "Rain Chance"),
                     value: rainVal,
                   ),
                 ),
@@ -316,21 +307,12 @@ class AgronomySuiteScreen extends StatelessWidget {
                   child: const Icon(Icons.access_time_filled_rounded, color: Colors.white, size: 14),
                 ),
                 const SizedBox(width: 8),
-                const Text(
-                  "Best Time to Spray",
-                  style: TextStyle(
+                Text(
+                  AppTranslations.tr(lang, "best_spray_timings", "Best Time to Spray"),
+                  style: const TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Text(
-                  "(Next 48 Hours)",
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF64748B),
                   ),
                 ),
               ],
@@ -354,33 +336,33 @@ class AgronomySuiteScreen extends StatelessWidget {
               child: Column(
                 children: [
                   _buildSprayRow(
-                    timeSlot: "Today Morning",
-                    hours: "6:30 AM – 10:00 AM",
-                    statusText: "Do not spray",
+                    timeSlot: AppTranslations.tr(lang, "morning_slot", "Today Morning (06:30 – 10:00 AM)"),
+                    hours: AppTranslations.tr(lang, "morning_reason", "Calm wind and optimal absorption"),
+                    statusText: AppTranslations.tr(lang, "best_time", "Best time"),
+                    isAllowed: true,
+                    isBest: true,
+                  ),
+                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                  _buildSprayRow(
+                    timeSlot: AppTranslations.tr(lang, "midday_slot", "Today Midday (11:30 AM – 03:30 PM)"),
+                    hours: AppTranslations.tr(lang, "midday_reason", "Midday heat causes rapid droplet evaporation"),
+                    statusText: AppTranslations.tr(lang, "no_spray", "Do not spray"),
                     isAllowed: false,
                     isBest: false,
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildSprayRow(
-                    timeSlot: "Today Midday",
-                    hours: "11:30 AM – 3:30 PM",
-                    statusText: "Do not spray",
-                    isAllowed: false,
-                    isBest: false,
-                  ),
-                  const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                  _buildSprayRow(
-                    timeSlot: "Today Evening",
-                    hours: "4:00 PM – 7:00 PM",
-                    statusText: "Can spray",
+                    timeSlot: AppTranslations.tr(lang, "evening_slot", "Today Evening (04:00 – 07:00 PM)"),
+                    hours: AppTranslations.tr(lang, "evening_reason", "Safe evening foliar window"),
+                    statusText: AppTranslations.tr(lang, "moderate", "Can spray"),
                     isAllowed: true,
                     isBest: false,
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildSprayRow(
-                    timeSlot: "Tomorrow Morning",
-                    hours: "6:30 AM – 10:30 AM",
-                    statusText: "Best time",
+                    timeSlot: AppTranslations.tr(lang, "tomorrow_slot", "Tomorrow Morning (06:30 – 10:30 AM)"),
+                    hours: AppTranslations.tr(lang, "tomorrow_reason", "Clear weather expected"),
+                    statusText: AppTranslations.tr(lang, "best_time", "Best time"),
                     isAllowed: true,
                     isBest: true,
                   ),
@@ -394,9 +376,9 @@ class AgronomySuiteScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.eco_rounded, color: Color(0xFF047857), size: 20),
                 const SizedBox(width: 6),
-                const Text(
-                  "Common Crop Problems & Solutions",
-                  style: TextStyle(
+                Text(
+                  AppTranslations.tr(lang, "crop_diseases", "Common Crop Problems & Solutions"),
+                  style: const TextStyle(
                     fontSize: 14.5,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFF0F172A),
@@ -407,17 +389,17 @@ class AgronomySuiteScreen extends StatelessWidget {
                   onTap: () => Navigator.pushNamed(context, '/crop_camera'),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
-                    children: const [
+                    children: [
                       Text(
-                        "View All",
-                        style: TextStyle(
+                        AppTranslations.tr(lang, "view_all", "View All"),
+                        style: const TextStyle(
                           fontSize: 12.5,
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF047857),
                         ),
                       ),
-                      SizedBox(width: 2),
-                      Icon(Icons.chevron_right_rounded, color: Color(0xFF047857), size: 16),
+                      const SizedBox(width: 2),
+                      const Icon(Icons.chevron_right_rounded, color: Color(0xFF047857), size: 16),
                     ],
                   ),
                 ),
@@ -443,10 +425,10 @@ class AgronomySuiteScreen extends StatelessWidget {
                 children: [
                   _buildProblemItem(
                     cropIcon: Icons.grass_rounded,
-                    name: "Yellow / Stripe Rust",
-                    crop: "Wheat",
-                    symptoms: "Yellow powder or stripes on leaves",
-                    dose: "Tilt 25% EC\n@ 200 ml per acre",
+                    name: AppTranslations.tr(lang, "wheat_disease", "Yellow / Stripe Rust"),
+                    crop: AppTranslations.tr(lang, "wheat", "Wheat"),
+                    symptoms: AppTranslations.tr(lang, "wheat_symptoms", "Yellow powder or stripes on leaves"),
+                    dose: AppTranslations.tr(lang, "wheat_medicine", "Tilt 25% EC @ 200 ml per acre"),
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildProblemItem(

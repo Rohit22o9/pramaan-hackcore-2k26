@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/providers/auth_provider.dart';
 import '../core/providers/farm_provider.dart';
+import '../core/localization/app_translations.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   void _showEditProfileDialog(BuildContext context, AuthProvider auth) {
+    final lang = auth.selectedLanguage;
     final nameCtrl = TextEditingController(text: auth.userName.isNotEmpty ? auth.userName : "Anushka");
     final villageCtrl = TextEditingController(text: auth.userVillage.isNotEmpty ? auth.userVillage : "Nashik, Maharashtra");
     final phoneCtrl = TextEditingController(text: auth.userPhone.isNotEmpty ? auth.userPhone : "9876543210");
@@ -15,37 +17,37 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          "Edit Farmer Profile",
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        title: Text(
+          AppTranslations.tr(lang, "edit_farmer_profile", "Edit Farmer Profile"),
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(
-                labelText: "Full Name",
-                prefixIcon: Icon(Icons.person_outline_rounded),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppTranslations.tr(lang, "full_name_lbl", "Full Name"),
+                prefixIcon: const Icon(Icons.person_outline_rounded),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: villageCtrl,
-              decoration: const InputDecoration(
-                labelText: "Village / Location",
-                prefixIcon: Icon(Icons.location_on_outlined),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppTranslations.tr(lang, "village_location_lbl", "Village / Location"),
+                prefixIcon: const Icon(Icons.location_on_outlined),
+                border: const OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: phoneCtrl,
-              decoration: const InputDecoration(
-                labelText: "Phone Number",
-                prefixIcon: Icon(Icons.phone_outlined),
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: AppTranslations.tr(lang, "phone_number_lbl", "Phone Number"),
+                prefixIcon: const Icon(Icons.phone_outlined),
+                border: const OutlineInputBorder(),
               ),
             ),
           ],
@@ -53,7 +55,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
+            child: Text(AppTranslations.tr(lang, "cancel_btn", "Cancel")),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -68,13 +70,13 @@ class ProfileScreen extends StatelessWidget {
               );
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("✓ Profile updated successfully!"),
-                  backgroundColor: Color(0xFF047857),
+                SnackBar(
+                  content: Text(AppTranslations.tr(lang, "profile_updated_success", "✓ Profile updated successfully!")),
+                  backgroundColor: const Color(0xFF047857),
                 ),
               );
             },
-            child: const Text("Save"),
+            child: Text(AppTranslations.tr(lang, "save_btn", "Save")),
           ),
         ],
       ),
@@ -86,12 +88,13 @@ class ProfileScreen extends StatelessWidget {
     final auth = Provider.of<AuthProvider>(context);
     final farmProv = Provider.of<FarmProvider>(context);
     final farm = farmProv.selectedFarm;
+    final lang = auth.selectedLanguage;
 
     final displayName = auth.userName.isNotEmpty ? auth.userName : "Anushka";
     final initialLetter = displayName.isNotEmpty ? displayName[0].toUpperCase() : "A";
     final locationText = auth.userVillage.isNotEmpty ? auth.userVillage : "Nashik, Maharashtra";
     final farmName = farm?.name.isNotEmpty == true ? farm!.name : "Sahyadri Bio-Farms (Plot North)";
-    final totalAcres = farm?.totalAcres != null ? "${farm!.totalAcres} Acre" : "12.5 Acre";
+    final totalAcres = farm?.totalAcres != null ? "${farm!.totalAcres} ${AppTranslations.tr(lang, "acres_unit", "Acre")}" : "12.5 ${AppTranslations.tr(lang, "acres_unit", "Acre")}";
     final activeCrop = auth.activeCrop.isNotEmpty ? auth.activeCrop : "Cotton (Bt-III)";
     final compliance = farm?.complianceScore != null ? "${farm!.complianceScore}% (Grade A+)" : "96.4% (Grade A+)";
     final coords = "${farm?.latitude ?? 20.1985}° N, ${farm?.longitude ?? 73.8322}° E";
@@ -114,20 +117,20 @@ class ProfileScreen extends StatelessWidget {
         ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             Text(
-              "User Profile",
-              style: TextStyle(
+              AppTranslations.tr(lang, "user_profile_title", "User Profile"),
+              style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 18,
                 color: Color(0xFF0F172A),
                 letterSpacing: -0.3,
               ),
             ),
-            SizedBox(height: 1),
+            const SizedBox(height: 1),
             Text(
-              "Your details and farm information",
-              style: TextStyle(
+              AppTranslations.tr(lang, "user_profile_sub", "Your details and farm information"),
+              style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),
                 fontWeight: FontWeight.w500,
@@ -159,10 +162,10 @@ class ProfileScreen extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          const Icon(Icons.forest_rounded, size: 28, color: Color(0xFF10B981)),
-                          const Icon(Icons.home_work_rounded, size: 36, color: Color(0xFF059669)),
-                          const Icon(Icons.park_rounded, size: 24, color: Color(0xFF34D399)),
+                        children: const [
+                          Icon(Icons.forest_rounded, size: 28, color: Color(0xFF10B981)),
+                          Icon(Icons.home_work_rounded, size: 36, color: Color(0xFF059669)),
+                          Icon(Icons.park_rounded, size: 24, color: Color(0xFF34D399)),
                         ],
                       ),
                     ),
@@ -210,9 +213,9 @@ class ProfileScreen extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
-                              const Text(
-                                "Farmer / Grower",
-                                style: TextStyle(
+                              Text(
+                                AppTranslations.tr(lang, "role_farmer", "Farmer / Grower"),
+                                style: const TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFF047857),
@@ -261,12 +264,12 @@ class ProfileScreen extends StatelessWidget {
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.edit_outlined, size: 13, color: Color(0xFF0F172A)),
-                                SizedBox(width: 4),
+                              children: [
+                                const Icon(Icons.edit_outlined, size: 13, color: Color(0xFF0F172A)),
+                                const SizedBox(width: 4),
                                 Text(
-                                  "Edit",
-                                  style: TextStyle(
+                                  AppTranslations.tr(lang, "edit_name", "Edit"),
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                     color: Color(0xFF0F172A),
@@ -292,18 +295,18 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      "Farm Details",
-                      style: TextStyle(
+                      AppTranslations.tr(lang, "farm_details_title", "Farm Details"),
+                      style: const TextStyle(
                         fontSize: 16.5,
                         fontWeight: FontWeight.w800,
                         color: Color(0xFF0F172A),
                       ),
                     ),
                     Text(
-                      "Your registered farm information",
-                      style: TextStyle(
+                      AppTranslations.tr(lang, "user_profile_sub", "Your registered farm information"),
+                      style: const TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFF64748B),
                         fontWeight: FontWeight.w500,
@@ -328,7 +331,7 @@ class ProfileScreen extends StatelessWidget {
                         Icon(Icons.location_on_rounded, color: Color(0xFF047857), size: 14),
                         SizedBox(width: 4),
                         Text(
-                          "View on Map",
+                          "Map",
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w700,
@@ -361,31 +364,31 @@ class ProfileScreen extends StatelessWidget {
                 children: [
                   _buildFarmRow(
                     icon: Icons.home_rounded,
-                    label: "Farm Name",
+                    label: AppTranslations.tr(lang, "plot_label", "Farm Name"),
                     value: farmName,
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildFarmRow(
                     icon: Icons.terrain_rounded,
-                    label: "Total Area",
+                    label: AppTranslations.tr(lang, "area_label", "Total Area"),
                     value: totalAcres,
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildFarmRow(
                     icon: Icons.eco_rounded,
-                    label: "Primary Active Crop",
+                    label: AppTranslations.tr(lang, "crop_label", "Primary Active Crop"),
                     value: activeCrop,
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildFarmRow(
                     icon: Icons.shield_rounded,
-                    label: "Compliance Score",
+                    label: AppTranslations.tr(lang, "compliance_label", "Compliance Score"),
                     value: compliance,
                   ),
                   const Divider(height: 1, color: Color(0xFFF1F5F9)),
                   _buildFarmRow(
                     icon: Icons.location_on_rounded,
-                    label: "Location Coordinates",
+                    label: AppTranslations.tr(lang, "village_location_lbl", "Location Coordinates"),
                     value: coords,
                   ),
                 ],
@@ -420,9 +423,9 @@ class ProfileScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text(
-                        "Account Type",
-                        style: TextStyle(
+                      Text(
+                        AppTranslations.tr(lang, "role_farmer", "Account Type"),
+                        style: const TextStyle(
                           fontSize: 10.5,
                           color: Color(0xFF64748B),
                           fontWeight: FontWeight.w500,
@@ -431,17 +434,17 @@ class ProfileScreen extends StatelessWidget {
                       const SizedBox(height: 2),
                       Row(
                         mainAxisSize: MainAxisSize.min,
-                        children: const [
+                        children: [
                           Text(
-                            "Verified Farmer",
-                            style: TextStyle(
+                            AppTranslations.tr(lang, "farmer_verified_log", "Verified Farmer"),
+                            style: const TextStyle(
                               fontSize: 12.5,
                               fontWeight: FontWeight.w800,
                               color: Color(0xFF047857),
                             ),
                           ),
-                          SizedBox(width: 4),
-                          Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.check_circle_rounded, color: Color(0xFF059669), size: 14),
                         ],
                       ),
                     ],
@@ -458,11 +461,11 @@ class ProfileScreen extends StatelessWidget {
                   // Right side: Slogan & Leaf
                   Expanded(
                     child: Row(
-                      children: const [
+                      children: [
                         Expanded(
                           child: Text(
-                            "Helping build\nsustainable agriculture",
-                            style: TextStyle(
+                            AppTranslations.tr(lang, "sustainable_slogan", "Helping build sustainable agriculture"),
+                            style: const TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w500,
                               color: Color(0xFF475569),
@@ -470,8 +473,8 @@ class ProfileScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        SizedBox(width: 4),
-                        Icon(Icons.eco_rounded, color: Color(0xFFA7F3D0), size: 20),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.eco_rounded, color: Color(0xFFA7F3D0), size: 20),
                       ],
                     ),
                   ),
@@ -497,20 +500,20 @@ class ProfileScreen extends StatelessWidget {
                 onPressed: () => Navigator.pushNamed(context, '/profile_selection'),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.sync_alt_rounded, color: Colors.white, size: 22),
-                    SizedBox(width: 10),
+                  children: [
+                    const Icon(Icons.sync_alt_rounded, color: Colors.white, size: 22),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        "Switch Role / Persona",
-                        style: TextStyle(
+                        AppTranslations.tr(lang, "switch_role_menu", "Switch Role / Persona"),
+                        style: const TextStyle(
                           fontSize: 14.5,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.2,
                         ),
                       ),
                     ),
-                    Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
+                    const Icon(Icons.chevron_right_rounded, color: Colors.white, size: 22),
                   ],
                 ),
               ),

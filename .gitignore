@@ -44,3 +44,6 @@ frontend/.dart_tool/
 Thumbs.db
 .vscode/
 .idea/
+*.salive
+.kotlin/
+**/android/.kotlin/
